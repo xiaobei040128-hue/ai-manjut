@@ -1,0 +1,313 @@
+.studio .f-refresh {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: #a181b2;
+  padding: 7px 0;
+  min-height: 30px;
+}
+.studio .f-refresh svg {
+  height: 12px;
+  width: 12px;
+}
+.f-receipt {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 16px 13px;
+  background: #f0f7f2;
+  border: 1px solid #dfede3;
+  border-radius: 12px;
+  color: #659775;
+  margin: 18px 0;
+}
+.f-receipt > div {
+  flex: 1;
+  min-width: 0;
+}
+.studio .f-receipt > svg {
+  height: 18px;
+  width: 18px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.f-receipt b {
+  font-size: 12px;
+  font-weight: 550;
+}
+.studio .f-receipt p {
+  font-size: 11px;
+  color: #88a38f;
+  line-height: 1.8;
+  margin: 5px 0;
+}
+.f-receipt small {
+  display: block;
+  font-size: 9px;
+  color: #94ad9c;
+  overflow-wrap: anywhere;
+  line-height: 1.8;
+}
+.studio .f-receipt > button {
+  font-size: 18px;
+  color: #8daa95;
+  line-height: 1;
+}
+.f-record-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 24px 0 13px;
+}
+.studio .f-record-heading h3 {
+  margin: 0;
+  font-size: 14px;
+  color: #856391;
+}
+.f-record-heading > span {
+  font-size: 9px;
+  color: #b09abb;
+}
+.f-filters {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 16px;
+}
+.studio .f-filters button {
+  font-size: 10px;
+  color: #ac8ebc;
+  padding: 7px 10px;
+  border: 1px solid #e9dcf1;
+  border-radius: 20px;
+  background: #fff;
+  min-height: 30px;
+}
+.studio .f-filters button[aria-pressed="true"] {
+  background: #f1e6f8;
+  color: #9e76b4;
+  border-color: #e0c9ef;
+}
+.f-request {
+  border: 1px solid #eadff2;
+  border-radius: 11px;
+  margin: 10px 0;
+  background: #fff;
+  overflow: hidden;
+}
+.f-request > summary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 14px 11px;
+  list-style: none;
+  cursor: pointer;
+}
+.f-request > summary::-webkit-details-marker {
+  display: none;
+}
+.f-request-title {
+  flex: 1;
+  min-width: 0;
+}
+.f-request-title b {
+  font-size: 11px;
+  display: block;
+  color: #866b94;
+  font-weight: 500;
+  line-height: 1.7;
+}
+.f-request-title em {
+  font-size: 12px;
+  font-weight: 550;
+  font-style: normal;
+  color: #825f95;
+  white-space: nowrap;
+}
+.f-request-title small {
+  display: block;
+  font-size: 9px;
+  color: #b59dc3;
+  line-height: 1.7;
+  margin-top: 5px;
+}
+.f-request-icon {
+  height: 31px;
+  width: 31px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #e8daf2;
+  background: #f6effc;
+  border-radius: 9px;
+  color: #b298c3;
+  flex-shrink: 0;
+}
+.studio .f-request-icon svg {
+  height: 15px;
+  width: 15px;
+}
+.f-request-icon.paid,
+.f-request-icon.completed {
+  color: #8faf9b;
+  background: #f0f6f2;
+  border-color: #e4eee8;
+}
+.studio .f-request > summary > .s-finance-status {
+  font-size: 8px;
+  white-space: nowrap;
+}
+.studio .f-request > summary > svg {
+  height: 11px;
+  width: 11px;
+  color: #bca6cb;
+  transition: transform 0.2s;
+}
+.f-request[open] > summary > svg {
+  transform: rotate(180deg);
+}
+.f-request-detail {
+  border-top: 1px solid #f0e8f5;
+  padding: 16px 13px;
+  background: #fcf9fe;
+}
+.f-request-track {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 17px;
+}
+.f-request-track > span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  font-size: 9px;
+  color: #c3afcd;
+  white-space: nowrap;
+}
+.studio .f-request-track svg {
+  height: 17px;
+  width: 17px;
+}
+.f-request-track > span.done {
+  color: #a689b8;
+}
+.f-request-track > span.active {
+  color: #9a6cb4;
+}
+.f-request-track > i {
+  flex: 1;
+  height: 1px;
+  background: #e6d5ef;
+  align-self: flex-start;
+  margin-top: 8px;
+}
+.f-request-detail dl {
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  gap: 9px;
+  font-size: 10px;
+  line-height: 1.8;
+}
+.f-request-detail dt {
+  color: #b39bc0;
+}
+.f-request-detail dd {
+  margin: 0;
+  color: #9d7fab;
+  overflow-wrap: anywhere;
+}
+.studio .f-request-detail > p {
+  font-size: 10px;
+  color: #ae96bc;
+  line-height: 1.9;
+  margin: 16px 0 0;
+}
+.f-empty {
+  text-align: center;
+  border: 1px dashed #e8dcf1;
+  border-radius: 11px;
+  background: #fcf9fe;
+  padding: 24px 15px;
+}
+.studio .f-empty > svg {
+  height: 24px;
+  width: 24px;
+  color: #ccb5d9;
+  margin-bottom: 12px;
+}
+.f-empty > b {
+  font-size: 11px;
+  font-weight: 500;
+  color: #aa8fba;
+  display: block;
+}
+.studio .f-empty > p {
+  font-size: 10px;
+  color: #bba5c8;
+  line-height: 1.9;
+  margin-top: 8px;
+}
+.f-spinning {
+  animation: f-spin 0.8s linear infinite;
+}
+@keyframes f-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .f-spinning {
+    animation: none;
+  }
+  .f-request > summary > svg {
+    transition: none;
+  }
+}
+
+.s-id-completeness {
+  display: flex;
+  gap: 8px;
+  margin: 18px 0;
+}
+.s-id-completeness > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: #ae89be;
+  background: #f7f0fc;
+  border: 1px solid #ebdcf4;
+  border-radius: 20px;
+  padding: 7px 11px;
+}
+.s-id-completeness svg {
+  height: 12px;
+  width: 12px;
+}
+.s-id-photo-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.s-id-photo-heading > b {
+  font-size: 12px;
+  color: #9270a2;
+}
+.s-id-photo-heading > button {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  background: none;
+  border: 0;
+  font: inherit;
+  font-size: 10px;
+  color: #b795c5;
+  cursor: pointer;
+}
+.s-id-photo-heading > button > svg {
+  height: 11px;
+  width: 11px;
+}

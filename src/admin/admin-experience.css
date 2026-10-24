@@ -1,0 +1,59 @@
+/* Operator workspace: consistent hierarchy, tables and review controls. */
+.ad-app .ad-main{max-width:1640px;padding-top:30px}
+.ad-app .ad-page-heading{margin-bottom:25px;align-items:center}
+.ad-app .ad-page-heading h1{font-size:29px;letter-spacing:-.8px;font-weight:650;color:#4c365b;margin:8px 0 9px}
+.ad-app .ad-page-heading p{font-size:12px;line-height:1.8;color:#947c9f}
+.ad-app .ad-topbar{background:#fefcffef;border-bottom:1px solid #e9e0f0;backdrop-filter:blur(18px);box-shadow:0 3px 12px #5e3e6f03}
+.ad-app .ad-sidebar{background:linear-gradient(175deg,#fff,#faf7fd);border-right:1px solid #e9e0f0}
+.ad-app .ad-sidebar nav>a{border:1px solid transparent;border-radius:11px;font-size:12px;min-height:41px}
+.ad-app .ad-sidebar nav>a.active{background:linear-gradient(100deg,#f2e9fa,#faf6fd);border-color:#e4d3ef;color:#8a5da2;font-weight:600;box-shadow:0 3px 9px #72448505}
+.ad-app .ad-sidebar nav>a:hover{background:#f7f2fb}
+.ad-app .ad-nav-label{font-size:9px;letter-spacing:1.5px;color:#b19abd}
+.ad-app .ad-panel{border-radius:19px;border:1px solid #e9e0ef;box-shadow:0 5px 20px #4a2a5b03;overflow:clip}
+.ad-app .ad-panel-heading,.ad-app .ad-toolbar{padding:22px 24px;border-bottom:1px solid #f0e9f5}
+.ad-app .ad-toolbar{gap:13px;flex-wrap:wrap;background:linear-gradient(150deg,#fff,#fdfbfe)}
+.ad-app .ad-toolbar h2,.ad-app .ad-panel-heading h2{font-size:17px;letter-spacing:-.3px;color:#775485}
+.ad-app .ad-toolbar input,.ad-app .ad-toolbar select{border-radius:11px;border-color:#e5d8ee;background:#fff;font-size:12px;min-height:41px;padding:10px 13px}
+.ad-app .ad-table-scroll{scrollbar-width:thin;scrollbar-color:#d8c6e4 transparent}
+.ad-app table thead{background:#faf7fc}
+.ad-app th{font-size:10px;letter-spacing:.2px;color:#a18bab;font-weight:500;background:#faf7fc;padding:14px 20px;border-bottom:1px solid #eee5f5}
+.ad-app td{padding:18px 20px;font-size:12px;color:#877191;line-height:1.75;border-bottom:1px solid #f3edf7;vertical-align:middle}
+.ad-app tbody tr:hover{background:#fcf9fe}
+.ad-app tbody tr:last-child td{border-bottom:0}
+.ad-app td b{font-weight:600;color:#71517f}
+.ad-app td>small,.ad-app .ad-story small,.ad-app .ad-table-person small{font-size:10px;color:#af98bc;line-height:1.7}
+.ad-app .ad-button{border-radius:11px;min-height:42px;padding:11px 17px;font-size:12px;font-weight:550;background:linear-gradient(115deg,#9766c5,#765092);border:1px solid #84569f;box-shadow:0 4px 10px #85539f0d;color:white}
+.ad-app .ad-button.secondary{background:#fff;border:1px solid #e3d6ec;box-shadow:none;color:#9672aa}
+.ad-app .ad-button.small{min-height:33px;padding:7px 11px;font-size:10px;border-radius:9px}
+.ad-app .ad-button.danger{background:#fff3ef;border-color:#f0d7cf;color:#b78273;box-shadow:none}
+.ad-app .ad-tabs{gap:6px;flex-wrap:wrap}
+.ad-app .ad-tabs>button{padding:9px 12px;border:1px solid transparent;border-radius:10px;color:#b09abd;font-size:11px}
+.ad-app .ad-tabs>button.active{border-color:#e4d3ee;background:#f1e8f8;color:#956bac}
+.ad-app .ad-badge{border-radius:20px;padding:5px 9px;font-size:10px;font-weight:400}
+.ad-app .ad-empty{padding:45px 24px;background:radial-gradient(ellipse at 50% 50%,#fbf6fe,transparent 70%)}
+.ad-app .ad-empty>svg{color:#c4acd4;width:37px;height:37px;background:#f7f0fc;border:1px solid #eadcf4;border-radius:15px;padding:8px;box-sizing:content-box}
+.ad-app .ad-empty h3{font-size:16px;color:#9675a6;margin-top:2px}
+.ad-app .ad-empty p{font-size:12px;color:#b49dc0;line-height:1.9;margin-top:11px}
+.ad-app .ad-metric{border-radius:18px;border-color:#e9dfef;background:linear-gradient(145deg,#fff,#fdfaff);box-shadow:0 5px 16px #65417d04}
+.ad-app .ad-metric strong{font-variant-numeric:tabular-nums;font-size:31px;color:#825a96;font-weight:500}
+.ad-app .ad-metric small{font-size:10px;color:#b19abf}
+.ad-app .ad-welcome{border-radius:21px;overflow:hidden;border-color:#e7dbee}
+.ad-app .ad-callout{border-radius:13px;border-color:#e9dcf2;background:#faf6fd;color:#9d80af;font-size:12px;padding:16px 18px}
+.ad-app .ad-error{border-radius:12px;font-size:12px;line-height:1.8}
+.ad-dialog{border-radius:23px;border:1px solid #e4d5ee;box-shadow:0 30px 90px #35223f30}
+.ad-dialog>header{padding:24px;border-bottom:1px solid #eee5f4;background:linear-gradient(140deg,#fdfbff,#fff)}
+.ad-dialog>header h2{font-size:21px;color:#6d467e;font-weight:600;letter-spacing:-.5px}
+.ad-dialog-body{padding:24px}
+.ad-dialog-body label{color:#977da5;font-size:12px;line-height:1.7}
+.ad-dialog-body :is(input,select,textarea){border-radius:11px;background:#fdfbff;border:1px solid #e5d8ee;padding:12px 13px;color:#775286;font:inherit;font-size:13px}
+.ad-app :is(input,select,textarea):focus,.ad-dialog :is(input,select,textarea):focus{outline:2px solid #c2a3d9;outline-offset:2px}
+.ad-app .ad-form-grid{gap:20px}
+.ad-app .ad-edit-form{padding:24px}
+.ad-dialog .ad-edit-form{padding:0}
+.ad-app .ad-pagination{padding:15px 22px;background:#fdfbff;border-top:1px solid #eee5f5;font-size:11px;color:#b19abd}
+.ad-app .ad-page-footer{color:#b39ebf;font-size:10px;line-height:1.8}
+.ad-login-form input{border-radius:12px;border-color:#e1d4ec;background:#fdfbff}
+.ad-login-form .ad-button{border-radius:12px;background:linear-gradient(115deg,#9766c5,#765092);box-shadow:0 6px 14px #80559b18}
+.ad-login-form h2{color:#694779;font-size:30px;letter-spacing:-.8px}
+@media(max-width:800px){.ad-app .ad-main{padding:24px 17px 0}.ad-app .ad-page-heading h1{font-size:25px}.ad-app .ad-toolbar{padding:18px;gap:10px}.ad-app td,.ad-app th{padding:14px 16px}.ad-app .ad-edit-form{padding:18px}.ad-app .ad-toolbar input{flex:1;min-width:130px}.ad-dialog-body{padding:20px}.ad-dialog>header{padding:20px}}
+.ad-app .ad-welcome button{display:inline-flex;align-items:center;justify-content:center;gap:10px;border:1px solid #f5e8ff;background:#fff8ff;color:#805792;padding:11px 16px;border-radius:11px;font-size:12px;font-weight:600;box-shadow:0 4px 12px #1e082b0a}

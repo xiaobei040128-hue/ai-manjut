@@ -1,0 +1,560 @@
+.q-compute {
+  background: #f7f5fa !important;
+  color: #33213e;
+}
+.q-main {
+  padding: 18px 20px 45px;
+}
+.q-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 25px;
+  padding: 28px 24px 20px;
+  background: radial-gradient(ellipse at 90% 35%, #67438d, #291735 70%);
+  color: #fff;
+  min-height: 290px;
+  box-shadow: 0 18px 35px -24px #3b175b99;
+}
+.q-eyebrow {
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: #ccb6df;
+  position: relative;
+}
+.q-hero h1 {
+  font-size: 34px;
+  line-height: 1.45;
+  margin: 30px 0 12px;
+  position: relative;
+}
+.q-hero h1 > span {
+  font-size: 18px;
+  color: #e2c181;
+  margin-left: 12px;
+}
+.q-hero > p {
+  font-size: 11px;
+  color: #d5c3df;
+  position: relative;
+}
+.q-hero-foot {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid #ffffff1c;
+  margin-top: 28px;
+  padding-top: 16px;
+  font-size: 9px;
+  color: #c5afd6;
+}
+.q-orb {
+  position: absolute;
+  right: -42px;
+  top: 45px;
+  width: 210px;
+  height: 210px;
+  perspective: 500px;
+  display: grid;
+  place-items: center;
+  transform: rotate(-15deg);
+}
+.q-orb i {
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  border: 1px solid #d1a8f366;
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 22px #d2a3ff30,
+    0 0 28px #b47aeb20;
+  animation: q-orbit 14s linear infinite;
+}
+.q-orb i:nth-child(2) {
+  transform: rotateY(60deg);
+  animation-direction: reverse;
+}
+.q-orb i:nth-child(3) {
+  transform: rotateX(65deg);
+  animation-duration: 20s;
+}
+.q-orb > svg {
+  width: 65px;
+  height: 65px;
+  color: #e8cdff;
+  filter: drop-shadow(0 0 20px #b46cfa);
+  transform: rotate(15deg);
+}
+@keyframes q-orbit {
+  to {
+    rotate: 360deg;
+  }
+}
+.q-balance {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: -15px 10px 28px;
+  padding: 22px 18px;
+  background: #fff;
+  border: 1px solid #eae0f0;
+  border-radius: 20px;
+  box-shadow: 0 12px 25px #45225b08;
+}
+.q-balance > div {
+  margin-right: auto;
+}
+.q-balance > div > span {
+  display: block;
+  font-size: 10px;
+  color: #9882a5;
+}
+.q-balance strong {
+  font-size: 33px;
+  display: block;
+  margin-top: 6px;
+  line-height: 1;
+}
+.q-balance strong small {
+  font-size: 11px;
+  margin-left: 7px;
+  font-weight: 400;
+  color: #9985a5;
+}
+.q-balance > div > small {
+  display: block;
+  font-size: 9px;
+  color: #a18bad;
+  margin-top: 8px;
+}
+.q-balance button {
+  border: 0;
+  border-radius: 10px;
+  padding: 12px 10px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: #f0e8f7;
+  color: #76508d;
+  font-size: 11px;
+}
+.q-balance .q-ledger-trigger {
+  padding: 10px;
+  background: transparent;
+}
+.q-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 22px 0 14px;
+  gap: 10px;
+}
+.q-heading h2 {
+  font-size: 18px;
+  margin: 0;
+}
+.q-heading > span {
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: #ad99b6;
+}
+.q-type-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 15px 0;
+}
+.q-type-tabs button {
+  border: 1px solid #e4dbe9;
+  border-radius: 13px;
+  background: #fff;
+  padding: 16px 8px;
+  font-size: 13px;
+  color: #927a9d;
+}
+.q-type-tabs button small {
+  display: block;
+  font-size: 9px;
+  margin-top: 6px;
+}
+.q-type-tabs button[aria-pressed="true"] {
+  color: #65407d;
+  background: #f1e9f8;
+  border-color: #bfa2d1;
+  box-shadow: inset 0 0 0 1px #cab2d955;
+}
+.q-style-rail {
+  display: flex;
+  gap: 10px;
+  padding: 2px 0 12px;
+}
+.q-style-rail button {
+  position: relative;
+  flex-shrink: 0;
+  width: 105px;
+  height: 133px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 13px;
+  overflow: hidden;
+  background: #3c2947;
+  color: white;
+}
+.q-style-rail button[aria-pressed="true"] {
+  border-color: #ac7dcd;
+  box-shadow: 0 4px 12px #7a489b22;
+}
+.q-style-rail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.8;
+}
+.q-style-rail span {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  font-size: 10px;
+  padding: 22px 5px 10px;
+  background: linear-gradient(transparent, #291531);
+}
+.q-style-rail svg {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  padding: 3px;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: #9c66c2;
+}
+.q-composer {
+  padding: 20px;
+  border: 1px solid #e7deee;
+  border-radius: 20px;
+  background: white;
+}
+.q-composer > label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #796487;
+  margin-bottom: 12px;
+}
+.q-composer > label > span {
+  font-size: 9px;
+  color: #ae9ab8;
+}
+.q-composer textarea {
+  border: 1px solid #e5dcec;
+  border-radius: 11px;
+  padding: 13px;
+  width: 100%;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.9;
+  color: #4f365e;
+  background: #fcfafc;
+  resize: vertical;
+}
+.q-spec {
+  display: flex;
+  gap: 7px;
+  margin: 12px 0 18px;
+  flex-wrap: wrap;
+}
+.q-spec span {
+  font-size: 9px;
+  color: #a48bab;
+  background: #f6f1f8;
+  padding: 5px 8px;
+  border-radius: 6px;
+}
+.q-generate {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 0;
+  border-radius: 12px;
+  padding: 16px;
+  background: linear-gradient(110deg, #965ec1, #5a3478);
+  box-shadow: 0 7px 18px #71409626;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+}
+.q-generate > span {
+  font-size: 10px;
+  font-weight: 400;
+  margin-left: 12px;
+  padding-left: 12px;
+  border-left: 1px solid #ffffff40;
+}
+.q-sample-note {
+  display: block;
+  font-size: 9px;
+  text-align: center;
+  color: #ae9bb8;
+  line-height: 1.8;
+  margin-top: 12px;
+}
+.q-generation {
+  border-radius: 12px;
+  background: #f5eefb;
+  padding: 15px;
+}
+.q-generation > div {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #846396;
+}
+.q-generation progress {
+  width: 100%;
+  height: 5px;
+  accent-color: #955ac0;
+  margin: 14px 0;
+}
+.q-generation button {
+  border: 0;
+  background: transparent;
+  font-size: 10px;
+  color: #9d85ae;
+  padding: 4px;
+}
+.q-message,
+.q-warning {
+  padding: 13px 16px;
+  border-radius: 12px;
+  background: #ede5f5;
+  color: #7b568f;
+  font-size: 11px;
+  line-height: 1.8;
+}
+.q-warning {
+  background: #fff0d9;
+  color: #976f3c;
+}
+.q-result {
+  margin-top: 24px;
+}
+.q-result-art {
+  position: relative;
+  max-width: 260px;
+  margin: auto;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 18px 30px #32213c22;
+}
+.q-result-art > img {
+  width: 100%;
+  aspect-ratio: 9/16;
+  object-fit: cover;
+  display: block;
+}
+.q-result-art > span {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 30px 15px 15px;
+  background: linear-gradient(transparent, #291b38);
+  color: white;
+  font-size: 11px;
+}
+.q-result > p {
+  font-size: 11px;
+  line-height: 1.9;
+  color: #917c9e;
+}
+.q-result > button {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 13px;
+  background: white;
+  border: 1px solid #decee9;
+  border-radius: 11px;
+  font-size: 12px;
+  color: #85599f;
+}
+.q-storyboard {
+  display: grid;
+  gap: 10px;
+}
+.q-storyboard > div {
+  background: white;
+  border: 1px solid #e7dced;
+  border-radius: 13px;
+  padding: 17px;
+}
+.q-storyboard span {
+  font-size: 10px;
+  color: #b696cb;
+  margin-right: 12px;
+}
+.q-storyboard b {
+  font-size: 13px;
+}
+.q-storyboard p {
+  font-size: 11px;
+  color: #9d89aa;
+  line-height: 1.8;
+}
+.q-value {
+  padding: 24px 4px 18px;
+}
+.q-value h3 {
+  font-size: 14px;
+}
+.q-value p {
+  font-size: 11px;
+  line-height: 1.9;
+  color: #9984a6;
+}
+.q-controls {
+  font-size: 11px;
+  color: #a089ad;
+  padding: 18px 0;
+  border-top: 1px solid #e6ddeb;
+}
+.q-controls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 15px 0;
+}
+.q-controls button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #ded1e6;
+  background: white;
+  color: #9b7ba9;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 10px;
+}
+.q-sheet {
+  padding: 20px 22px 38px;
+}
+.q-sheet > p {
+  font-size: 11px;
+  line-height: 1.9;
+  color: #95809f;
+}
+.q-close {
+  display: block;
+  margin-left: auto;
+  border: 0;
+  background: #f4eef9;
+  border-radius: 50%;
+  padding: 8px;
+  color: #9875ae;
+}
+.q-pack-intro {
+  text-align: center;
+}
+.q-packs {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0;
+}
+.q-packs > button {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  text-align: left;
+  border: 1px solid #e4d8ec;
+  background: #fff;
+  border-radius: 16px;
+  padding: 18px;
+  color: #79528f;
+}
+.q-packs > button[aria-pressed="true"] {
+  border-color: #ab7dca;
+  background: #f6effb;
+  box-shadow: inset 0 0 0 1px #bd9bd5;
+}
+.q-packs > button > span {
+  font-size: 12px;
+  grid-column: 1/-1;
+}
+.q-packs > button > span small {
+  font-size: 8px;
+  padding: 3px 7px;
+  background: #a47bbb;
+  color: white;
+  border-radius: 5px;
+  margin-left: 10px;
+}
+.q-packs strong {
+  font-size: 28px;
+  color: #573369;
+}
+.q-packs strong small {
+  font-size: 11px;
+  margin-left: 6px;
+  font-weight: 400;
+}
+.q-packs b {
+  font-size: 23px;
+  align-self: center;
+  text-align: right;
+}
+.q-packs b small {
+  font-size: 9px;
+  font-weight: 400;
+}
+.q-packs em {
+  grid-column: 1/-1;
+  font-style: normal;
+  font-size: 10px;
+  color: #a18aaf;
+}
+.q-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  padding: 18px 0;
+  border-bottom: 1px solid #eee6f3;
+}
+.q-entry b {
+  font-size: 12px;
+  color: #725580;
+}
+.q-entry small {
+  display: block;
+  margin-top: 7px;
+  font-size: 9px;
+  color: #b19aba;
+}
+.q-entry strong {
+  font-size: 14px;
+  color: #9567ae;
+  white-space: nowrap;
+}
+.q-sheet > h3 {
+  font-size: 17px;
+  color: #5b3d6c;
+}
+.q-compute button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.q-compute button:focus-visible,
+.q-compute a:focus-visible {
+  outline: 2px solid #be8ddc;
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .q-orb i {
+    animation: none;
+  }
+}

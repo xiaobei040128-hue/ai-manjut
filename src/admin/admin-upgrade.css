@@ -1,0 +1,602 @@
+.ad-app .ad-finance-overview {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 23px;
+}
+.ad-app .ad-finance-overview > button {
+  position: relative;
+  text-align: left;
+  padding: 21px;
+  background: linear-gradient(140deg, #fff, #fcf8ff);
+  border: 1px solid #e8ddef;
+  border-radius: 15px;
+  box-shadow: 0 8px 20px -22px #62417c44;
+  cursor: pointer;
+}
+.ad-finance-overview > button > span {
+  display: block;
+  font-size: 11px;
+  color: #987ca9;
+  line-height: 1.7;
+}
+.ad-finance-overview > button > strong {
+  display: block;
+  font-size: 32px;
+  line-height: 1.3;
+  font-weight: 500;
+  color: #775489;
+  margin: 12px 0 9px;
+}
+.ad-finance-overview > button > small {
+  display: block;
+  font-size: 10px;
+  color: #b096bf;
+  line-height: 1.7;
+}
+.ad-app .ad-finance-overview > button:hover {
+  border-color: #cba9e0;
+  background: #fcf7ff;
+}
+.ad-app .ad-finance-overview > button:focus-visible {
+  outline: 3px solid #bf94dd66;
+  outline-offset: 3px;
+}
+.ad-tab-count {
+  padding: 2px 5px;
+  background: #e7d8f2;
+  color: #9f7ab4;
+  border-radius: 5px;
+  font-size: 9px;
+  margin-left: 7px;
+  line-height: 1.4;
+}
+.ad-app .ad-sidebar {
+  background: linear-gradient(170deg, #fff, #fbf6ff);
+  border-right: 1px solid #e8deef;
+}
+.ad-app .ad-brand > span {
+  background: linear-gradient(145deg, #ae8acf, #815b9e);
+  box-shadow:
+    0 3px 0 #785391,
+    inset 0 1px 0 #ffffff66;
+  border: 1px solid #ba9ed3;
+}
+.ad-app .ad-sidebar nav > a {
+  border-radius: 9px;
+  color: #9b80ac;
+  font-size: 12px;
+}
+.ad-app .ad-sidebar nav > a.active {
+  background: #f0e4f9;
+  color: #8c63a6;
+  border: 1px solid #e5d1f0;
+  box-shadow: inset 0 1px 0 #fff9;
+}
+.ad-app .ad-sidebar nav > a:hover {
+  background: #f8f0fd;
+}
+.ad-app .ad-workspace {
+  border: 1px solid #e7d9ef;
+  background: #fcf9ff;
+  border-radius: 11px;
+}
+.ad-app .ad-main {
+  background: #f8f6fb;
+}
+.ad-app .ad-topbar {
+  background: #fffafef2;
+  border-bottom: 1px solid #e8deef;
+  backdrop-filter: blur(15px);
+}
+.ad-app .ad-panel {
+  border: 1px solid #e5d9ed;
+  border-radius: 16px;
+  box-shadow: 0 8px 22px -26px #55306866;
+  background: white;
+}
+.ad-app .ad-panel-heading h2 {
+  font-weight: 600;
+  color: #755483;
+  font-size: 16px;
+}
+.ad-app .ad-page-heading h1 {
+  font-size: 27px;
+  color: #644372;
+  letter-spacing: 0.5px;
+}
+.ad-app .ad-page-heading p {
+  color: #a68cb5;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.ad-app .ad-button {
+  border-radius: 9px;
+  font-size: 12px;
+  background: linear-gradient(110deg, #a17ac5, #80599e);
+  border: 1px solid #b08bcf;
+  box-shadow:
+    inset 0 1px 0 #fff4,
+    0 2px 0 #664580;
+}
+.ad-app .ad-button.secondary {
+  background: #fff;
+  border-color: #e4d4ee;
+  color: #9d78b0;
+  box-shadow: none;
+}
+.ad-app .ad-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.ad-app .ad-metric {
+  border: 1px solid #e8ddef;
+  border-radius: 15px;
+  background: linear-gradient(130deg, #fff, #fcf9ff);
+  box-shadow: 0 9px 20px -23px #60377f55;
+}
+.ad-app .ad-metric strong {
+  font-weight: 500;
+  color: #89609d;
+}
+.ad-app .ad-metric > div > span {
+  font-size: 11px;
+  color: #aa8fba;
+}
+.ad-app .ad-metric > small {
+  font-size: 10px;
+  color: #ae95bb;
+}
+.ad-app .ad-welcome {
+  border-radius: 19px;
+  background: linear-gradient(115deg, #453052, #654975);
+  border: 1px solid #84618f;
+}
+.ad-app .ad-welcome h2 {
+  color: white;
+  font-weight: 550;
+  line-height: 1.5;
+}
+.ad-app .ad-welcome p {
+  color: #d9c4e5;
+  line-height: 1.9;
+}
+.ad-app .ad-welcome .ad-button {
+  background: #fdf6ff;
+  color: #78518b;
+  border-color: #f8e9ff;
+  box-shadow: 0 2px 0 #d8bce7;
+}
+.ad-app th {
+  font-size: 10px;
+  color: #a88db9;
+  background: #fbf7fe;
+  letter-spacing: 0.3px;
+  font-weight: 500;
+}
+.ad-app td {
+  font-size: 12px;
+  color: #8c709b;
+  border-bottom-color: #f1e8f7;
+}
+.ad-app td > b {
+  font-weight: 500;
+  color: #785786;
+}
+.ad-app td > small {
+  color: #ac93bb;
+  font-size: 10px;
+  line-height: 1.8;
+}
+.ad-app tbody tr:hover {
+  background: #fdf9ff;
+}
+.ad-app .ad-row-actions > button,
+.ad-app .ad-row-actions > a {
+  color: #a17bb7;
+  font-size: 11px;
+}
+.ad-app .ad-tabs {
+  background: #f5edf9;
+  border: 1px solid #ede1f5;
+  border-radius: 9px;
+  padding: 4px;
+  flex-wrap: wrap;
+}
+.ad-app .ad-tabs > button {
+  font-size: 11px;
+  color: #b092c2;
+  min-height: 33px;
+}
+.ad-app .ad-tabs > button.active {
+  color: #9a70b1;
+  background: #fff;
+  box-shadow: 0 2px 4px #60357d0c;
+  border-radius: 6px;
+}
+.ad-app .ad-toolbar {
+  border-bottom-color: #f0e6f6;
+  gap: 12px;
+}
+.ad-app .ad-toolbar input,
+.ad-app .ad-toolbar select {
+  border: 1px solid #e7daef;
+  border-radius: 9px;
+  color: #9778a6;
+  background: #fdfaff;
+  font-size: 12px;
+  min-height: 40px;
+}
+.ad-app .ad-callout {
+  background: #faf3fe;
+  border: 1px solid #eadbf4;
+  border-radius: 11px;
+  color: #aa8dbb;
+  font-size: 11px;
+  line-height: 1.9;
+}
+.ad-app .ad-table-scroll {
+  scrollbar-color: #d7c1e4 transparent;
+}
+.ad-login .ad-login-form h2 {
+  font-size: 28px;
+  line-height: 1.5;
+  color: #654773;
+  letter-spacing: 0.2px;
+}
+.ad-login .ad-login-icon {
+  background: linear-gradient(135deg, #e9d6f7, #ceb0e0);
+  border: 1px solid #f6eaff;
+  box-shadow: 0 3px 0 #ceb3df;
+  color: #9a72b1;
+}
+.ad-login .ad-login-form input {
+  border-color: #e3d4ed;
+  background: #fcf9fe;
+  color: #826290;
+  border-radius: 10px;
+}
+.ad-login .ad-login-form .ad-button {
+  border: 1px solid #b08ace;
+  background: linear-gradient(110deg, #a17bc6, #7e569b);
+  box-shadow:
+    0 3px 0 #62407d,
+    inset 0 1px 0 #fff6;
+  border-radius: 10px;
+}
+.ad-login .ad-login-story {
+  background-color: #3a2248;
+}
+.ad-login .ad-login-story h1 {
+  line-height: 1.5;
+  font-weight: 550;
+}
+.ad-app .ad-definition dd {
+  color: #82638f;
+  overflow-wrap: anywhere;
+}
+.ad-app .ad-definition dt {
+  color: #ac90b9;
+}
+.ad-app .ad-badge {
+  font-size: 9px;
+  border-radius: 5px;
+}
+.ad-app .ad-sidebar-bottom > div {
+  border-top-color: #e8ddef;
+}
+.ad-app .ad-pagination {
+  border-top-color: #f0e6f6;
+  color: #ae95bd;
+}
+.ad-app .ad-page-footer {
+  color: #b49dc2;
+  border-color: #e8dced;
+}
+.ad-app .ad-story b {
+  color: #795486;
+  font-size: 13px;
+}
+.ad-app .ad-story small {
+  color: #b296bf;
+}
+.ad-app .ad-empty h3 {
+  color: #92709f;
+}
+.ad-app .ad-empty p {
+  color: #b099bf;
+}
+@media (max-width: 1100px) {
+  .ad-app .ad-finance-overview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+}
+@media (max-width: 500px) {
+  .ad-app .ad-finance-overview > button {
+    padding: 16px;
+  }
+  .ad-finance-overview > button > strong {
+    font-size: 28px;
+  }
+  .ad-finance-overview > button > small {
+    font-size: 9px;
+  }
+  .ad-app .ad-page-heading h1 {
+    font-size: 24px;
+  }
+  .ad-app .ad-toolbar .ad-button {
+    font-size: 10px;
+  }
+  .ad-app .ad-tabs {
+    gap: 2px;
+  }
+  .ad-app .ad-tabs > button {
+    padding: 8px;
+  }
+}
+/* Important operational text has stronger contrast than the decorative details. */
+.ad-app td,
+.ad-app td > b,
+.ad-app .ad-panel-heading h2,
+.ad-app .ad-story b {
+  color: #72577f;
+}
+.ad-app td > small,
+.ad-app .ad-page-heading p,
+.ad-app .ad-definition dd,
+.ad-app .ad-callout {
+  color: #8b719b;
+}
+.ad-app .ad-sidebar nav > a {
+  color: #8d719f;
+}
+.ad-app th {
+  color: #9a7baa;
+}
+.ad-app .ad-metric > div > span,
+.ad-finance-overview > button > span {
+  color: #9672a8;
+}
+/* Final operational contrast and readable desktop density. */
+.ad-app .ad-sidebar nav > a {
+  font-size: 13px;
+  color: #74617f;
+}
+.ad-app .ad-sidebar nav > a.active {
+  color: #77518f;
+  font-weight: 550;
+}
+.ad-app .ad-panel-heading h2 {
+  font-size: 17px;
+  color: #56415f;
+}
+.ad-app .ad-page-heading h1 {
+  color: #44314f;
+  font-weight: 650;
+}
+.ad-app .ad-page-heading p {
+  color: #83708f;
+  font-size: 12px;
+}
+.ad-app .ad-finance-overview > button > span {
+  font-size: 12px;
+  color: #7d668c;
+}
+.ad-app .ad-finance-overview > button > strong {
+  color: #70507e;
+  font-weight: 550;
+}
+.ad-app .ad-finance-overview > button > small {
+  font-size: 11px;
+  color: #947b9f;
+}
+.ad-app td {
+  font-size: 13px;
+  color: #715e7d;
+}
+.ad-app td > b,
+.ad-app .ad-story b {
+  font-size: 13px;
+  color: #604a6c;
+  font-weight: 550;
+}
+.ad-app td > small,
+.ad-app .ad-story small {
+  font-size: 11px;
+  color: #8e779d;
+}
+.ad-app th {
+  font-size: 11px;
+  color: #846890;
+}
+.ad-app .ad-callout {
+  font-size: 12px;
+  color: #8a7198;
+}
+.ad-app .ad-row-actions > button,
+.ad-app .ad-row-actions > a {
+  font-size: 12px;
+  color: #8e62a5;
+}
+.ad-app .ad-tabs > button {
+  font-size: 12px;
+  color: #9b7aa9;
+}
+.ad-app .ad-tabs > button.active {
+  color: #82529b;
+}
+.ad-app .ad-toolbar input,
+.ad-app .ad-toolbar select {
+  font-size: 12px;
+  color: #82688e;
+}
+.ad-app .ad-metric > div > span {
+  font-size: 12px;
+  color: #8b719b;
+}
+.ad-app .ad-metric > small {
+  font-size: 11px;
+  color: #9d84aa;
+}
+.ad-app .ad-sidebar .ad-nav-label {
+  color: #a68db3;
+  font-size: 10px;
+}
+.ad-app .ad-panel-heading p {
+  font-size: 12px;
+  color: #927d9d;
+}
+.ad-account-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 17px;
+  margin-bottom: 23px;
+}
+.ad-account-summary > div {
+  border: 1px solid #e6d9ee;
+  background: linear-gradient(135deg, #fff, #fcf8ff);
+  border-radius: 14px;
+  padding: 21px;
+}
+.ad-account-summary span {
+  display: block;
+  font-size: 12px;
+  color: #9471a6;
+}
+.ad-account-summary strong {
+  display: block;
+  font-size: 32px;
+  font-weight: 500;
+  color: #775387;
+  margin: 13px 0 10px;
+}
+.ad-account-summary small {
+  font-size: 11px;
+  color: #ae92bd;
+}
+.ad-app .ad-invite-generator {
+  padding: 0 23px 24px;
+  margin-bottom: 22px;
+}
+.ad-invite-generator .ad-panel-heading {
+  padding-left: 0;
+  padding-right: 0;
+}
+.ad-invite-generator .ad-invite-form {
+  margin: 0;
+}
+.ad-generated-codes {
+  border-top: 1px solid #eee3f5;
+  padding-top: 21px;
+  margin-top: 24px;
+}
+.ad-generated-codes > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+.ad-generated-codes b {
+  font-size: 12px;
+  font-weight: 500;
+  color: #a07cad;
+}
+.ad-code-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+  gap: 11px;
+}
+.ad-code-grid > button {
+  border: 1px solid #e1cbed;
+  border-radius: 12px;
+  padding: 16px 12px;
+  background: linear-gradient(135deg, #fcf7ff, #f6edfd);
+  font-family: Consolas, monospace;
+  letter-spacing: 3px;
+  font-size: 20px;
+  color: #9b73ad;
+  cursor: pointer;
+  text-align: center;
+}
+.ad-code-grid small {
+  display: block;
+  font-family: Arial, "Microsoft YaHei", sans-serif;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: #baa0c8;
+  margin-top: 9px;
+}
+.ad-app .ad-invite-code {
+  font-family: Consolas, monospace;
+  font-size: 17px;
+  letter-spacing: 2px;
+  color: #9a70af;
+}
+.ad-revoke-confirm > strong {
+  display: block;
+  font-family: Consolas, monospace;
+  font-size: 27px;
+  letter-spacing: 4px;
+  color: #a581bb;
+}
+.ad-revoke-confirm > p {
+  font-size: 12px;
+  color: #ae92bc;
+  line-height: 1.9;
+  margin: 15px 0 24px;
+}
+.ad-app .ad-invite-form input {
+  background: #fdfaff;
+  border-color: #e4d6ed;
+  color: #9671a6;
+  font-size: 12px;
+}
+.ad-app .ad-invite-form label {
+  color: #a282b1;
+  font-size: 11px;
+}
+@media (max-width: 650px) {
+  .ad-account-summary {
+    gap: 9px;
+  }
+  .ad-account-summary > div {
+    padding: 16px 12px;
+  }
+  .ad-account-summary span {
+    font-size: 10px;
+  }
+  .ad-account-summary strong {
+    font-size: 27px;
+  }
+  .ad-account-summary small {
+    font-size: 9px;
+    line-height: 1.7;
+    display: block;
+  }
+  .ad-app .ad-invite-generator {
+    padding-left: 17px;
+    padding-right: 17px;
+  }
+  .ad-code-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ad-code-grid > button {
+    font-size: 17px;
+    letter-spacing: 2px;
+  }
+}
+.ad-customer-detail h4 { margin: 26px 0 14px; font-size: 14px; }
+.ad-customer-detail > p { font-size: 13px; color: #7f6d8c; line-height: 1.8; }
+.ad-customer-heading { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
+.ad-customer-heading h3 { margin: 0 auto 0 0; font-size: 20px; }
+.ad-customer-grid { display: grid; grid-template-columns: 120px minmax(0,1fr); gap: 12px 18px; margin: 16px 0; font-size: 12px; }
+.ad-customer-grid dt { color: #9882a5; }.ad-customer-grid dd { margin: 0; color: #4e375d; overflow-wrap: anywhere; }
+.ad-customer-balances { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+.ad-customer-balances > div { border: 1px solid #e9dfef; padding: 18px 12px; background: #faf7fc; border-radius: 14px; }
+.ad-customer-balances span { display: block; font-size: 11px; color: #95829f; margin-bottom: 10px; }.ad-customer-balances b { font-size: 19px; color: #63417d; }
+.ad-customer-note { display: grid; gap: 10px; margin: 24px 0 16px; font-size: 13px; color: #856991; }.ad-customer-note textarea { width: 100%; resize: vertical; padding: 13px; border-radius: 12px; border: 1px solid #dfd3e8; font: inherit; }
+.ad-customer-note-preview { max-width: 190px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; color: #9d78b4 !important; }
+.ad-customer-pending { color: #b47b38 !important; margin-top: 8px; }
+@media(max-width:600px){.ad-customer-grid { grid-template-columns: 90px minmax(0,1fr); gap: 11px; }.ad-customer-balances { gap: 6px; }.ad-customer-balances b { font-size: 15px; }}

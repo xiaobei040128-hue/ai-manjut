@@ -1,0 +1,449 @@
+.d-heading {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin: 7px 0 22px;
+}
+.d-heading > div {
+  flex: 1;
+}
+.d-heading > div > span {
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: #ad8fbd;
+}
+.studio .d-heading h2 {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.6;
+  color: #795188;
+  margin: 12px 0 8px;
+}
+.studio .d-heading p {
+  font-size: 11px;
+  color: #a68ab6;
+}
+.studio .d-heading > button {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  border: 1px solid #e6d3f0;
+  background: #fdf8ff;
+  padding: 9px;
+  border-radius: 8px;
+  font-size: 9px;
+  color: #ae85c2;
+  align-self: flex-end;
+  min-height: 32px;
+}
+.studio .d-heading > button svg {
+  height: 12px;
+  width: 12px;
+}
+.d-genre-track {
+  display: flex;
+  gap: 8px;
+  padding-bottom: 15px;
+}
+.studio .d-genre-track > button {
+  border: 1px solid #e4d3ee;
+  background: #fff;
+  border-radius: 20px;
+  padding: 8px 12px;
+  min-height: 32px;
+  font-size: 10px;
+  color: #a47bb7;
+  white-space: nowrap;
+}
+.studio .d-genre-track > button[aria-pressed="true"] {
+  background: #ecdef6;
+  border-color: #ddc4eb;
+  color: #9b70b0;
+}
+.d-stage {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid #4a3159;
+  border-radius: 22px;
+  overflow: hidden;
+  padding: 27px 24px 18px;
+  background: #2d1c39;
+  perspective: 1200px;
+}
+.studio .d-ambient {
+  position: absolute;
+  inset: -30px;
+  width: calc(100% + 60px);
+  max-width: none;
+  height: calc(100% + 60px);
+  filter: blur(24px);
+  opacity: 0.28;
+  object-fit: cover;
+  z-index: -1;
+}
+.d-stage:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 100%, #1d1027aa, transparent 80%);
+  pointer-events: none;
+  z-index: -1;
+}
+.d-poster-frame {
+  position: relative;
+  aspect-ratio: 3/4;
+  max-height: 430px;
+  width: 85%;
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid #e0c6ef66;
+  box-shadow:
+    8px 9px 0 #4c3355,
+    9px 10px 0 #c1a0d22b,
+    0 28px 35px #14051e80;
+  transform: rotateY(-6deg) rotate(-1.5deg);
+  animation: d-poster-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  transform-origin: 50% 80%;
+}
+.studio .d-poster-frame > img {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  object-position: center 20%;
+}
+.d-poster-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, #1f0e2ee8, transparent 75%);
+}
+.d-poster-format {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  border: 1px solid #ead3f326;
+  background: #26143355;
+  backdrop-filter: blur(5px);
+  padding: 5px 8px;
+  border-radius: 6px;
+  color: #e5d0ef;
+  font-size: 7px;
+  z-index: 1;
+}
+.studio .d-poster-format svg {
+  width: 10px;
+  height: 10px;
+}
+.d-poster-copy {
+  position: absolute;
+  left: 17px;
+  right: 17px;
+  bottom: 21px;
+}
+.d-poster-copy > span {
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: #d4b1e9;
+}
+.studio .d-poster-copy h2 {
+  font-size: 21px;
+  color: #fff;
+  line-height: 1.5;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  margin: 10px 0 9px;
+}
+.studio .d-poster-copy p {
+  font-size: 8px;
+  color: #c9aedb;
+  line-height: 1.8;
+  letter-spacing: 0.5px;
+}
+.d-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 27px;
+  margin-top: 24px;
+}
+.studio .d-navigation > button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #d5b7e52e;
+  background: #ffffff08;
+  color: #b498c8;
+  border-radius: 50%;
+}
+.studio .d-navigation > button svg {
+  height: 14px;
+  width: 14px;
+}
+.d-navigation > span {
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: #9d80b2;
+}
+.d-navigation b {
+  font-size: 14px;
+  color: #e3cbed;
+  font-weight: 500;
+}
+.d-story-info {
+  padding: 22px 0 20px;
+  border-bottom: 1px solid #e7d9ef;
+}
+.d-story-info > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.d-story-info > div:first-child > span {
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: #b699c4;
+}
+.studio .d-story-info > div:first-child > button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 9px;
+  background: #fcf6ff;
+  border: 1px solid #ead7f2;
+  border-radius: 7px;
+  font-size: 10px;
+  color: #af88c1;
+}
+.studio .d-story-info > div:first-child > button svg {
+  height: 13px;
+  width: 13px;
+}
+.studio .d-story-info > p {
+  font-size: 12px;
+  color: #8e719d;
+  line-height: 2;
+}
+.d-story-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0 20px;
+}
+.d-story-tags > span {
+  font-size: 9px;
+  color: #b494c6;
+  background: #f5edf9;
+  border: 1px solid #ede0f4;
+  border-radius: 5px;
+  padding: 5px 7px;
+}
+.studio .d-detail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  background: linear-gradient(110deg, #a27bc7, #7f589b);
+  border: 1px solid #ae8acd;
+  border-radius: 11px;
+  color: #fff;
+  min-height: 46px;
+  width: 100%;
+  font-size: 12px;
+  box-shadow:
+    inset 0 1px 0 #fff5,
+    0 3px 0 #66457f;
+}
+.studio .d-detail svg {
+  height: 15px;
+  width: 15px;
+}
+.studio .d-video-link {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 17px 0 0;
+  width: 100%;
+  font-size: 11px;
+  color: #a47cb8;
+}
+.studio .d-video-link svg {
+  height: 14px;
+  width: 14px;
+}
+.d-material-note {
+  display: block;
+  text-align: center;
+  font-size: 9px;
+  color: #ae94bc;
+  margin-top: 17px;
+  line-height: 1.8;
+}
+.d-library-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 25px 0 16px;
+}
+.studio .d-library-title h3 {
+  font-size: 14px;
+  font-weight: 500;
+  color: #9671a6;
+}
+.d-library-title > span {
+  font-size: 9px;
+  color: #b69bc4;
+}
+.d-filmstrip {
+  display: flex;
+  gap: 12px;
+  padding: 3px 2px 12px;
+}
+.studio .d-filmstrip > button {
+  flex: 0 0 91px;
+  width: 91px;
+  text-align: left;
+  padding: 0;
+}
+.d-filmstrip > button > span {
+  display: block;
+  position: relative;
+  height: 126px;
+  border-radius: 9px;
+  overflow: hidden;
+  border: 1px solid #ecdff4;
+  box-shadow: 0 5px 8px -7px #4f275f88;
+}
+.studio .d-filmstrip img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 20%;
+}
+.d-filmstrip > button[aria-pressed="true"] > span {
+  border: 2px solid #bc91d8;
+  box-shadow: 0 0 0 2px #d5b8e6aa;
+}
+.d-filmstrip i {
+  position: absolute;
+  inset: auto 0 0;
+  height: 3px;
+  background: #dfbdf5;
+}
+.d-filmstrip b {
+  display: block;
+  font-size: 10px;
+  line-height: 1.7;
+  color: #9670a8;
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  margin: 10px 0 5px;
+}
+.d-filmstrip small {
+  font-size: 9px;
+  color: #b89bc6;
+}
+.studio .d-footer {
+  font-size: 9px;
+  color: #b39bc0;
+  line-height: 1.9;
+  margin: 20px 0 10px;
+  text-align: center;
+}
+.d-empty {
+  text-align: center;
+  padding: 65px 20px;
+  color: #b396c3;
+}
+.studio .d-empty > svg {
+  height: 37px;
+  width: 37px;
+  margin-bottom: 20px;
+}
+.studio .d-empty h2 {
+  font-size: 17px;
+  color: #9470a6;
+  font-weight: 500;
+}
+.studio .d-empty p {
+  font-size: 12px;
+  color: #b69cc5;
+  line-height: 1.9;
+  margin-top: 13px;
+}
+@keyframes d-poster-in {
+  from {
+    opacity: 0.2;
+    transform: rotateY(-18deg) rotate(-3deg) translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: rotateY(-6deg) rotate(-1.5deg) translateY(0) scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .d-poster-frame {
+    animation: none;
+    transform: none;
+  }
+}
+@media (max-width: 360px) {
+  .d-stage {
+    padding: 22px 16px 16px;
+  }
+  .d-poster-frame {
+    width: 90%;
+  }
+  .studio .d-poster-copy h2 {
+    font-size: 18px;
+  }
+  .d-heading {
+    gap: 8px;
+  }
+  .studio .d-heading h2 {
+    font-size: 18px;
+  }
+  .studio .d-heading > button {
+    font-size: 8px;
+    padding: 7px;
+  }
+  .d-material-note {
+    font-size: 9px;
+  }
+}
+
+.d-discovery .d-poster-frame {
+  width: min(82%, calc(clamp(210px, calc(100dvh - 360px), 410px) * 0.75));
+  min-width: 165px;
+}
+.studio .d-story-info > p {
+  color: #80638f;
+}
+.studio .d-heading h2 {
+  color: #674777;
+}
+.studio .d-heading p {
+  color: #92769f;
+}
+.studio .d-material-note {
+  font-size: 10px;
+  color: #9c81ac;
+}
+.studio .d-empty > button {
+  margin-top: 20px;
+  border: 1px solid #e1cbed;
+  border-radius: 9px;
+  background: #f8effe;
+  padding: 11px 15px;
+  font-size: 12px;
+  color: #a17bb5;
+}
