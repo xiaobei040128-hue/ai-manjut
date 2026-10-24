@@ -252,7 +252,7 @@ async function api(req, res, url, inScope=false) {
       const tasks=operator.role==='super'?store.allTasks():summary.tasks,materials=tasks.flatMap(t=>store.listMaterials(t.id,true));
       const storage=store.db.prepare("SELECT (SELECT COALESCE(SUM(size),0) FROM uploads)+(SELECT COALESCE(SUM(size),0) FROM materials) AS mediaBytes").get();
       const database=await Promise.all(["workspace.sqlite","workspace.sqlite-wal"].map(name=>stat(join(dataDir,name)).then(s=>s.size).catch(()=>0)));
-      return send(res,200,{...summary,legacy:operator.role==='super'?store.asUser('legacy',()=>store.summary()):summary,creators:operatorScope.filterUsers(operator,creatorAuth.users()),tasks,materials:operator.role==='super'?materials:[],audit:store.auditLog().filter(a=>operator.role==='super'||a.actor===actor),admin:{username:actor,role:operator.role,id:operator.id},system:{version:"2.0.0",node:process.version,uptime:Math.floor(process.uptime()),databaseBytes:database.reduce((a,b)=>a+b,0),mediaBytes:storage.mediaBytes,mode:"local-workspace"}});
+      return send(res,200,{...summary,legacy:operator.role==='super'?store.asUser('legacy',()=>store.summary()):summary,creators:operatorScope.filterUsers(operator,creatorAuth.users()),tasks,materials:operator.role==='super'?materials:[],audit:store.auditLog().filter(a=>operator.role==='super'||a.actor===actor),admin:{username:actor,role:operator.role,id:operator.id},system:{version:"2.0.0",node:process.version,uptime:Math.floor(process.uptime()),databaseBytes:database.reduce((a,b)=>a+b,0),mediaBytes:storage.mediaBytes,mode:process.env.DRAMA_ALLOWED_HOSTS?.trim()?"https-proxy":"local-workspace"}});
     }
     if(method === "POST" && p === "/api/admin/integrity") {
       validateOrigin(req);await body(req);
