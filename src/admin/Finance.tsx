@@ -59,28 +59,19 @@ export default function Finance({isSuper=true}:{isSuper?:boolean}) {
     } | null>(null),
     [page, setPage] = useState(1),
     key = useRef("");
+  const alive=useRef(true),version=useRef(0),mutation=useRef(false);
   async function load() {
-    setData(await api<Snapshot>("/admin/finance"));
+    const current=++version.current;
+    const next=await api<Snapshot>("/admin/finance");
+    if(alive.current&&current===version.current){setData(next);setError("");}
   }
   useEffect(() => {
-    let live = true;
-    const read = () =>
-      api<Snapshot>("/admin/finance")
-        .then((r) => {
-          if (live) setData(r);
-        })
-        .catch((e) => {
-          if (live) setError(e.message);
-        });
-    void read();
-    const timer = setInterval(() => {
-      if (document.visibilityState === "visible") void read();
-    }, 15000);
-    return () => {
-      live = false;
-      clearInterval(timer);
-    };
-  }, []);
+    alive.current=true;
+    const read=()=>{if(!mutation.current)void load().catch(e=>{if(alive.current)setError(e.message);});};
+    read();
+    const timer=setInterval(()=>{if(document.visibilityState==='visible')read();},15000);
+    return()=>{alive.current=false;version.current++;clearInterval(timer);};
+  },[]);
   function open(t: Target) {
     setTarget(t);
     setNote("");
@@ -95,7 +86,8 @@ export default function Finance({isSuper=true}:{isSuper?:boolean}) {
   }
   async function perform(e: React.FormEvent) {
     e.preventDefault();
-    if (!target || busy) return;
+    if (!target || mutation.current) return;
+    mutation.current=true;version.current++;
     setBusy(true);
     setError("");
     try {
@@ -113,14 +105,17 @@ export default function Finance({isSuper=true}:{isSuper?:boolean}) {
                 confirmReceived: received,
               },
       );
-      await load();
+      if(!alive.current)return;
       setTarget(null);
       setPrivate(null);
-      setSuccess("操作已保存，账本与客户状态已同步。");
+      setSuccess("操作已保存。");
+      try { await load();if(alive.current)setSuccess("操作已保存，账本与客户状态已同步。"); }
+      catch { if(alive.current)setError("操作已保存，但列表暂未刷新。请刷新核对最新记录，无需重复提交。"); }
     } catch (e) {
       setError((e as Error).message);
     } finally {
-      setBusy(false);
+      mutation.current=false;
+      if(alive.current)setBusy(false);
     }
   }
   const account = (id: string) => data?.users.find((u) => u.id === id),

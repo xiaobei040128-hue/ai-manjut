@@ -1,4 +1,5 @@
-import { useEffect, useState, type ReactNode } from "react";
+import {BrandMark} from "../Brand";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   LightningBoltIcon,
   LockClosedIcon,
@@ -34,28 +35,34 @@ export default function CreatorAccess({
     [visible, setVisible] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
+  const generation = useRef(0), mutation = useRef(false);
   const keyboard = useKeyboard(),
     native =
       new URLSearchParams(location.search).get("view") === "app" ||
       innerWidth <= 600;
   useEffect(() => {
     let live = true;
-    const read = () =>
-      api<{ user: CreatorUser | null }>("/auth/session")
+    const read = () => {
+      if (mutation.current) return;
+      const version = ++generation.current;
+      return api<{ user: CreatorUser | null }>("/auth/session")
         .then((r) => {
-          if (live) {
+          if (live && version === generation.current) {
             setUser(r.user);
             setError("");
           }
         })
         .catch((e) => {
-          if (live) setError(e.message);
+          if (live && version === generation.current) setError(e.message);
         })
         .finally(() => {
-          if (live) setLoading(false);
+          if (live && version === generation.current) setLoading(false);
         });
+    };
     void read();
     const expired = (event: Event) => {
+      generation.current++;
+      setLoading(false);
       setUser(null);
       setPassword("");
       setError(
@@ -66,17 +73,20 @@ export default function CreatorAccess({
     window.addEventListener("focus", read);
     return () => {
       live = false;
+      generation.current++;
       window.removeEventListener("creator-session-expired", expired);
       window.removeEventListener("focus", read);
     };
   }, []);
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (busy) return;
+    if (mutation.current) return;
     if (mode === "register" && password !== confirmation) {
       setError("两次输入的密码不一致");
       return;
     }
+    mutation.current = true;
+    const version = ++generation.current;
     keyboard.hide();
     setBusy(true);
     setError("");
@@ -86,18 +96,24 @@ export default function CreatorAccess({
         password,
         ...(mode === "register" ? { inviteCode } : {}),
       });
+      if (version !== generation.current) return;
       setPassword("");
       setConfirmation("");
       setInvite("");
       setUser(result.user);
     } catch (e) {
-      setError((e as Error).message);
+      if (version === generation.current) setError((e as Error).message);
     } finally {
+      mutation.current = false;
       setBusy(false);
     }
   }
   async function logout() {
-    await api("/auth/logout", "POST", {});
+    if (mutation.current) return;
+    mutation.current = true;
+    generation.current++;
+    try { await api("/auth/logout", "POST", {}); }
+    finally { mutation.current = false; }
     keyboard.hide();
     setUser(null);
     setMode("login");
@@ -113,7 +129,7 @@ export default function CreatorAccess({
       <MobileScroll className="s-auth-scroll">
         <main className="s-auth-main">
           <a className="s-auth-brand" href="/?view=app">
-            <LightningBoltIcon />
+            <BrandMark />
             <b>
               漫剧 <em>STUDIO</em>
             </b>

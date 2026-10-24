@@ -6,7 +6,6 @@ import {createStore} from '../server/store.mjs';
 import {createAdminAuth} from '../server/auth.mjs';
 import {createCreatorAuth} from '../server/creator-auth.mjs';
 import {createFinance} from '../server/finance.mjs';
-import {createJourneys} from '../server/journeys.mjs';
 import {createOperatorScope} from '../server/operators.mjs';
 import {createStageEnrollments} from '../server/stage-enrollments.mjs';
 const quote=t=>({amount:t.deposit,commission:t.commission,rateBps:t.commission_rate_bps});
@@ -15,7 +14,7 @@ test('production stages freeze server quotes and settle once, independent of lat
  try{
   assert.equal(s.summary().wallet.available,0);assert.equal(s.allTasks().length,0);
   const admin=createAdminAuth(s,4986);admin.setup({username:'stage-admin',password:'StageFinanceQA123!'});
-  const auth=createCreatorAuth(s,4986),finance=createFinance(s,dir),journeys=createJourneys(s),scope=createOperatorScope(s),enroll=createStageEnrollments(s,scope,journeys);
+  const auth=createCreatorAuth(s,4986),finance=createFinance(s,dir),scope=createOperatorScope(s),enroll=createStageEnrollments(s,scope);
   const inv=auth.createInvite('stage-admin',{},'super'),req={headers:{},socket:{remoteAddress:'stage-qa'}};
   const user=(await auth.register(req,{email:'stage-qa@example.invalid',password:'StageFinanceQA123!',inviteCode:inv.code})).user;
   finance.adjust('stage-admin',user.id,{direction:'credit',amount:'1000',note:'Isolated QA funding',operationKey:'stage-test-funding-0001'});

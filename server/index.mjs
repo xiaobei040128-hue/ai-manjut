@@ -42,7 +42,7 @@ const finance=createFinance(store,dataDir);
 const operatorScope=createOperatorScope(store);
 const activityRewards=createActivityRewards(store,operatorScope);
 const stageEnrollments=createStageEnrollments(store,operatorScope);
-const premiumDispatch=createPremiumDispatch(store,operatorScope,stageEnrollments);
+const premiumDispatch=createPremiumDispatch(store,operatorScope);
 const production = args.includes("--production");
 let backupActive = false;
 const types = {
@@ -159,7 +159,7 @@ async function api(req, res, url, inScope=false) {
     method = req.method;
   if(p==='/api/stage-finance'&&method==='GET'){
     const user=creatorAuth.require(req),settings=store.commissionSettings();
-    return store.asUser(user.id,()=>{const summary=store.summary();return send(res,200,{...summary,commissionPolicy:settings,paymentMode:'manual',stageTwoEligible:summary.assignments.some(a=>a.status==='completed'&&a.task.stage===1),stageThreeEligible:stageEnrollments.status(user.id).enrollment?.status==='approved'});});
+    return store.asUser(user.id,()=>{const summary=store.summary();return send(res,200,{...summary,commissionPolicy:settings,dispatch:store.dispatchStatus(),paymentMode:'manual',stageTwoEligible:summary.assignments.some(a=>a.status==='completed'&&a.task.stage===1),stageThreeEligible:stageEnrollments.status(user.id).enrollment?.status==='approved'});});
   }
   if(['/api/stage-three/premium-reveal','/api/stage-three/example'].includes(p))throw new AppError('此旧版功能已停用，请使用阶段任务',410);
   if(p==='/api/stage-three/enrollment'||p==='/api/stage-three/access'){
@@ -208,7 +208,7 @@ async function api(req, res, url, inScope=false) {
     if(p==='/api/admin/commission-policy'){
       adminAuth.requireSuper(req);
       if(method==='GET')return send(res,200,{...store.commissionSettings(),paymentMode:'manual'});
-      if(method==='POST'){validateOrigin(req);const input=await body(req);return send(res,200,store.audited(actor,'commission.policy','global',()=>store.setCommissionRate(input.rate),{rate:input.rate}));}
+      if(method==='POST'){validateOrigin(req);const input=await body(req);return send(res,200,store.audited(actor,'commission.policy','global',()=>store.setCommissionRate(input.rate,input.revision),{rate:input.rate}));}
       throw new AppError('接口不存在',404);
     }
     if(p==='/api/admin/agents'&&method==='GET'){adminAuth.requireSuper(req);return send(res,200,{agents:adminAuth.agents().map(a=>({...a,customers:store.db.prepare('SELECT COUNT(*) AS n FROM creator_accounts c JOIN invitations i ON i.id=c.invite_id WHERE i.owner_id=?').get(a.id).n}))});}
@@ -228,7 +228,7 @@ async function api(req, res, url, inScope=false) {
     if(activity&&method==='POST'){validateOrigin(req);return send(res,200,activityRewards[activity[2]](operator,activity[1],await body(req)));}
     const identityPhoto=p.match(/^\/api\/admin\/finance\/identity\/([^/]+)\/photos\/(front|back)$/);
     if(identityPhoto&&method==='GET'){const image=finance.photo(actor,identityPhoto[1],identityPhoto[2]);res.writeHead(200,{'Content-Type':image.mime,'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'});return res.end(image.bytes);}
-    if(p==='/api/admin/finance'&&method==='GET')return send(res,200,operatorScope.finance(operator,finance.admin()));
+    if(p==='/api/admin/finance'&&method==='GET'){const allowed=operatorScope.users(operator);return send(res,200,finance.admin(allowed?[...allowed]:null));}
     const financial=p.match(/^\/api\/admin\/finance\/(identity|bank|fund|account)\/([^/]+)\/(review|reveal|adjust|freeze)$/);
     if(financial&&method==='POST'){validateOrigin(req);const input=await body(req),[,type,id,action]=financial;
       if(action==='reveal')return send(res,200,finance.reveal(actor,type,id));
@@ -273,6 +273,11 @@ async function api(req, res, url, inScope=false) {
         storage: "sqlite",
         mode: "local-workspace",
       });
+    if(p==='/api/notifications'){
+      const rawBefore=url.searchParams.get('before'),rawLimit=url.searchParams.get('limit'),rawUnread=url.searchParams.get('unread');
+      if(rawBefore!==null&&!/^[1-9]\d*$/.test(rawBefore)||rawLimit!==null&&!/^[1-9]\d*$/.test(rawLimit)||rawUnread!==null&&!['0','1'].includes(rawUnread))throw new AppError('无效消息分页参数');
+      return send(res,200,store.notifications({before:rawBefore===null?undefined:Number(rawBefore),limit:rawLimit===null?20:Number(rawLimit),unread:rawUnread==='1'}));
+    }
     if (p === "/api/bootstrap") return send(res, 200, store.summary());
     if (p === "/api/export/backup") {
       const actor=adminAuth.requireAdmin(req);
@@ -439,9 +444,10 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname.startsWith("/materials/")) {
       if (!["GET", "HEAD"].includes(req.method))
         throw new AppError("不支持此请求方式", 405);
-      if(!adminAuth.state(req).authenticated)creatorAuth.require(req);
+      const materialAdmin=adminAuth.state(req).authenticated;
+      if(!materialAdmin)creatorAuth.require(req);
       const record = store.materialPath(url.pathname);
-      if (!record) throw new AppError("素材不存在", 404);
+      if (!record || (!materialAdmin && !record.active)) throw new AppError("素材不存在", 404);
       const filename = url.pathname.slice(11);
       if (!/^[a-f0-9-]+\.(mp4|webm|txt|srt)$/.test(filename))
         throw new AppError("素材不存在", 404);

@@ -29,6 +29,8 @@ test('activity rewards enforce budgets, fixed amounts, operator scope and once-o
   assert.throws(()=>rewards.grant(other,c.id,input),e=>e.status===403);
   assert.throws(()=>rewards.grant(agent,c.id,{...input,userId:foreign}),e=>e.status===403);
   assert.throws(()=>rewards.grant(agent,c.id,{...input,confirm:false}));
+  assert.throws(()=>rewards.grant(agent,c.id,{...input,operationKey:'a'.repeat(81)}),e=>e.status===400);
+  assert.equal(balance(u1),0);
   assert.deepEqual(rewards.snapshot(other).campaigns,[]);
   const receipt=rewards.grant(agent,c.id,input);assert.equal(receipt.amount,125);assert.equal(balance(u1),125);
   assert.equal(rewards.grant(agent,c.id,input).id,receipt.id);assert.equal(balance(u1),125);

@@ -16,7 +16,7 @@ import {
   Carousel,
   useKeyboard,
 } from "../mobile";
-import { demoDramas } from "./stageSimulation";
+import { creativeCatalog } from "./creativeCatalog";
 import "./creative-planner.css";
 
 type Plan = {
@@ -83,7 +83,7 @@ function valid(v: unknown): v is Plan {
     p.title.length <= 80 &&
     Number.isInteger(p.drama) &&
     p.drama >= 0 &&
-    p.drama < demoDramas.length &&
+    p.drama < creativeCatalog.length &&
     ["TikTok", "YouTube", "Facebook"].includes(p.platform) &&
     ["hook", "middle", "ending", "caption"].every(
       (k) =>
@@ -163,7 +163,7 @@ export default function CreativePlanner({ userId }: { userId: string }) {
   }
   function buildCaption() {
     update({
-      caption: `${plan.hook || "一个选择，改变整个故事。"}\n${plan.ending || "一起走进这个故事。"}\n#${demoDramas[plan.drama].genre} #漫剧 #剧情`,
+      caption: `${plan.hook || "一个选择，改变整个故事。"}\n${plan.ending || "一起走进这个故事。"}\n#${creativeCatalog[plan.drama].genre} #漫剧 #剧情`,
     });
     setPendingCaption(false);
   }
@@ -178,7 +178,7 @@ export default function CreativePlanner({ userId }: { userId: string }) {
   function exportPlan() {
     const body = [
       plan.title,
-      `剧集：${demoDramas[plan.drama].title} | ${plan.platform}`,
+      `剧集：${creativeCatalog[plan.drama].title} | ${plan.platform}`,
       `保存时间：${new Date(plan.updatedAt).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" })}`,
       "",
       "00–03 秒 / 开场",
@@ -211,7 +211,7 @@ export default function CreativePlanner({ userId }: { userId: string }) {
     setExporting(true);
     setExportMessage("");
     try {
-      const response = await fetch(demoDramas[plan.drama].cover);
+      const response = await fetch(creativeCatalog[plan.drama].cover);
       if (!response.ok) throw new Error("封面素材暂时无法读取，请稍后重试");
       const image = await createImageBitmap(await response.blob()),
         canvas = document.createElement("canvas");
@@ -252,7 +252,7 @@ export default function CreativePlanner({ userId }: { userId: string }) {
       ctx.textAlign = "center";
       ctx.fillStyle = "#d9b6ed";
       ctx.font = '28px "Microsoft YaHei",sans-serif';
-      ctx.fillText(demoDramas[plan.drama].title, 540, 1210);
+      ctx.fillText(creativeCatalog[plan.drama].title, 540, 1210);
       const wrap = (text: string, maxWidth: number, maxLines: number) => {
         const lines: string[] = [];
         let line = "";
@@ -364,7 +364,7 @@ export default function CreativePlanner({ userId }: { userId: string }) {
                   value={plan.drama}
                   onChange={(e) => update({ drama: Number(e.target.value) })}
                 >
-                  {demoDramas.map((d, i) => (
+                  {creativeCatalog.map((d, i) => (
                     <option value={i} key={d.title}>
                       {d.title}
                     </option>
@@ -501,8 +501,8 @@ export default function CreativePlanner({ userId }: { userId: string }) {
         <section className="c-preview-panel">
           <div className={"c-phone-preview" + (playing ? " playing" : "")}>
             <img
-              src={demoDramas[plan.drama].cover}
-              alt={demoDramas[plan.drama].title}
+              src={creativeCatalog[plan.drama].cover}
+              alt={creativeCatalog[plan.drama].title}
             />
             <div className="c-preview-shade" />
             <div className="c-preview-top">
@@ -510,7 +510,7 @@ export default function CreativePlanner({ userId }: { userId: string }) {
               <small>{plan.platform}</small>
             </div>
             <div className="c-preview-caption" key={scene}>
-              <small>{demoDramas[plan.drama].title}</small>
+              <small>{creativeCatalog[plan.drama].title}</small>
               <h3>
                 {previewText ||
                   (scene === 0

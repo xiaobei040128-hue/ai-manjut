@@ -6,6 +6,7 @@ export type Status =
   | "cancelled";
 export interface Task {
   stage: number;
+  premium: number;
   commission_rate_bps: number | null;
   materials: Material[];
   id: string;
@@ -81,6 +82,8 @@ export interface Ledger {
   created_at: string;
 }
 export interface Notice {
+  category?: string;
+  record_id?: string;
   task_id: string | null;
   id: string;
   title: string;
@@ -109,6 +112,7 @@ export interface Bootstrap {
   assignments: Assignment[];
   ledger: Ledger[];
   notifications: Notice[];
+  notificationsUnread?: number;
   bookmarks: string[];
   savedTasks?: Task[];
   tasks: Task[];
@@ -140,7 +144,7 @@ export async function api<T>(
     });
   } catch (error) {
     if (error instanceof DOMException && ["TimeoutError", "AbortError"].includes(error.name)) throw new Error(method === "GET" ? "读取超时，请检查连接后重试" : "请求超时，结果可能已保存；请先刷新核对，避免重复提交");
-    throw new Error("暂时无法连接工作区，请确认本地服务仍在运行");
+    throw new Error("暂时无法连接平台，请检查网络后重试");
   }
   let result;
   try {
@@ -149,7 +153,8 @@ export async function api<T>(
     throw new Error("服务连接中断，请稍后重试");
   }
   if (!response.ok) {
-    if ([401, 403].includes(response.status) && ["/bootstrap", "/journey"].includes(path))
+    const creatorPath=['/bootstrap','/journey','/finance','/notifications','/stage-finance','/assignments'].some(prefix=>path===prefix||path.startsWith(prefix+'/')||path.startsWith(prefix+'?'));
+    if (response.status===401&&creatorPath || response.status===403&&['/bootstrap','/stage-finance'].includes(path))
       window.dispatchEvent(
         new CustomEvent("creator-session-expired", { detail: result.error }),
       );

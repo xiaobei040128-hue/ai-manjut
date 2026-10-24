@@ -3,6 +3,7 @@ import { DatabaseSync } from "node:sqlite";
 import { randomUUID } from "node:crypto";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
+import {shanghaiDay} from './time.mjs';
 
 const catalog = [
   [
@@ -100,6 +101,7 @@ const text = (v, max = 500) =>
 export function createStore(file, {fixtures=false}={}) {
   if (file !== ":memory:") mkdirSync(dirname(file), { recursive: true });
   const db = new DatabaseSync(file);
+  try {
   db.exec(
     "PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;",
   );
@@ -107,7 +109,6 @@ export function createStore(file, {fixtures=false}={}) {
  CREATE TABLE IF NOT EXISTS profile(id INTEGER PRIMARY KEY CHECK(id=1),name TEXT NOT NULL,bio TEXT NOT NULL,channel TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS tasks(id TEXT PRIMARY KEY,title TEXT NOT NULL,platform TEXT NOT NULL,episodes INTEGER NOT NULL,language TEXT NOT NULL,deposit INTEGER NOT NULL,commission INTEGER NOT NULL,posts INTEGER NOT NULL,genre TEXT NOT NULL,description TEXT NOT NULL,cover TEXT NOT NULL,badge TEXT NOT NULL,slots INTEGER NOT NULL,active INTEGER NOT NULL DEFAULT 1,created_at TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS assignments(id TEXT PRIMARY KEY,task_id TEXT NOT NULL REFERENCES tasks(id),status TEXT NOT NULL CHECK(status IN ('active','review','revision','completed','cancelled')),created_at TEXT NOT NULL,deadline TEXT NOT NULL,draft TEXT NOT NULL DEFAULT '{}',submitted_at TEXT,reviewed_at TEXT,review_note TEXT NOT NULL DEFAULT '');
- CREATE UNIQUE INDEX IF NOT EXISTS one_live_task ON assignments(task_id) WHERE status IN ('active','review','revision');
  CREATE TABLE IF NOT EXISTS submissions(id TEXT PRIMARY KEY,assignment_id TEXT NOT NULL REFERENCES assignments(id),version INTEGER NOT NULL,links TEXT NOT NULL,note TEXT NOT NULL DEFAULT '',status TEXT NOT NULL DEFAULT 'pending',created_at TEXT NOT NULL,reviewed_at TEXT,review_note TEXT NOT NULL DEFAULT '');
  CREATE TABLE IF NOT EXISTS uploads(id TEXT PRIMARY KEY,assignment_id TEXT REFERENCES assignments(id),name TEXT NOT NULL,mime TEXT NOT NULL,size INTEGER NOT NULL,path TEXT NOT NULL,created_at TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS submission_uploads(submission_id TEXT NOT NULL REFERENCES submissions(id),upload_id TEXT NOT NULL REFERENCES uploads(id),PRIMARY KEY(submission_id,upload_id));
@@ -127,14 +128,19 @@ export function createStore(file, {fixtures=false}={}) {
  `);
   if (!db.prepare("PRAGMA table_info(notifications)").all().some((c) => c.name === "task_id"))
     db.exec("ALTER TABLE notifications ADD COLUMN task_id TEXT REFERENCES tasks(id)");
+  for(const column of ['category','record_id'])if(!db.prepare('PRAGMA table_info(notifications)').all().some(c=>c.name===column))db.exec("ALTER TABLE notifications ADD COLUMN "+column+" TEXT NOT NULL DEFAULT ''");
   if (!db.prepare('PRAGMA table_info(tasks)').all().some(c=>c.name==='stage')) db.exec('ALTER TABLE tasks ADD COLUMN stage INTEGER NOT NULL DEFAULT 1');
+  if (!db.prepare('PRAGMA table_info(tasks)').all().some(c=>c.name==='premium')) db.exec('ALTER TABLE tasks ADD COLUMN premium INTEGER NOT NULL DEFAULT 0');
   db.exec(`CREATE TABLE IF NOT EXISTS commission_policy(id INTEGER PRIMARY KEY CHECK(id=1),rate_bps INTEGER,updated_at TEXT NOT NULL);
-    INSERT OR IGNORE INTO commission_policy VALUES(1,NULL,'');
+    INSERT OR IGNORE INTO commission_policy(id,rate_bps,updated_at) VALUES(1,NULL,'');
     CREATE TABLE IF NOT EXISTS assignment_terms(assignment_id TEXT PRIMARY KEY REFERENCES assignments(id),amount INTEGER NOT NULL,commission INTEGER NOT NULL,rate_bps INTEGER,stage INTEGER NOT NULL);
-    INSERT OR IGNORE INTO assignment_terms SELECT a.id,t.deposit,t.commission,NULL,t.stage FROM assignments a JOIN tasks t ON t.id=a.task_id;`);
+    INSERT OR IGNORE INTO assignment_terms(assignment_id,amount,commission,rate_bps,stage) SELECT a.id,t.deposit,t.commission,NULL,t.stage FROM assignments a JOIN tasks t ON t.id=a.task_id;`);
+  for(const [column,type] of [['premium','INTEGER NOT NULL DEFAULT 0'],['sequence','INTEGER'],['dispatch_day','TEXT']])if(!db.prepare('PRAGMA table_info(assignment_terms)').all().some(c=>c.name===column))db.exec('ALTER TABLE assignment_terms ADD COLUMN '+column+' '+type);
+  db.exec("CREATE TABLE IF NOT EXISTS premium_dispatch_policy(user_id TEXT NOT NULL,day TEXT NOT NULL,sequences TEXT NOT NULL,revision INTEGER NOT NULL,updated_by TEXT NOT NULL,updated_at TEXT NOT NULL,PRIMARY KEY(user_id,day))");
+  if(!db.prepare('PRAGMA table_info(commission_policy)').all().some(c=>c.name==='revision'))db.exec('ALTER TABLE commission_policy ADD COLUMN revision INTEGER NOT NULL DEFAULT 0');
   const policy=()=>db.prepare('SELECT * FROM commission_policy WHERE id=1').get();
-  const quote=row=>{const rate=policy().rate_bps;return {...row,commission:rate===null?row.commission:Math.round(row.deposit*rate/10000),commission_rate_bps:rate};};
-  function frozenTask(a,t){const terms=db.prepare('SELECT * FROM assignment_terms WHERE assignment_id=?').get(a.id);return terms?{...t,deposit:terms.amount,commission:terms.commission,commission_rate_bps:terms.rate_bps,stage:terms.stage}:t;}
+  const quote=(row,rate=policy().rate_bps)=>{return {...row,premium:0,commission:rate===null?row.commission:Math.round(row.deposit*rate/10000),commission_rate_bps:rate};};
+  function frozenTask(a,t,terms=db.prepare('SELECT * FROM assignment_terms WHERE assignment_id=?').get(a.id)){return terms?{...t,deposit:terms.amount,commission:terms.commission,commission_rate_bps:terms.rate_bps,stage:terms.stage,premium:terms.premium,dispatch_sequence:terms.sequence,dispatch_day:terms.dispatch_day}:t;}
   const context = new AsyncLocalStorage();
   const owner = () => context.getStore() || 'legacy';
   const scoped = () => !!context.getStore();
@@ -149,6 +155,8 @@ export function createStore(file, {fixtures=false}={}) {
     CREATE UNIQUE INDEX IF NOT EXISTS one_live_task_per_owner ON assignments(owner_id,task_id) WHERE status IN ('active','review','revision');
     CREATE INDEX IF NOT EXISTS assignments_owner ON assignments(owner_id,created_at);
     CREATE INDEX IF NOT EXISTS ledger_owner ON ledger(owner_id,id);
+    CREATE INDEX IF NOT EXISTS notifications_owner_time ON notifications(owner_id,created_at,id);
+    CREATE INDEX IF NOT EXISTS notifications_owner_read ON notifications(owner_id,is_read);
   `);
   if(!hadCreatorProfiles)db.exec("INSERT OR IGNORE INTO creator_profiles SELECT 'legacy',name,bio,channel,created_at FROM profile; INSERT OR IGNORE INTO creator_bookmarks SELECT 'legacy',task_id,created_at FROM bookmarks;");
   const statements = new Map();
@@ -161,8 +169,11 @@ export function createStore(file, {fixtures=false}={}) {
     all = (sql, ...args) => prepared(sql).all(...args),
     run = (sql, ...args) => prepared(sql).run(...args);
   let transactionDepth = 0;
+  function ensureUserActive(userId) {
+    if(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='creator_accounts'").get() && db.prepare('PRAGMA table_info(creator_accounts)').all().some(c=>c.name==='frozen') && db.prepare('SELECT frozen FROM creator_accounts WHERE id=?').get(userId)?.frozen)throw new AppError('账号已冻结，请联系管理员',403);
+  }
   function ensureActive() {
-    if(context.getStore() && db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='creator_accounts'").get() && db.prepare('PRAGMA table_info(creator_accounts)').all().some(c=>c.name==='frozen') && db.prepare('SELECT frozen FROM creator_accounts WHERE id=?').get(owner())?.frozen)throw new AppError('账号已冻结，请联系管理员',403);
+    if(context.getStore())ensureUserActive(owner());
   }
   function atomic(fn) {
     ensureActive();
@@ -246,6 +257,15 @@ export function createStore(file, {fixtures=false}={}) {
     const recipients = id ? [get('SELECT owner_id FROM assignments WHERE id=?',id)?.owner_id||owner()] : scoped() ? [owner()] : all('SELECT user_id FROM creator_profiles').map(p=>p.user_id);
     for(const userId of recipients)run("INSERT INTO notifications(id,title,body,assignment_id,is_read,created_at,task_id,owner_id) VALUES(?,?,?,?,0,?,?,?)",randomUUID(),title,body,id,now(),taskId,userId);
   }
+  function notifyUser(userId,title,body,category='general',recordId=''){
+    run('INSERT INTO notifications(id,title,body,is_read,created_at,owner_id,category,record_id) VALUES(?,?,?,0,?,?,?,?)',randomUUID(),title,body,now(),userId,category,recordId);
+  }
+  function notificationPage({before,limit=20,unread=false}={}){
+    if(!Number.isInteger(limit)||limit<1||limit>100||before!==undefined&&(!Number.isSafeInteger(before)||before<1)||typeof unread!=='boolean')throw new AppError('无效消息分页参数');
+    const params=[owner()],clauses=['owner_id=?'];if(before!==undefined){clauses.push('rowid<?');params.push(before);}if(unread)clauses.push('is_read=0');
+    const rows=all('SELECT rowid AS cursor,* FROM notifications WHERE '+clauses.join(' AND ')+' ORDER BY rowid DESC LIMIT ?',...params,limit+1),hasMore=rows.length>limit,visible=rows.slice(0,limit);
+    return {notifications:visible.map(({cursor,...row})=>row),nextCursor:hasMore?visible.at(-1).cursor:null,unreadCount:get('SELECT COUNT(*) n FROM notifications WHERE owner_id=? AND is_read=0',owner()).n};
+  }
   function ledger(id, kind, amount, note, operation) {
     const userId=id?get('SELECT owner_id FROM assignments WHERE id=?',id).owner_id:owner();
     const current=balance(userId);
@@ -306,7 +326,9 @@ export function createStore(file, {fixtures=false}={}) {
       submissions,
     };
   }
-  function summary() {
+  function summary({owners}={}) {
+    if(owners!==undefined&&(!Array.isArray(owners)||owners.some(id=>typeof id!=='string'||!id||id.length>100)))throw new AppError('无效客户范围');
+    const selectedOwners=scoped()?[owner()]:owners,restricted=selectedOwners!==undefined,scopeArgs=restricted?[JSON.stringify(selectedOwners)]:[],whereOwner=column=>restricted?column+' IN (SELECT value FROM json_each(?))':'1';
     // Build the graph with a fixed number of reads, rather than one query per record.
     const group = (rows, key) => {
       const result = new Map();
@@ -316,34 +338,33 @@ export function createStore(file, {fixtures=false}={}) {
       }
       return result;
     };
-    const globalAssignments = all("SELECT * FROM assignments ORDER BY created_at DESC");
-    const rawAssignments = scoped()?globalAssignments.filter(a=>a.owner_id===owner()):globalAssignments;
-    const taken = new Map();
-    for (const a of globalAssignments) if (a.status !== "cancelled") taken.set(a.task_id, (taken.get(a.task_id) || 0) + 1);
-    const bookmarks = all("SELECT task_id FROM creator_bookmarks WHERE user_id=?",owner()).map((x) => x.task_id);
+    const rawAssignments = all('SELECT * FROM assignments WHERE '+whereOwner('owner_id')+' ORDER BY created_at DESC',...scopeArgs);
+    const taken = new Map(all("SELECT task_id,COUNT(*) n FROM assignments WHERE status!='cancelled' GROUP BY task_id").map(row=>[row.task_id,row.n]));
+    const rate=policy().rate_bps;
+    const frozenTerms=new Map(all('SELECT f.* FROM assignment_terms f JOIN assignments a ON a.id=f.assignment_id WHERE '+whereOwner('a.owner_id'),...scopeArgs).map(row=>[row.assignment_id,row]));
+    const personalOwner=scoped()||!restricted?owner():null;
+    const bookmarks = personalOwner?all("SELECT task_id FROM creator_bookmarks WHERE user_id=?",personalOwner).map((x) => x.task_id):[];
     const saved = new Set(bookmarks);
     const materials = group(all("SELECT * FROM materials WHERE active=1 ORDER BY created_at,id"), "task_id");
-    const tasks = all("SELECT * FROM tasks ORDER BY created_at,id").map((row) => ({...quote(row),materials:materials.get(row.id)||[],bookmarked:saved.has(row.id),remaining:Math.max(0,row.slots-(taken.get(row.id)||0)),tags:[row.genre,row.language,row.platform],regions:["US","UK","CA"]}));
+    const tasks = all("SELECT * FROM tasks ORDER BY created_at,id").map((row) => ({...quote(row,rate),materials:materials.get(row.id)||[],bookmarked:saved.has(row.id),remaining:Math.max(0,row.slots-(taken.get(row.id)||0)),tags:[row.genre,row.language,row.platform],regions:["US","UK","CA"]}));
     const taskMap = new Map(tasks.map((t) => [t.id,t]));
-    const uploads = group(all("SELECT * FROM uploads WHERE assignment_id IS NOT NULL ORDER BY created_at,id"), "assignment_id");
-    const evidence = group(all("SELECT su.submission_id,u.* FROM uploads u JOIN submission_uploads su ON su.upload_id=u.id ORDER BY u.created_at,u.id"), "submission_id");
-    const submissions = group(all("SELECT * FROM submissions ORDER BY version DESC").map((s) => ({...s,links:parse(s.links,[]),uploads:(evidence.get(s.id)||[]).map(({submission_id,...u})=>u)})), "assignment_id");
-    const events = group(all("SELECT * FROM events ORDER BY id"), "assignment_id");
-    const assignments = rawAssignments.map((a) => ({...a,task:frozenTask(a,taskMap.get(a.task_id)),draft:parse(a.draft),uploads:uploads.get(a.id)||[],events:events.get(a.id)||[],submissions:submissions.get(a.id)||[]}));
+    const uploads = group(all('SELECT u.* FROM uploads u JOIN assignments a ON a.id=u.assignment_id WHERE '+whereOwner('a.owner_id')+' ORDER BY u.created_at,u.id',...scopeArgs),'assignment_id');
+    const evidence = group(all('SELECT su.submission_id,u.* FROM assignments a JOIN submissions s ON s.assignment_id=a.id JOIN submission_uploads su ON su.submission_id=s.id JOIN uploads u ON u.id=su.upload_id WHERE '+whereOwner('a.owner_id')+' ORDER BY u.created_at,u.id',...scopeArgs),'submission_id');
+    const submissions = group(all('SELECT s.* FROM submissions s JOIN assignments a ON a.id=s.assignment_id WHERE '+whereOwner('a.owner_id')+' ORDER BY s.version DESC',...scopeArgs).map((s) => ({...s,links:parse(s.links,[]),uploads:(evidence.get(s.id)||[]).map(({submission_id,...u})=>u)})), "assignment_id");
+    const events = group(all('SELECT e.* FROM events e JOIN assignments a ON a.id=e.assignment_id WHERE '+whereOwner('a.owner_id')+' ORDER BY e.id',...scopeArgs),'assignment_id');
+    const assignments = rawAssignments.map((a) => ({...a,task:frozenTask(a,taskMap.get(a.task_id),frozenTerms.get(a.id)),draft:parse(a.draft),uploads:uploads.get(a.id)||[],events:events.get(a.id)||[],submissions:submissions.get(a.id)||[]}));
     const hasFunds=!!get("SELECT name FROM sqlite_master WHERE type='table' AND name='fund_requests'");
-    const withdrawalHeld=hasFunds?get("SELECT COALESCE(SUM(amount),0) AS n FROM fund_requests WHERE kind='withdrawal' AND status IN ('review','paying')"+(scoped()?" AND user_id=?":""),...(scoped()?[owner()]:[])).n:0;
-    const rows = scoped()?all("SELECT * FROM ledger WHERE owner_id=? ORDER BY id DESC",owner()):all("SELECT * FROM ledger ORDER BY id DESC");
+    const withdrawalHeld=hasFunds?get("SELECT COALESCE(SUM(amount),0) AS n FROM fund_requests WHERE kind='withdrawal' AND status IN ('review','paying') AND "+whereOwner("user_id"),...scopeArgs).n:0;
+    const rows = all('SELECT * FROM ledger WHERE '+whereOwner('owner_id')+' ORDER BY id DESC',...scopeArgs);
     return {
-      profile: get("SELECT * FROM creator_profiles WHERE user_id=?",owner()),
+      profile: personalOwner?get("SELECT * FROM creator_profiles WHERE user_id=?",personalOwner):null,
       wallet: {
-        available: balance(),
+        available: rows.reduce((sum,row)=>sum+row.amount,0),
         withdrawalHeld,
         held: withdrawalHeld + get(
-          "SELECT COALESCE(SUM(COALESCE(f.amount,t.deposit)),0) AS n FROM assignments a JOIN tasks t ON t.id=a.task_id LEFT JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.status IN ('active','review','revision')"+(scoped()?" AND a.owner_id=?":""),...(scoped()?[owner()]:[]),
+          "SELECT COALESCE(SUM(COALESCE(f.amount,t.deposit)),0) AS n FROM assignments a JOIN tasks t ON t.id=a.task_id LEFT JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.status IN ('active','review','revision') AND "+whereOwner("a.owner_id"),...scopeArgs,
         ).n,
-        earned: get(
-          "SELECT COALESCE(SUM(amount),0) AS n FROM ledger WHERE kind='reward'"+(scoped()?" AND owner_id=?":""),...(scoped()?[owner()]:[]),
-        ).n,
+        earned: rows.filter(row=>row.kind==='reward').reduce((sum,row)=>sum+row.amount,0),
         currency: "USD",
         testMode: false,
       },
@@ -356,9 +377,10 @@ export function createStore(file, {fixtures=false}={}) {
       },
       assignments,
       ledger: rows,
-      notifications: all(
-        "SELECT * FROM notifications WHERE owner_id=? ORDER BY created_at DESC LIMIT 100",owner(),
-      ),
+      notificationsUnread:personalOwner?get('SELECT COUNT(*) n FROM notifications WHERE owner_id=? AND is_read=0',personalOwner).n:0,
+      notifications: personalOwner?all(
+        "SELECT * FROM notifications WHERE owner_id=? ORDER BY created_at DESC LIMIT 100",personalOwner,
+      ):[],
       bookmarks,
       savedTasks: tasks.filter((t) => t.bookmarked),
       tasks: tasks.filter((t) => t.active),
@@ -395,10 +417,12 @@ export function createStore(file, {fixtures=false}={}) {
         created,
         deadline,owner(),
       );
-      run('INSERT INTO assignment_terms VALUES(?,?,?,?,?)',id,t.deposit,t.commission,t.commission_rate_bps,t.stage);
+      let sequence=null,dispatchDay=null,premium=0;
+      if(t.stage===3){dispatchDay=shanghaiDay();sequence=get('SELECT COALESCE(MAX(f.sequence),0)+1 n FROM assignment_terms f JOIN assignments a ON a.id=f.assignment_id WHERE a.owner_id=? AND f.dispatch_day=?',owner(),dispatchDay).n;if(sequence>20)throw new AppError('今日第三阶段20单已领取完毕，请明日再来',409);const config=get('SELECT sequences FROM premium_dispatch_policy WHERE user_id=? AND day=?',owner(),dispatchDay);premium=config&&JSON.parse(config.sequences).includes(sequence)?1:0;}
+      run('INSERT INTO assignment_terms(assignment_id,amount,commission,rate_bps,stage,premium,sequence,dispatch_day) VALUES(?,?,?,?,?,?,?,?)',id,t.deposit,t.commission,t.commission_rate_bps,t.stage,premium,sequence,dispatchDay);
       ledger(id, "hold", -t.deposit, "领取任务 · " + t.title, "claim:" + id);
       event(id, "claimed", "任务已领取，任务本金已冻结");
-      notify("新任务已领取", t.title + " · 请在 48 小时内完成发布", id);
+      notify(premium?"高阶任务已领取":"新任务已领取", t.title + " · 请在 48 小时内完成发布", id);
       return assignment(id);
     });
   }
@@ -539,6 +563,7 @@ export function createStore(file, {fixtures=false}={}) {
         throw new AppError("请填写具体的修改意见");
       const time = now(),
         approved = input.decision === "approve";
+      if(approved)ensureUserActive(a.owner_id);
       run(
         "UPDATE submissions SET status=?,reviewed_at=?,review_note=? WHERE id=?",
         approved ? "approved" : "changes",
@@ -646,10 +671,11 @@ export function createStore(file, {fixtures=false}={}) {
     )
       throw new AppError("请选择或上传有效封面");
     const stage=Number(input.stage??1);if(![1,2,3].includes(stage))throw new AppError('请选择第一、二或三阶段');
-    return {title,description,platform,language,genre:genre||"都市剧情",deposit,commission,posts,episodes,slots,cover,stage};
+    const premium=input.premium===true||input.premium===1||input.premium==='1'?1:0;
+    return {title,description,platform,language,genre:genre||"都市剧情",deposit,commission,posts,episodes,slots,cover,stage,premium};
   }
   function createTask(input) {
-    const {title,description,platform,language,genre,deposit,commission,posts,episodes,slots,cover,stage}=validateTask(input);
+    const {title,description,platform,language,genre,deposit,commission,posts,episodes,slots,cover,stage,premium}=validateTask(input);
     const id = randomUUID();
     run(
       "INSERT INTO tasks(id,title,platform,episodes,language,deposit,commission,posts,genre,description,cover,badge,slots,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
@@ -668,14 +694,17 @@ export function createStore(file, {fixtures=false}={}) {
       slots,
       now(),
     );
-    run('UPDATE tasks SET stage=? WHERE id=?',stage,id);
+    run('UPDATE tasks SET stage=?,premium=? WHERE id=?',stage,premium,id);
     notify("任务已发布", title + " 已在任务大厅上架", null, id);
     return getTask(id);
   }
   return {
     db,
+    dispatchStatus(){const day=shanghaiDay();return {day,claimed:get('SELECT COALESCE(MAX(f.sequence),0) n FROM assignment_terms f JOIN assignments a ON a.id=f.assignment_id WHERE a.owner_id=? AND f.dispatch_day=?',owner(),day).n,limit:20};},
+    notifications:notificationPage,
+    notifyUser,
     commissionSettings:policy,
-    setCommissionRate(rate){if(!/^(?:0|[1-9]\d?)(?:\.\d{1,2})?$|^100(?:\.0{1,2})?$/.test(String(rate)))throw new AppError('佣金比例须为 0–100，最多两位小数');const bps=Math.round(Number(rate)*100);run('UPDATE commission_policy SET rate_bps=?,updated_at=? WHERE id=1',bps,now());return policy();},
+    setCommissionRate(rate,revision){if(revision!==undefined&&(!Number.isSafeInteger(revision)||revision<0))throw new AppError('请刷新后提交佣金配置');if(revision!==undefined&&revision!==policy().revision)throw new AppError('佣金比例已被其他页面更新，请重新读取后保存',409);if(!/^(?:0|[1-9]\d?)(?:\.\d{1,2})?$|^100(?:\.0{1,2})?$/.test(String(rate)))throw new AppError('佣金比例须为 0–100，最多两位小数');const bps=Math.round(Number(rate)*100);run('UPDATE commission_policy SET rate_bps=?,updated_at=?,revision=revision+1 WHERE id=1',bps,now());return policy();},
     asUser:(id,fn)=>context.run(id,fn),
     summary,
     getTask,
@@ -693,10 +722,10 @@ export function createStore(file, {fixtures=false}={}) {
         const old=getTask(id),next=validateTask({...old,deposit:old.deposit/100,commission:old.commission/100,...input});
         if(policy().rate_bps!==null&&input.commission!==undefined&&Math.round(Number(input.commission)*100)!==next.commission)throw new AppError('佣金由统一比例计算，不能单独修改',409);
         const claims=get("SELECT COUNT(*) AS n FROM assignments WHERE task_id=?",id).n;
-        if(claims && ["deposit","commission","posts","platform","language","stage"].some(key=>next[key]!==old[key])) throw new AppError("已有领取记录，金额、发布数量、平台和语言已锁定",409);
+        if(claims && ["deposit","commission","posts","platform","language","stage","premium"].some(key=>next[key]!==old[key])) throw new AppError("已有领取记录，金额、发布数量、平台和语言已锁定",409);
         if(next.slots < old.slots-old.remaining) throw new AppError("开放名额不能小于已使用名额",409);
         run("UPDATE tasks SET title=?,description=?,platform=?,language=?,genre=?,deposit=?,commission=?,posts=?,episodes=?,slots=?,cover=? WHERE id=?",next.title,next.description,next.platform,next.language,next.genre,next.deposit,next.commission,next.posts,next.episodes,next.slots,next.cover,id);
-        run('UPDATE tasks SET stage=? WHERE id=?',next.stage,id);
+        run('UPDATE tasks SET stage=?,premium=? WHERE id=?',next.stage,next.premium,id);
         return getTask(id);
       });
     },
@@ -792,4 +821,8 @@ export function createStore(file, {fixtures=false}={}) {
       db.close();
     },
   };
+  } catch (error) {
+    db.close();
+    throw error;
+  }
 }

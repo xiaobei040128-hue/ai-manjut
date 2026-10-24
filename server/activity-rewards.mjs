@@ -16,7 +16,7 @@ export function createActivityRewards(store,scope){
   create(op,input){if(op.role!=='super')throw new AppError('仅总后台可配置活动',403);const name=text(input.name,80),reward=amount(input.amount),budget=amount(input.budget),operatorId=text(input.operatorId,80);if(name.length<2||budget<reward)throw new AppError('请填写活动名称，预算不得低于单人奖励');if(operatorId!=='super'&&!db.prepare('SELECT id FROM agent_admins WHERE id=? AND active=1').get(operatorId))throw new AppError('请选择有效发放员');const id=randomUUID();return store.audited(op.username,'activity.create',id,()=>{db.prepare('INSERT INTO reward_campaigns(id,name,amount,budget,operator_id,created_by,created_at) VALUES(?,?,?,?,?,?,?)').run(id,name,reward,budget,operatorId,op.username,now());return campaign(op,id);},{name,amount:reward,budget,operatorId});},
   state(op,id,input){if(op.role!=='super')throw new AppError('仅总后台可启停活动',403);if(typeof input.active!=='boolean')throw new AppError('无效活动状态');campaign(op,id);return store.audited(op.username,'activity.state',id,()=>{db.prepare('UPDATE reward_campaigns SET active=? WHERE id=?').run(Number(input.active),id);return {ok:true};},{active:input.active});},
   grant(op,id,input){
-   const userId=text(input.userId,80),reason=text(input.reason,500),key=text(input.operationKey,80);
+   const userId=text(input.userId,80),reason=text(input.reason,500),key=typeof input.operationKey==='string'?input.operationKey.trim():'';
    scope.assertUser(op,userId);campaign(op,id);
    if(reason.length<3||!/^[-a-zA-Z0-9]{16,80}$/.test(key)||input.confirm!==true)throw new AppError('请填写发放原因并确认入账');
    return store.audited(op.username,'activity.grant',userId,()=>{
@@ -31,7 +31,7 @@ export function createActivityRewards(store,scope){
     const grantId=randomUUID(),time=now(),balance=db.prepare('SELECT COALESCE(SUM(amount),0) AS n FROM ledger WHERE owner_id=?').get(userId).n;
     db.prepare('INSERT INTO activity_grants(id,campaign_id,user_id,amount,actor_id,actor_name,reason,operation_key,created_at) VALUES(?,?,?,?,?,?,?,?,?)').run(grantId,id,userId,c.amount,op.id,op.username,reason,key,time);
     db.prepare('INSERT INTO ledger(kind,amount,balance_after,note,operation_key,created_at,owner_id) VALUES(?,?,?,?,?,?,?)').run('activity_reward',c.amount,balance+c.amount,'活动奖励 · '+c.name+' · '+reason,'activity:'+grantId,time,userId);
-    db.prepare('INSERT INTO notifications(id,title,body,is_read,created_at,owner_id) VALUES(?,?,?,0,?,?)').run(randomUUID(),'活动奖励已到账',c.name+'：'+(c.amount/100).toFixed(2)+' USD。可在钱包查看流水。',time,userId);
+    store.notifyUser(userId,'活动奖励已到账',c.name+'：'+(c.amount/100).toFixed(2)+' USD。可在钱包查看流水。','finance',grantId);
     return receipt(grantId);
    },{campaignId:id,reason,operationKey:key});
   }

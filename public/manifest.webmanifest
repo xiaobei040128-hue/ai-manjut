@@ -12,13 +12,13 @@
   "lang": "zh-CN",
   "icons": [
     {
-      "src": "/icons/app-192.png",
+      "src": "/icons/studio-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/app-512.png",
+      "src": "/icons/studio-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

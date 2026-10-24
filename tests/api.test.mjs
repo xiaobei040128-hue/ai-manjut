@@ -44,10 +44,12 @@ test('HTTP API validates boundaries and persists the complete workflow',async t=
   assert.equal((await upload('bad.txt',Buffer.from([255,254,0]))).status,400);
   const bytes=Buffer.from('UTF-8 local acceptance document');const r=await upload('acceptance.txt',bytes);assert.equal(r.status,201);const material=await r.json();
   assert.equal((await json('/tasks/secret-wife')).materials.length,1);
+  const materialCreatorCookie=cookie.split('; ').find(value=>value.startsWith('drama_creator_'));assert.ok(materialCreatorCookie);assert.equal((await fetch(base+material.path,{headers:{Cookie:materialCreatorCookie}})).status,200);
   const partial=await fetch(base+material.path,{headers:{Cookie:cookie,Range:'bytes=0-4'}});assert.equal(partial.status,206);assert.equal(partial.headers.get('content-range'),`bytes 0-4/${bytes.length}`);assert.equal(await partial.text(),'UTF-8');
   const head=await fetch(base+material.path,{method:'HEAD',headers:{Cookie:cookie}});assert.equal(Number(head.headers.get('content-length')),bytes.length);assert.equal((await head.arrayBuffer()).byteLength,0);
   const invalid=await fetch(base+material.path,{headers:{Cookie:cookie,Range:'bytes=999-'}});assert.equal(invalid.status,416);assert.equal(invalid.headers.get('content-range'),`bytes */${bytes.length}`);
   await json('/materials/'+material.id,'DELETE');assert.equal((await json('/tasks/secret-wife')).materials.length,0);assert.equal((await json('/tasks/secret-wife/materials?all=1')).materials.length,1);assert.equal((await fetch(base+material.path,{headers:{Cookie:cookie}})).status,200);
+  for(const method of ['GET','HEAD'])assert.equal((await fetch(base+material.path,{method,headers:{Cookie:materialCreatorCookie}})).status,404);
   await json('/materials/'+material.id+'/restore','POST');await stop();await start();assert.equal((await json('/tasks/secret-wife')).materials.length,1);assert.deepEqual(Buffer.from(await (await fetch(base+material.path,{headers:{Cookie:cookie}})).arrayBuffer()),bytes);
  });
  await t.test('complete backup restores ledger and binary media into a new directory',async()=>{

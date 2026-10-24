@@ -10,7 +10,7 @@ export function customerDirectory(store, auth, scope, operator) {
     (SELECT COUNT(*) FROM fund_requests WHERE user_id=a.id AND status='review') AS pending_funds,
     (SELECT COUNT(*) FROM bank_cards WHERE user_id=a.id AND status='review') AS pending_cards,
     (SELECT COUNT(*) FROM creator_sessions WHERE user_id=a.id AND expires_at>?) AS session_count,
-    (SELECT COALESCE(SUM(t.deposit),0) FROM assignments x JOIN tasks t ON t.id=x.task_id WHERE x.owner_id=a.id AND x.status IN ('active','review','revision')) AS task_held,
+    (SELECT COALESCE(SUM(COALESCE(f.amount,t.deposit)),0) FROM assignments x JOIN tasks t ON t.id=x.task_id LEFT JOIN assignment_terms f ON f.assignment_id=x.id WHERE x.owner_id=a.id AND x.status IN ('active','review','revision')) AS task_held,
     (SELECT COALESCE(SUM(amount),0) FROM fund_requests WHERE user_id=a.id AND kind='withdrawal' AND status IN ('review','paying')) AS withdrawal_held,
     (SELECT COALESCE(SUM(amount),0) FROM fund_requests WHERE user_id=a.id AND kind='deposit' AND status='completed') AS deposited,
     (SELECT COALESCE(SUM(amount),0) FROM fund_requests WHERE user_id=a.id AND kind='withdrawal' AND status='paid') AS withdrawn

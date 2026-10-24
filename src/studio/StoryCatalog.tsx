@@ -1,11 +1,11 @@
 import {useEffect,useState} from 'react';
 import {ArrowRightIcon,ChevronLeftIcon,ChevronRightIcon,StarIcon,StarFilledIcon} from '@radix-ui/react-icons';
 import {Carousel,KeyboardInput} from '../mobile';
-import {useAccountJourney} from './AccountJourney';
+
 import stories from './storyCatalog.json';
 import './story-catalog.css';
-export default function StoryCatalog({savedOnly=false,onSelect,initialTaskId}:{savedOnly?:boolean;onSelect?:(id:string)=>void;initialTaskId?:string}){
- const {ownerId}=useAccountJourney(),key=`studio-story-favorites-v1:${ownerId}`;
+export default function StoryCatalog({ownerId,savedOnly=false,onSelect,initialTaskId}: {ownerId:string;savedOnly?:boolean;onSelect?:(id:string)=>void;initialTaskId?:string}){
+ const key=`studio-story-favorites-v1:${ownerId}`;
  const [saved,setSaved]=useState<string[]>(()=>{try{const value=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(value)?value.filter(id=>typeof id==='string'&&stories.some(s=>s.id===id)):[];}catch{return [];}}),[error,setError]=useState('');
  const [genre,setGenre]=useState('全部'),[query,setQuery]=useState(''),[selected,setSelected]=useState(initialTaskId||stories[0].id),[onlySaved,setOnlySaved]=useState(savedOnly);
  const visible=stories.filter(s=>(!onlySaved||saved.includes(s.id))&&(genre==='全部'||s.genre===genre)&&`${s.title} ${s.description}`.toLowerCase().includes(query.trim().toLowerCase()));

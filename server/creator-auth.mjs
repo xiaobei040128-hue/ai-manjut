@@ -1,3 +1,4 @@
+import {createAttemptLimit,attemptAddress} from './attempt-limit.mjs';
 import {
   randomBytes,
   randomUUID,
@@ -14,7 +15,7 @@ const derive = promisify(scrypt),
 export function createCreatorAuth(store, port) {
   const db = store.db,
     name = "drama_creator_" + port,
-    attempts = new Map(),
+    attempts = createAttemptLimit({max:10}),
     duration = 7 * 86400;
   db.exec(`CREATE TABLE IF NOT EXISTS creator_accounts(id TEXT PRIMARY KEY,email TEXT UNIQUE NOT NULL,password_hash TEXT NOT NULL,salt TEXT NOT NULL,created_at TEXT NOT NULL,invite_id TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS creator_sessions(token_hash TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES creator_accounts(id),expires_at TEXT NOT NULL,created_at TEXT NOT NULL);
@@ -96,19 +97,7 @@ export function createCreatorAuth(store, port) {
         .get(digest(t), new Date().toISOString()),
     );
   }
-  function limited(req) {
-    const key = req.socket.remoteAddress || "local",
-      old = attempts.get(key),
-      now = Date.now();
-    if (old && old.until > now && old.count >= 10)
-      throw new AppError("尝试过于频繁，请稍后再试", 429);
-    const next =
-      old && old.until > now ? old : { count: 0, until: now + 60000 };
-    next.count++;
-    attempts.set(key, next);
-    if (attempts.size > 1000)
-      for (const [k, v] of attempts) if (v.until <= now) attempts.delete(k);
-  }
+  function limited(req) { attempts.hit(attemptAddress(req)); }
   function credentials(input) {
     const email =
         typeof input.email === "string" ? input.email.trim().toLowerCase() : "",

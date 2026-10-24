@@ -1,3 +1,6 @@
+import Notifications from "./studio/Notifications";
+import {BrandMark,NotificationIcon} from "./Brand";
+import "./visual-refresh.css";
 import {AccountReadiness,JourneyRecord} from "./studio/AccountOverview";
 import StageWork from "./studio/StageWork";
 import StageHub from "./studio/StageHub";
@@ -451,7 +454,6 @@ function Studio({
     [installPrompt, setInstallPrompt] = useState<InstallPrompt | null>(null),
     [serviceWorkerReady, setServiceWorkerReady] = useState(false);
   const [ledgerSearch, setLedgerSearch] = useState(""),
-    [noticeView, setNoticeView] = useState("全部"),
     [taskSearch, setTaskSearch] = useState("");
   const materialRef = useRef<HTMLInputElement>(null);
   const [loadedTask, setLoadedTask] = useState<Task | null>(null);
@@ -982,7 +984,7 @@ function Studio({
       (a) => a.status === "review",
     );
   const notices = data?.notifications || [],
-    unread = notices.filter((n) => !n.is_read).length,
+    unread = data?.notificationsUnread??notices.filter((n) => !n.is_read).length,
     footerStyle = {
       bottom: nativeMode ? 14 : Math.max(16, insets.bottomInset),
     };
@@ -999,7 +1001,7 @@ function Studio({
         {page === "home" ? (
           <div className="s-brand">
             <span>
-              <LightningBoltIcon />
+              <BrandMark />
             </span>
             <div>
               <b>
@@ -1038,7 +1040,7 @@ function Studio({
               }
               onClick={() => go("notices")}
             >
-              <BellIcon />
+              <NotificationIcon />
               {unread > 0 && <i />}
             </button>
             <button
@@ -1144,7 +1146,7 @@ function Studio({
                 <>
                   <div className="v3-home-welcome"><span>你的创作空间</span><b>{data.profile.name}，欢迎回来</b></div>
                   <section className="s-hero">
-                    <img src="/art/hero-v2.webp" alt="漫剧人物插画" />
+                    <img src="/art/studio-hero-v1.webp" alt="漫剧创作者在数位屏前绘制分镜" fetchPriority="high" />
                     <div className="s-hero-shade" />
                     <div className="s-hero-copy">
                       <span className="s-hero-eyebrow">
@@ -1269,7 +1271,7 @@ function Studio({
                       </div>
                     }
                   >
-                    <StoryDiscovery initialTaskId={taskId} onSelect={setTaskId}/>
+                    <StoryDiscovery ownerId={user.id} initialTaskId={taskId} onSelect={setTaskId}/>
                   </Suspense>
                 </DesignBoundary>
               )}
@@ -1302,7 +1304,7 @@ function Studio({
               {page === "hall" && <StageHub />}
               {page === "saved" && (
                 <>
-                  <DesignBoundary><Suspense fallback={<div className="u-inline-loading">正在读取收藏故事…</div>}><StoryDiscovery savedOnly/></Suspense></DesignBoundary>
+                  <DesignBoundary><Suspense fallback={<div className="u-inline-loading">正在读取收藏故事…</div>}><StoryDiscovery ownerId={user.id} savedOnly/></Suspense></DesignBoundary>
                   <details className="sc-legacy"><summary>历史剧集收藏 · {data.bookmarks.length} 部</summary>
                   <div className="u-library-intro">
                     <span>THE STORY LIBRARY</span>
@@ -2324,7 +2326,7 @@ function Studio({
                       <ChevronRightIcon />
                     </button>
                     <button onClick={() => go("notices")}>
-                      <BellIcon />
+                      <NotificationIcon />
                       <span>消息通知</span>
                       {unread > 0 && (
                         <small className="s-counter">{unread}</small>
@@ -2396,99 +2398,13 @@ function Studio({
                   </div>
                 </>
               )}
-              {page === "notices" && (
-                <>
-                  <div className="u-notice-intro">
-                    <span>YOUR INBOX</span>
-                    <h2>每一份进展，都有回音</h2>
-                    <p>任务、审核与结算消息，集中留存。</p>
-                  </div>
-                  <div className="s-platform-tabs">
-                    {["全部", "未读"].map((v) => (
-                      <button
-                        key={v}
-                        className={noticeView === v ? "active" : ""}
-                        aria-pressed={noticeView === v}
-                        onClick={() => setNoticeView(v)}
-                      >
-                        {v}
-                        {v === "未读" && unread > 0 ? ` (${unread})` : ""}
-                      </button>
-                    ))}
-                  </div>
-                  {notices.length > 0 && (
-                    <div className="s-notice-toolbar">
-                      <span>{unread} 条未读消息</span>
-                      <button
-                        onClick={() =>
-                          perform(
-                            () => api("/notifications/read", "POST", {}),
-                            "消息已全部标记为已读",
-                          )
-                        }
-                      >
-                        全部已读 <CheckIcon />
-                      </button>
-                    </div>
-                  )}
-                  {noticeView === "未读" && unread === 0 && (
-                    <Empty
-                      icon={CheckCircledIcon}
-                      title="未读消息已处理完"
-                      description="有新的任务进展时，会在这里提醒你。"
-                    />
-                  )}
-                  {notices.length ? (
-                    notices
-                      .filter((n) => noticeView === "全部" || !n.is_read)
-                      .map((n) => (
-                        <button
-                          key={n.id}
-                          className={
-                            "s-notice-card " + (!n.is_read ? "unread" : "")
-                          }
-                          onClick={async () => {
-                            if (!n.is_read)
-                              await perform(() =>
-                                api(
-                                  "/notifications/" + n.id + "/read",
-                                  "POST",
-                                  {},
-                                ),
-                              );
-                            if (n.assignment_id) {
-                              const a = data.assignments.find(
-                                (a) => a.id === n.assignment_id,
-                              );
-                              if (a) viewAssignment(a);
-                            } else if (n.task_id) {
-                              setTaskId(n.task_id);
-                              go("detail");
-                            } else open("guide");
-                          }}
-                        >
-                          <span>
-                            <BellIcon />
-                          </span>
-                          <div>
-                            <h3>
-                              {n.title}
-                              {!n.is_read && <i />}
-                            </h3>
-                            <p>{n.body}</p>
-                            <small>{date(n.created_at, true)}</small>
-                          </div>
-                        </button>
-                      ))
-                  ) : (
-                    <Empty
-                      icon={BellIcon}
-                      title="消息还在路上"
-                      description="任务领取、提交、审核和结算通知，会在这里实时记录。"
-                    />
-                  )}
-                </>
-              )}
+              {page === "notices" && <Notifications onCountChange={count=>setData(old=>old?{...old,notificationsUnread:count}:old)} onOpen={n=>{
+                if(n.category==='finance'){go('wallet');return;}
+                if(n.category==='stage'){location.assign('/?view=app&design=third');return;}
+                if(n.assignment_id){const a=data.assignments.find(a=>a.id===n.assignment_id);if(a){viewAssignment(a);return;}}
+                if(n.task_id){setTaskId(n.task_id);go('detail');return;}
+                open('guide');
+              }}/>}
               {page === "reviews" && (
                 <>
                   <div className="s-workbench-heading">
@@ -2503,7 +2419,7 @@ function Studio({
                   <div className="s-workbench-stats">
                     <b>{pendingReviews.length}</b>
                     <span>份作品等待审核</span>
-                    <small>本地工作区审核台</small>
+                    <small>运营审核中心</small>
                   </div>
                   {pendingReviews.length ? (
                     pendingReviews.map((a) => (
@@ -3122,7 +3038,7 @@ function Studio({
                 ],
                 [
                   "提交作品与跟踪审核",
-                  "截图会真实保存到本地工作区，链接与备注自动保存草稿。提交后可在任务页面查看完整时间线。",
+                  "截图会保存到当前账号，链接与备注自动保存草稿。提交后可在任务页面查看完整时间线。",
                 ],
                 [
                   "审核与结算",
@@ -3256,7 +3172,7 @@ function Studio({
           {modal === "install" && (
             <>
               <div className="s-install-heading">
-                <img src="/icons/app-192.png" alt="漫剧 STUDIO" />
+                <img src="/icons/studio-192.png" alt="漫剧 STUDIO" />
                 <h3>把创作工作台，留在主屏幕</h3>
                 <p>以独立窗口打开，随时回来继续创作。</p>
               </div>
@@ -3288,7 +3204,7 @@ function Studio({
               <div className="s-info-note">
                 <LockClosedIcon />
                 <span>
-                  安装的是本地工作区界面。使用任务、上传和审核时，本机服务仍需保持运行。
+                  安装后使用同一平台账号登录。任务、资金和审核需要网络连接，离线时不能提交。
                 </span>
               </div>
             </>

@@ -14,7 +14,7 @@
     "prebuild": "npm run check:runtime",
     "build": "tsc && vite build --config vite.app.config.ts && node scripts/precompress.mjs && node scripts/prepare-sites-build.mjs",
     "start": "node server/index.mjs --production",
-    "test:app": "node --test tests/stage-finance.test.mjs tests/store.test.mjs tests/materials.test.mjs tests/backup.test.mjs tests/static.test.mjs tests/auth.test.mjs tests/creator-auth.test.mjs tests/finance.test.mjs tests/stage-simulation.test.mjs tests/downloads.test.mjs tests/library.test.mjs tests/customer-directory.test.mjs tests/compute-demo.test.mjs tests/activity-rewards.test.mjs tests/daily-example.test.mjs tests/story-catalog.test.mjs tests/premium-dispatch.test.mjs",
+    "test:app": "node --test tests/commission-policy.test.mjs tests/auth-proxy.test.mjs tests/attempt-limit.test.mjs tests/operator-summary.test.mjs tests/time.test.mjs tests/migrations.test.mjs tests/finance-boundaries.test.mjs tests/notifications.test.mjs tests/stage-finance.test.mjs tests/store.test.mjs tests/materials.test.mjs tests/backup.test.mjs tests/static.test.mjs tests/auth.test.mjs tests/creator-auth.test.mjs tests/finance.test.mjs tests/downloads.test.mjs tests/library.test.mjs tests/customer-directory.test.mjs tests/activity-rewards.test.mjs tests/story-catalog.test.mjs tests/premium-dispatch.test.mjs",
     "test:api": "node --test tests/api.test.mjs",
     "test": "npm run test:app && npm run test:api",
     "restore": "node scripts/restore-backup.mjs"

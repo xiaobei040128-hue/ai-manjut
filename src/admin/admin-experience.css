@@ -57,3 +57,13 @@
 .ad-login-form h2{color:#694779;font-size:30px;letter-spacing:-.8px}
 @media(max-width:800px){.ad-app .ad-main{padding:24px 17px 0}.ad-app .ad-page-heading h1{font-size:25px}.ad-app .ad-toolbar{padding:18px;gap:10px}.ad-app td,.ad-app th{padding:14px 16px}.ad-app .ad-edit-form{padding:18px}.ad-app .ad-toolbar input{flex:1;min-width:130px}.ad-dialog-body{padding:20px}.ad-dialog>header{padding:20px}}
 .ad-app .ad-welcome button{display:inline-flex;align-items:center;justify-content:center;gap:10px;border:1px solid #f5e8ff;background:#fff8ff;color:#805792;padding:11px 16px;border-radius:11px;font-size:12px;font-weight:600;box-shadow:0 4px 12px #1e082b0a}
+
+.ad-dispatch-form{display:flex;flex-direction:column;gap:16px}
+.ad-dispatch-form>p{margin:0;color:#665773;font-size:13px;line-height:1.85}
+.ad-dispatch-form fieldset{margin:0;min-width:0}
+.ad-dispatch-form legend{padding:0 8px;color:#574163;font-size:12px;font-weight:600}
+.ad-dispatch-form fieldset label{flex-direction:row;justify-content:flex-start;border:1px solid #ece4f3;border-radius:9px;padding:9px 6px;background:#fcfaff;cursor:pointer;white-space:nowrap}
+.ad-dispatch-form fieldset label:has(input:checked){border-color:#b69add;background:#f1e9fc;color:#65408f}
+.ad-dispatch-form fieldset label:has(input:disabled){opacity:.55;cursor:default}
+.ad-dispatch-form>button{align-self:stretch;min-height:42px}
+@media(max-width:380px){.ad-dispatch-form fieldset>div{grid-template-columns:repeat(3,minmax(0,1fr))!important}}

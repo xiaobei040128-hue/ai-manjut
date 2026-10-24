@@ -29,7 +29,7 @@ const questions = [
     group: "认证",
     question: "为什么客户已提交，后台却找不到？",
     answer:
-      "先核对客户与后台是否访问同一个工作区入口，再核对客户邮箱和申请编号。不同端口可能对应不同工作区。可在本页的“连接检查”查看当前入口，提交成功的编号也保留在钱包记录中。",
+      "先核对客户与后台是否使用同一平台入口，再核对客户邮箱和申请编号。可在本页的“连接检查”查看当前入口，提交成功的编号也保留在钱包记录中。",
   },
   {
     group: "资金",
@@ -150,7 +150,7 @@ export default function HelpCenter({
       `检查时间：${new Date(diagnostic.checkedAt).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" })}`,
       `访问入口：${diagnostic.origin}`,
       `网络状态：${diagnostic.online ? "在线" : "离线"}`,
-      `本地服务：${diagnostic.service ? "可连接" : "连接失败"}`,
+      `平台服务：${diagnostic.service ? "可连接" : "连接失败"}`,
       `浏览器存储：${diagnostic.storage ? "可用" : "不可用"}`,
       `浏览器：${diagnostic.browser}`,
       diagnostic.error || "",
@@ -249,13 +249,13 @@ export default function HelpCenter({
             {busy ? "检查中" : "检查连接"}
           </button>
         </div>
-        <p>遇到页面不同步时，先检查当前入口和本地服务。</p>
+        <p>遇到页面不同步时，先检查当前入口和平台服务。</p>
         {diagnostic && (
           <>
             <dl>
               <dt>当前入口</dt>
               <dd>{diagnostic.origin}</dd>
-              <dt>本地服务</dt>
+              <dt>平台服务</dt>
               <dd className={diagnostic.service ? "ok" : "warning"}>
                 {diagnostic.service ? "连接正常" : "暂时无法连接"}
               </dd>
