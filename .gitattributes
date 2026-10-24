@@ -1,0 +1,2 @@
+# Preserve archive bytes, including files checked by mobile-runtime.lock.json.
+* -text
