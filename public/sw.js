@@ -1,4 +1,4 @@
-const CACHE='drama-studio-v2-20261021';
+const CACHE='drama-studio-finance-20261024';
 const APP='/?view=app';
 self.addEventListener('install',event=>event.waitUntil((async()=>{const cache=await caches.open(CACHE);const response=await fetch(APP,{cache:'no-cache'});if(!response.ok)throw new Error('App shell unavailable');const html=await response.clone().text();await cache.put(APP,response);const assets=[...html.matchAll(/(?:src|href)="([^"\s]+\.(?:js|css))"/g)].map(m=>m[1]).filter(path=>new URL(path,self.location.origin).origin===self.location.origin);await cache.addAll(['/manifest.webmanifest','/icons/app-192.png','/icons/app-512.png',...assets]);await self.skipWaiting();})()));
 self.addEventListener('activate',event=>event.waitUntil((async()=>{for(const name of await caches.keys())if(name.startsWith('drama-studio-')&&name!==CACHE)await caches.delete(name);await self.clients.claim()})()));

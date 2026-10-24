@@ -8,7 +8,7 @@ export function createStageEnrollments(store,scope,journeys){
  CREATE INDEX IF NOT EXISTS stage_enrollments_owner ON stage_enrollments(user_id,created_at);`);
  const latest=id=>db.prepare('SELECT * FROM stage_enrollments WHERE user_id=? ORDER BY rowid DESC LIMIT 1').get(id)||null;
  function active(id){const u=db.prepare('SELECT frozen FROM creator_accounts WHERE id=?').get(id);if(!u)throw new AppError('账号不存在',404);if(u.frozen)throw new AppError('账号已冻结',403);}
- function eligible(id){const j=journeys.get(id);return j.newcomer.stage===6&&j.advanced.community?.completed===5;}
+ function eligible(id){return !!db.prepare("SELECT a.id FROM assignments a JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.owner_id=? AND a.status='completed' AND f.stage=2").get(id);}
  function status(id){active(id);const r=latest(id);return {eligible:eligible(id),enrollment:r?{id:r.id,status:r.status,note:r.note,created_at:r.created_at,reviewed_at:r.reviewed_at}:null};}
  function access(id){const state=status(id);if(state.enrollment?.status!=='approved')throw new AppError('第三阶段需报名并经后台审核通过',403);return {stage:3,unlocked:true,enrollmentId:state.enrollment.id};}
  const day=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());

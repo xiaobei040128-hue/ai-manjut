@@ -143,7 +143,7 @@ export function createCreatorAuth(store, port) {
       return user;
     },
     cookie(value) {
-      return `${name}=${value}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${value ? duration : 0}`;
+      return `${name}=${value}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${value ? duration : 0}${process.env.DRAMA_COOKIE_SECURE==='1'?'; Secure':''}`;
     },
     async register(req, input) {
       limited(req);

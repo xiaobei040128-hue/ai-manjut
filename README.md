@@ -2,6 +2,8 @@
 
 React 19、TypeScript、Vite 前端，Node.js HTTP 服务与 SQLite 数据库，包含创作者界面和管理后台。
 
+三个阶段现已接入统一佣金比例、领取冻结本金、人工审核结算与钱包流水。生产环境默认不赠送余额、不发布示例任务；后台先配置佣金比例，再发布各阶段任务。上线与运营步骤见 [PRODUCTION.md](PRODUCTION.md)。
+
 ## 本地运行
 
 需要 Node.js 24 或以上及 npm。在项目目录执行：
@@ -34,4 +36,4 @@ npm run test:runtime
 
 Node.js 服务提供完整后端；`worker/index.js` 仅提供静态资源和前端路由回退，不能替代 Node.js/SQLite 业务接口。
 
-原包说明中的授权购买、版权转移和佣金结算属于演示。检查范围及已知限制见 `CHECK_REPORT.md`。
+旧版随机金额、计算器和模拟结算入口已经停用。当前收付款由后台人工核实外部转账，自动支付网关尚未选定。`CHECK_REPORT.md` 保留原包导入时的检查记录，当前资金流程与部署边界以 `PRODUCTION.md` 为准。

@@ -228,7 +228,7 @@ export default function Finance({isSuper=true}:{isSuper?:boolean}) {
           <strong>{pendingWithdrawals.length}</strong>
           <small>
             {money(pendingWithdrawals.reduce((sum, r) => sum + r.amount, 0))} ·
-            测试额度
+            账户资金
           </small>
         </button>
         <button
@@ -243,7 +243,7 @@ export default function Finance({isSuper=true}:{isSuper?:boolean}) {
           <strong>{payingRequests.length}</strong>
           <small>
             {money(payingRequests.reduce((sum, r) => sum + r.amount, 0))} ·
-            测试额度
+            账户资金
           </small>
         </button>
         <button
@@ -278,7 +278,7 @@ export default function Finance({isSuper=true}:{isSuper?:boolean}) {
       <div className="ad-callout" style={{ marginBottom: 20 }}>
         <span>
           人工审批账本 ·
-          当前使用测试额度，未接支付及银行转账接口。“已出款”仅表示管理员登记了外部出款结果。
+          充值须核实外部实际收款；提现须完成实际转账并登记凭证后，才能标记已出款。
         </span>
       </div>
       <section className="ad-panel">

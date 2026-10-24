@@ -1,5 +1,5 @@
 import {AccountReadiness,JourneyRecord} from "./studio/AccountOverview";
-import AccountJourney, { useAccountJourney } from "./studio/AccountJourney";
+import StageWork from "./studio/StageWork";
 import StageHub from "./studio/StageHub";
 import DesignBoundary from "./studio/DesignBoundary";
 import "./studio/platform-upgrade.css";
@@ -79,10 +79,6 @@ import {
 } from "./api";
 import SubmissionHistory from "./studio/SubmissionHistory";
 import { createPortal } from "react-dom";
-const ComputeDemo = lazy(() => import("./studio/ComputeDemo"));
-const StageThree = lazy(() => import("./studio/StageThree"));
-const AdvancedDesign = lazy(() => import("./studio/CommunityStage"));
-const NewcomerDesign = lazy(() => import("./studio/NewcomerDesign"));
 const CreativePlanner = lazy(() => import("./studio/CreativePlanner"));
 const HelpCenter = lazy(() => import("./studio/HelpCenter"));
 const StoryDiscovery = lazy(() => import("./studio/StoryCatalog"));
@@ -296,7 +292,7 @@ function TaskCard({
           查看剧集与素材 <ArrowRightIcon />
         </button>
         <div className="s-task-foot">
-          <span>故事收藏 · 不支持自主接单</span>
+          <span>故事收藏</span>
         </div>
       </div>
       <button
@@ -367,9 +363,9 @@ export default function Prototype() {
   return (
     <CreatorAccess>
       {(user, logout) => (
-        <AccountJourney key={user.id} ownerId={user.id}>
+        <div style={{display:"contents"}}>
           <AccountContent user={user} logout={logout} />
-        </AccountJourney>
+        </div>
       )}
     </CreatorAccess>
   );
@@ -381,33 +377,13 @@ function AccountContent({
   user: CreatorUser;
   logout: () => Promise<void>;
 }) {
-  const journey = useAccountJourney();
   const design = new URLSearchParams(location.search).get("design");
-  if (design === "third") return <DesignPreview><StageThree /></DesignPreview>;
-  if (design === "compute")
-    return (
-      <DesignPreview>
-        <ComputeDemo key={user.id} ownerId={user.id} />
-      </DesignPreview>
-    );
-  if (design === "advanced" && journey.newcomer.stage === 6)
-    return (
-      <DesignPreview>
-        <AdvancedDesign />
-      </DesignPreview>
-    );
-  if (design === "newcomer" || design === "advanced")
-    return (
-      <DesignPreview>
-        <NewcomerDesign />
-      </DesignPreview>
-    );
+  if (design && ['newcomer','advanced','third'].includes(design)) return <DesignPreview><StageWork stage={design==='newcomer'?1:design==='advanced'?2:3}/></DesignPreview>;
   return (
     <Studio
       key={user.id}
       user={user}
       logout={async () => {
-        await journey.flush();
         await logout();
       }}
     />
@@ -886,7 +862,7 @@ function Studio({
           reason: reviewReason,
         }),
       decision === "approve"
-        ? "审核通过，测试账本已完成结算"
+        ? "审核通过，资金账本已完成结算"
         : "修改意见已发送给创作者",
     );
     if (result) {
@@ -1029,7 +1005,7 @@ function Studio({
               <b>
                 漫剧 <em>STUDIO</em>
               </b>
-              <small className="s-funds-notice">预览版</small>
+
             </div>
           </div>
         ) : (
@@ -1049,7 +1025,7 @@ function Studio({
                   ? "审核详情"
                   : pageTitles[page]}
               </h1>
-              <small className="s-funds-notice">预览版</small>
+
             </div>
           </>
         )}
@@ -1651,7 +1627,7 @@ function Studio({
                     )}
                   </Section>
                   <button className="s-rule-link" onClick={() => open("rules")}>
-                    了解测试额度与结算规则 <ChevronRightIcon />
+                    了解任务本金与结算规则 <ChevronRightIcon />
                   </button>
                 </>
               )}
@@ -1948,7 +1924,7 @@ function Studio({
                       className="s-cancel-link"
                       onClick={() => open("cancel")}
                     >
-                      取消任务并返还测试额度
+                      取消任务并返还任务本金
                     </button>
                   )}
                 </>
@@ -2363,12 +2339,6 @@ function Studio({
                   </div>
                   <div className="s-menu-group">
                     <a href="/?view=app&design=third"><ReaderIcon/><span>第三阶段</span><small>报名与每日记录</small><ChevronRightIcon/></a>
-                    <a href="/?view=app&design=compute">
-                      <LightningBoltIcon />
-                      <span>AI 创作额度</span>
-                      <small>独立创作工具</small>
-                      <ChevronRightIcon />
-                    </a>
                     <button onClick={() => go("planner")}>
                       <VideoIcon />
                       <span>创作工作室</span>
@@ -2560,7 +2530,7 @@ function Studio({
                     <Empty
                       icon={CheckCircledIcon}
                       title="审核队列已清空"
-                      description="创作者提交的作品会自动进入这里。审核通过后，系统会完成测试账本结算。"
+                      description="创作者提交的作品会自动进入这里。审核通过后，系统会完成资金账本结算。"
                     >
                       <Button
                         kind="secondary"
@@ -3140,7 +3110,7 @@ function Studio({
               {[
                 [
                   "选择好故事",
-                  "进入任务大厅查看当前阶段，任务由系统逐笔派发，不支持自主选单。",
+                  "进入对应阶段，查看发布要求、冻结本金与佣金，确认后领取任务。",
                 ],
                 [
                   "准备创作素材",
@@ -3156,7 +3126,7 @@ function Studio({
                 ],
                 [
                   "审核与结算",
-                  "本地审核台可逐项核对作品，通过或要求修改。通过后，系统在测试账本中返还额度并记录佣金。",
+                  "本地审核台可逐项核对作品，通过或要求修改。通过后，系统在资金账本中返还额度并记录佣金。",
                 ],
               ].map(([title, copy], i) => (
                 <section key={title}>
@@ -3173,12 +3143,11 @@ function Studio({
             <div className="s-prose">
               <h3>每一笔变化，都有记录</h3>
               <p>
-                这是保存在本机的测试工作区。钱包中的 USD
-                为测试记账单位，不是实际资金，也不能提现。
+                钱包按 USD 记账。充值经实际收款核实后入账；提现需完成实名认证、绑定银行卡并经后台审核。
               </p>
               <h4>阶段任务与历史记录</h4>
               <p>
-                当前任务入口采用逐阶段模拟派发，不提供自主选单。旧版已有任务保留原测试账本、提交和审核记录。
+                三个阶段使用后台发布的任务金额和统一佣金比例。已领取任务按领取时确认的金额与比例结算。
               </p>
               <h4>提交与审核</h4>
               <p>
@@ -3197,8 +3166,8 @@ function Studio({
                 <CheckCircledIcon />
                 <h3>确认这份作品符合任务要求</h3>
                 <p>
-                  通过后会返还 {money(assignment.task.deposit)} 测试额度，并记入{" "}
-                  {money(assignment.task.commission)} 测试佣金。
+                  通过后会返还 {money(assignment.task.deposit)} 任务本金，并记入{" "}
+                  {money(assignment.task.commission)} 任务佣金。
                 </p>
               </div>
               {[
@@ -3331,7 +3300,7 @@ function Studio({
                 <h3>确认取消这项任务？</h3>
                 <p>
                   {money(assignment.task.deposit)}{" "}
-                  测试额度会返还可用余额。已有提交记录与任务时间线会保留。
+                  任务本金会返还可用余额。已有提交记录与任务时间线会保留。
                 </p>
               </div>
               <Button
@@ -3345,7 +3314,7 @@ function Studio({
                         "POST",
                         {},
                       ),
-                    "任务已取消，测试额度已返还",
+                    "任务已取消，任务本金已返还",
                   );
                   if (r) setModal(null);
                 }}

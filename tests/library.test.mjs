@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createStore } from "../server/store.mjs";
+import { createStore } from "./fixtures/store.mjs";
 import { createCreatorAuth } from "../server/creator-auth.mjs";
 test("saved stories remain visible after pause and never leak another owner bookmarks", async () => {
   const store = createStore(":memory:"),

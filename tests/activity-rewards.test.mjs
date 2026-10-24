@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {mkdir,mkdtemp,rm} from 'node:fs/promises';
 import {resolve,join} from 'node:path';
 import {randomUUID} from 'node:crypto';
-import {createStore} from '../server/store.mjs';
+import {createStore} from './fixtures/store.mjs';
 import {createCreatorAuth} from '../server/creator-auth.mjs';
 import {createAdminAuth} from '../server/auth.mjs';
 import {createFinance} from '../server/finance.mjs';

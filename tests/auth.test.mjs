@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createStore} from '../server/store.mjs';
+import {createStore} from './fixtures/store.mjs';
 import {createAdminAuth} from '../server/auth.mjs';
 const req=cookie=>({headers:{cookie},socket:{remoteAddress:'test-local'}});
 test('admin passwords and sessions are hashed, expire, and revoke',()=>{const store=createStore(':memory:');try{

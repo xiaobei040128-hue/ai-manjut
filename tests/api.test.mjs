@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {createStore as fixtureStore} from './fixtures/store.mjs';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {once} from 'node:events';
@@ -9,9 +10,9 @@ const base='http://127.0.0.1:4181',work=resolve('work');
 let child,folder,cookie="",creatorId="";
 async function start(){child=spawn(process.execPath,['server/index.mjs','--production','--port','4181','--host','127.0.0.1'],{cwd:process.cwd(),env:{...process.env,DRAMA_DATA_DIR:folder},stdio:['ignore','pipe','pipe'],windowsHide:true});let output='';child.stdout.on('data',x=>output+=x);child.stderr.on('data',x=>output+=x);const begun=Date.now();while(!output.includes('Drama Studio 2.0:')){if(child.exitCode!==null)throw new Error(output);if(Date.now()-begun>15000)throw new Error('Server startup timed out: '+output);await new Promise(r=>setTimeout(r,25));}}
 async function stop(){if(child&&child.exitCode===null){child.kill();await once(child,'exit');}}
-async function request(path,method='GET',input,headers={}){return fetch(base+'/api'+path,{method,headers:{Cookie:cookie,...(method==='GET'?{}:{'Content-Type':'application/json','X-Workspace-Request':'1'}),...headers},body:input===undefined?undefined:JSON.stringify(input)});}
+async function request(path,method='GET',input,headers={}){if(path==='/assignments'&&method==='POST'&&typeof input?.taskId==='string'&&!input.expected){const q=await fetch(base+'/api/tasks/'+input.taskId).then(r=>r.json());input={...input,expected:{amount:q.deposit,commission:q.commission,rateBps:q.commission_rate_bps}};}return fetch(base+'/api'+path,{method,headers:{Cookie:cookie,...(method==='GET'?{}:{'Content-Type':'application/json','X-Workspace-Request':'1'}),...headers},body:input===undefined?undefined:JSON.stringify(input)});}
 async function json(path,method,input){const r=await request(path,method,input);const b=await r.json();assert.ok(r.ok,JSON.stringify(b));return b;}
-test('HTTP API validates boundaries and persists the complete workflow',async t=>{await mkdir(work,{recursive:true});folder=await mkdtemp(join(work,'api-check-'));try{await start();let a;const screenshot=await readFile('public/art/poster0.png'),uploads=[];
+test('HTTP API validates boundaries and persists the complete workflow',async t=>{await mkdir(work,{recursive:true});folder=await mkdtemp(join(work,'api-check-'));try{fixtureStore(join(folder,'workspace.sqlite')).close();await start();let a;const screenshot=await readFile('public/art/poster0.png'),uploads=[];
  await t.test('health and initial balance',async()=>{assert.equal((await request('/bootstrap')).status,401);assert.equal((await json('/health')).ok,true);});
  await t.test('admin setup, cookie sessions and privileged API protection',async()=>{
   assert.equal((await json('/admin/session')).configured,false);
@@ -21,7 +22,7 @@ test('HTTP API validates boundaries and persists the complete workflow',async t=
   const r=await request('/admin/setup','POST',{username:'test-admin',password:'Local-Test-Password-2026!'});assert.equal(r.status,200);assert.match(r.headers.get('set-cookie'),/HttpOnly/);assert.match(r.headers.get('set-cookie'),/SameSite=Strict/);cookie=r.headers.get('set-cookie').split(';')[0];assert.equal((await json('/admin/session')).authenticated,true);
   assert.equal((await request('/admin/setup','POST',{username:'other-admin',password:'Local-Test-Password-2026!'})).status,409);
   assert.equal((await request('/admin/login','POST',{username:'test-admin',password:'wrong-password'})).status,401);
-  const snapshot=await json('/admin/bootstrap');assert.equal(snapshot.admin.username,'test-admin');assert.ok(snapshot.audit.some(a=>a.action==='auth.setup'));assert.ok(!JSON.stringify(snapshot).includes('password_hash'));
+  await json('/admin/commission-policy','POST',{rate:'15'});const snapshot=await json('/admin/bootstrap');assert.equal(snapshot.admin.username,'test-admin');assert.ok(snapshot.audit.some(a=>a.action==='auth.setup'));assert.ok(!JSON.stringify(snapshot).includes('password_hash'));
   const html=await fetch(base+'/admin');assert.equal(html.status,200);assert.match(await html.text(),/admin-root/);
   const invite=await json('/admin/invitations','POST',{maxUses:2,days:1});const registered=await request('/auth/register','POST',{email:'acceptance@example.com',password:'Creator-Test-Password!',inviteCode:invite.code});assert.equal(registered.status,201);creatorId=(await registered.json()).user.id;cookie+='; '+registered.headers.get('set-cookie').split(';')[0];assert.equal((await json('/bootstrap')).wallet.available,0);await json('/admin/finance/account/'+creatorId+'/adjust','POST',{amount:'2000',direction:'credit',note:'Explicit API test funding',operationKey:'api-fixture-funding-2026'});assert.equal((await json('/bootstrap')).wallet.available,200000);
  });
@@ -136,49 +137,10 @@ test('HTTP API validates boundaries and persists the complete workflow',async t=
   const session=await(await request('/auth/session','GET',undefined,{Cookie:customerCookie})).json();assert.ok(!JSON.stringify(session).includes('Follow-up'));assert.ok(!JSON.stringify(session).includes('password_hash'));
   await json('/admin/accounts/'+user.id+'/revoke-sessions','POST',{});assert.equal((await request('/bootstrap','GET',undefined,{Cookie:customerCookie})).status,401);assert.equal((await json('/admin/session')).authenticated,true);
  });
- await t.test('account journeys isolate new accounts, reject stale or cross-account writes and survive restart',async()=>{
-  const invite=await json('/admin/invitations','POST',{label:'Journey isolation QA'});
-  async function register(email){const response=await request('/auth/register','POST',{email,password:'JourneyTest123',inviteCode:invite.code},{Cookie:''});assert.equal(response.status,201);return {user:(await response.json()).user,cookie:response.headers.get('set-cookie').split(';')[0]};}
-  const one=await register('journey-one@example.com'),two=await register('journey-two@example.com');
-  async function read(c){const r=await request('/journey','GET',undefined,{Cookie:c});assert.equal(r.status,200);return r.json();}
-  const first=await read(one.cookie),second=await read(two.cookie);assert.equal(first.newcomer.stage,1);assert.equal(second.newcomer.stage,1);assert.notEqual(first.advanced.id,second.advanced.id);
-  assert.equal((await request('/journey','GET',undefined,{Cookie:''})).status,401);
-  const update={ownerId:first.ownerId,kind:'newcomer',value:{...first.newcomer,stage:3},revision:first.revision};
-  assert.equal((await request('/journey','PATCH',update,{Cookie:two.cookie})).status,409);
-  assert.equal((await request('/journey','PATCH',update,{Cookie:one.cookie})).status,200);
-  assert.equal((await read(one.cookie)).newcomer.stage,3);assert.equal((await read(two.cookie)).newcomer.stage,1);
-  assert.equal((await request('/journey','PATCH',update,{Cookie:one.cookie})).status,409);
-  let saved=await read(one.cookie);
-  assert.equal((await request('/journey','PATCH',{ownerId:one.user.id,kind:'advanced',value:saved.advanced,revision:saved.revision},{Cookie:one.cookie})).status,409);
-  await request('/journey','PATCH',{ownerId:one.user.id,kind:'newcomer',value:{...saved.newcomer,stage:6},revision:saved.revision},{Cookie:one.cookie});saved=await read(one.cookie);
-  await request('/journey','PATCH',{ownerId:one.user.id,kind:'advanced',value:{...saved.advanced,revealed:true,status:'working'},revision:saved.revision},{Cookie:one.cookie});
-  const amount=saved.advanced.orders[0].amount;
-  await stop();await start();saved=await read(one.cookie);assert.equal(saved.newcomer.stage,6);assert.equal(saved.advanced.status,'working');assert.equal(saved.advanced.orders[0].amount,amount);assert.equal((await read(two.cookie)).newcomer.stage,1);
-  assert.equal((await(await request('/bootstrap','GET',undefined,{Cookie:one.cookie})).json()).wallet.available,0);
-  const callOne=(path,method='GET',input)=>request(path,method,input,{Cookie:one.cookie});
-  assert.equal((await callOne('/stage-three/access')).status,403);
-  assert.equal((await callOne('/stage-three/enrollment','POST',{})).status,409);
-  saved=await read(one.cookie);
-  await callOne('/journey','PATCH',{ownerId:one.user.id,kind:'advanced',value:{...saved.advanced,community:{completed:5,genre:'奇幻爱情',rating:4,review:'HTTP阶段验收记录',shared:false,code:'ABCD2345'}},revision:saved.revision});
-  let enrollment=(await(await callOne('/stage-three/enrollment','POST',{})).json()).enrollment;
-  assert.equal(enrollment.status,'pending');assert.equal((await(await callOne('/stage-three/enrollment','POST',{})).json()).enrollment.id,enrollment.id);
-  assert.equal((await callOne('/stage-three/example')).status,403);
-  assert.equal((await callOne('/admin/stage-enrollments/'+enrollment.id+'/review','POST',{decision:'approve'})).status,401);
-  assert.equal((await request('/admin/stage-enrollments/'+enrollment.id+'/review','POST',{decision:'reject',note:''})).status,400);
-  await json('/admin/stage-enrollments/'+enrollment.id+'/review','POST',{decision:'reject',note:'请补充参与信息'});
-  assert.equal((await callOne('/stage-three/access')).status,403);
-  const previousId=enrollment.id;enrollment=(await(await callOne('/stage-three/enrollment','POST',{})).json()).enrollment;assert.notEqual(previousId,enrollment.id);
-  assert.equal((await request('/admin/stage-enrollments/'+previousId+'/review','POST',{decision:'approve'})).status,409);
-  await json('/admin/stage-enrollments/'+enrollment.id+'/review','POST',{decision:'approve',note:'已核对报名'});
-  assert.equal((await callOne('/stage-three/access')).status,200);
-  assert.equal((await request('/stage-three/access','GET',undefined,{Cookie:two.cookie})).status,403);
-  assert.equal((await callOne('/stage-three/example','POST',{source:'demo',balance:'100.001'})).status,400);
-  let example=await(await callOne('/stage-three/example','POST',{source:'demo',balance:'100.25'})).json();assert.equal(example.example.balance,10025);assert.ok(example.example.items.length>=12&&example.example.items.length<=15);
-  assert.deepEqual((await(await callOne('/stage-three/example','POST',{source:'demo',balance:'5000'})).json()).example,example.example);
-  assert.equal((await(await callOne('/bootstrap')).json()).wallet.available,0);
-  await stop();await start();assert.deepEqual((await(await callOne('/stage-three/example')).json()).example,example.example);
-  assert.equal((await(await request('/stage-three/enrollment','GET',undefined,{Cookie:two.cookie})).json()).enrollment,null);
-
+ await t.test('retired preview endpoints cannot calculate or grant stage eligibility',async()=>{
+  assert.equal((await request('/journey','PATCH',{kind:'newcomer',value:{stage:6}})).status,410);
+  assert.equal((await request('/stage-three/example','POST',{source:'demo',balance:'100'})).status,410);
+  assert.equal((await request('/stage-three/premium-reveal','POST',{sequence:20})).status,410);
  });
  await t.test('logout invalidates the stored session',async()=>{await json('/admin/logout','POST',{});assert.equal((await request('/admin/bootstrap')).status,401);assert.equal((await json('/admin/session')).authenticated,false);});
  }finally{await stop();const target=resolve(folder);if(!target.startsWith(work+requireSeparator()))throw new Error('Unsafe test cleanup path');await rm(target,{recursive:true,force:true});}});

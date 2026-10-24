@@ -1,18 +1,16 @@
 import {useCallback,useEffect,useRef,useState} from "react";
 import {ArrowRightIcon,CheckIcon,ClockIcon,ReloadIcon,Cross2Icon,LockClosedIcon} from "@radix-ui/react-icons";
 import {api,date} from "../api";
-import {useAccountJourney} from "./AccountJourney";
 import "./enrollment-card.css";
 interface EnrollmentState {eligible:boolean;enrollment:null|{id:string;status:string;note:string;created_at:string;reviewed_at:string|null}}
 export default function EnrollmentCard(){
- const {flush}=useAccountJourney();
  const [state,setState]=useState<EnrollmentState|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[refreshing,setRefreshing]=useState(false);
  const alive=useRef(true),lock=useRef(false),reading=useRef(false);
  const read=useCallback(async()=>{if(lock.current||reading.current)return;reading.current=true;setRefreshing(true);try{const v=await api<EnrollmentState>('/stage-three/enrollment');if(alive.current){setState(v);setError('');}}catch(e){if(alive.current)setError((e as Error).message);}finally{reading.current=false;if(alive.current)setRefreshing(false);}},[]);
  useEffect(()=>{alive.current=true;void read();const focus=()=>void read();const timer=setInterval(()=>{if(document.visibilityState==='visible')void read();},30000);window.addEventListener('focus',focus);return()=>{alive.current=false;clearInterval(timer);window.removeEventListener('focus',focus);};},[read]);
  const status=state?.enrollment?.status||'none',approved=status==='approved',pending=status==='pending',rejected=status==='rejected';
  const Icon=approved?CheckIcon:pending?ClockIcon:rejected?Cross2Icon:LockClosedIcon;
- async function apply(){if(lock.current)return;lock.current=true;setBusy(true);setError('');try{await flush();const v=await api<EnrollmentState>('/stage-three/enrollment','POST',{});if(alive.current)setState(v);}catch(e){if(alive.current)setError((e as Error).message);}finally{lock.current=false;if(alive.current)setBusy(false);}}
+ async function apply(){if(lock.current)return;lock.current=true;setBusy(true);setError('');try{const v=await api<EnrollmentState>('/stage-three/enrollment','POST',{});if(alive.current)setState(v);}catch(e){if(alive.current)setError((e as Error).message);}finally{lock.current=false;if(alive.current)setBusy(false);}}
  return <section className={'en-card en-'+status} aria-label="第三阶段报名" aria-busy={busy}>
  <div className="en-top"><span>CHAPTER 03</span><span className="en-badge">{!state?'正在读取':approved?'资格已开通':pending?'审核中':rejected?'需重新申请':'待报名'}</span></div>
  <div className="en-heading"><span className="en-icon"><Icon/></span><div><h2>{approved?'下一阶段，已为你开启':pending?'报名已提交':rejected?'报名暂未通过':'开启你的下一段旅程'}</h2><p>第三阶段 · 报名资格</p></div></div>

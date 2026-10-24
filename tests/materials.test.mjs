@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {parseRange} from '../server/materials.mjs';
-import {createStore} from '../server/store.mjs';
+import {createStore} from './fixtures/store.mjs';
 
 test('media ranges cover open, bounded and suffix requests',()=>{
  assert.equal(parseRange(undefined,100),null);

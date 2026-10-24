@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdtemp,rm} from 'node:fs/promises';
 import {resolve,join,sep} from 'node:path';
-import {createStore} from '../server/store.mjs';
+import {createStore} from './fixtures/store.mjs';
 import {createCreatorAuth} from '../server/creator-auth.mjs';
 import {createAdminAuth} from '../server/auth.mjs';
 import {createFinance} from '../server/finance.mjs';

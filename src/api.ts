@@ -5,6 +5,8 @@ export type Status =
   | "completed"
   | "cancelled";
 export interface Task {
+  stage: number;
+  commission_rate_bps: number | null;
   materials: Material[];
   id: string;
   title: string;

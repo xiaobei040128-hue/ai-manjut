@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createStore } from '../server/store.mjs';
+import { createStore } from './fixtures/store.mjs';
 function fixture(){return createStore(':memory:');}
 function evidence(s,a){return Array.from({length:a.task.posts},(_,i)=>s.addUpload(a.id,{name:`shot-${i}.png`,mime:'image/png',size:123,path:`/uploads/test-${i}.png`}));}
 function submit(s,a){const uploads=evidence(s,a);return s.submit(a.id,{links:uploads.map((_,i)=>`https://www.tiktok.com/@creator/video/${i+1}`),uploadIds:uploads.map(u=>u.id),note:'首轮发布'});}

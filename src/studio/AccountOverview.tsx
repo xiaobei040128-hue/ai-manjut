@@ -2,7 +2,7 @@ import {useEffect,useState} from "react";
 import {PersonIcon,CardStackIcon,LockClosedIcon,ChevronRightIcon,CheckIcon,CopyIcon,ReaderIcon,ArrowRightIcon} from "@radix-ui/react-icons";
 import {api,date} from "../api";
 import {financeStatus,type FinanceSnapshot} from "../finance";
-import {useAccountJourney} from "./AccountJourney";
+
 export function AccountReadiness({id,createdAt,onWallet}:{id:string;createdAt:string;onWallet:()=>void}){
  const [data,setData]=useState<FinanceSnapshot|null>(null),[error,setError]=useState(''),[copied,setCopied]=useState(false);
  useEffect(()=>{let active=true;void api<FinanceSnapshot>('/finance').then(v=>{if(active)setData(v);}).catch(e=>{if(active)setError(e.message);});return()=>{active=false;};},[]);
@@ -11,7 +11,8 @@ export function AccountReadiness({id,createdAt,onWallet}:{id:string;createdAt:st
  {error&&<p className="v3-inline-error" role="alert">{error}</p>}<footer><LockClosedIcon/>认证状态与钱包审批记录同步</footer></section>;
 }
 export function JourneyRecord(){
- const {newcomer,advanced}=useAccountJourney();
- const stage=newcomer.stage===6?2:1,done=stage===2?(advanced.community?.completed??0):newcomer.stage,percent=Math.round(done/(stage===2?5:6)*100);
- return <a className="v3-journey-record" href={'/?view=app&design='+(stage===2?'advanced':'newcomer')}><span className="v3-journey-icon"><ReaderIcon/></span><div><small>成长阶段 · 0{stage}</small><b>{stage===2?'AI 漫剧探索计划':'新手创作旅程'}</b><progress value={percent} max={100} aria-label="成长阶段完成进度"/></div><span className="v3-journey-percent">{percent}%<ArrowRightIcon/></span></a>;
+ const [data,setData]=useState<{assignments:{status:string;task:{stage:number}}[]}|null>(null);
+ useEffect(()=>{let active=true;void api<{assignments:{status:string;task:{stage:number}}[]}>('/stage-finance').then(v=>{if(active)setData(v);}).catch(()=>{});return()=>{active=false;};},[]);
+ const done=data?.assignments.filter(a=>a.status==='completed')||[],stage=done.some(a=>a.task.stage===2)?3:done.some(a=>a.task.stage===1)?2:1;
+ return <a className="v3-journey-record" href={'/?view=app&design='+['newcomer','advanced','third'][stage-1]}><span className="v3-journey-icon"><ReaderIcon/></span><div><small>阶段任务</small><b>第 {stage} 阶段 · 已审核完成 {done.length} 项</b></div><ArrowRightIcon/></a>;
 }

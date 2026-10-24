@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createStore} from '../server/store.mjs';
+import {createStore} from './fixtures/store.mjs';
 import {createCreatorAuth} from '../server/creator-auth.mjs';
 const request=()=>({headers:{},socket:{remoteAddress:Math.random().toString()}});
 test('permanent short invitations allow repeat registration and hash credentials',async()=>{

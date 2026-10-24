@@ -156,6 +156,7 @@ export function validateSimulation(value: unknown): value is Simulation {
     return false;
   if (s.community !== undefined) {
     const c = s.community;
+    if (!c || typeof c!=="object" || Array.isArray(c)) return false;
     if (c.exampleQuote !== undefined && !validExampleQuote(c.exampleQuote)) return false;
     if (!c || !Number.isInteger(c.completed) || c.completed < 0 || c.completed > 5 ||
         typeof c.genre !== "string" || c.genre.length > 40 || !Number.isInteger(c.rating) || c.rating < 0 || c.rating > 5 ||

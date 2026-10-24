@@ -1,11 +1,11 @@
 import {createPremiumDispatch} from './premium-dispatch.mjs';
 import {createStageEnrollments} from "./stage-enrollments.mjs";
 import {createActivityRewards} from "./activity-rewards.mjs";
-import {createJourneys} from "./journeys.mjs";
+
 import {initializeGeoCountry} from "./geo-country.mjs";
 import http from "node:http";
 import { createReadStream } from "node:fs";
-import { randomUUID } from "node:crypto";
+import { randomUUID,createHash,timingSafeEqual } from "node:crypto";
 import { mkdir, readFile, writeFile, unlink, stat } from "node:fs/promises";
 import { resolve, join, extname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -30,13 +30,18 @@ const dataDir = resolve(
 await mkdir(join(dataDir, "uploads"), { recursive: true });
 const store = createStore(join(dataDir, "workspace.sqlite"));
 const adminAuth = createAdminAuth(store,port);
+if(process.env.DRAMA_ALLOWED_HOSTS?.trim()){
+ if(process.env.DRAMA_COOKIE_SECURE!=='1')throw new Error('Public hosts require DRAMA_COOKIE_SECURE=1 and HTTPS');
+ if(!adminAuth.state({headers:{}}).configured&&!process.env.DRAMA_SETUP_TOKEN)throw new Error('Configure DRAMA_SETUP_TOKEN before first public startup');
+}
+
 await initializeGeoCountry();
 const creatorAuth = createCreatorAuth(store,port);
 const finance=createFinance(store,dataDir);
-const journeys=createJourneys(store);
+
 const operatorScope=createOperatorScope(store);
 const activityRewards=createActivityRewards(store,operatorScope);
-const stageEnrollments=createStageEnrollments(store,operatorScope,journeys);
+const stageEnrollments=createStageEnrollments(store,operatorScope);
 const premiumDispatch=createPremiumDispatch(store,operatorScope,stageEnrollments);
 const production = args.includes("--production");
 let backupActive = false;
@@ -152,25 +157,18 @@ async function validateCoverPath(cover) {
 async function api(req, res, url, inScope=false) {
   const p = url.pathname,
     method = req.method;
-  if(p==='/api/stage-three/premium-reveal'&&method==='POST'){const user=creatorAuth.require(req);validateOrigin(req);return send(res,200,premiumDispatch.reveal(user.id,await body(req)));}
-  if(p==='/api/stage-three/example'){
-    const user=creatorAuth.require(req);
-    if(method==='GET')return send(res,200,stageEnrollments.example(user.id));
-    if(method==='POST'){validateOrigin(req);return send(res,200,stageEnrollments.generate(user.id,await body(req)));}
-    throw new AppError('接口不存在',404);
+  if(p==='/api/stage-finance'&&method==='GET'){
+    const user=creatorAuth.require(req),settings=store.commissionSettings();
+    return store.asUser(user.id,()=>{const summary=store.summary();return send(res,200,{...summary,commissionPolicy:settings,paymentMode:'manual',stageTwoEligible:summary.assignments.some(a=>a.status==='completed'&&a.task.stage===1),stageThreeEligible:stageEnrollments.status(user.id).enrollment?.status==='approved'});});
   }
+  if(['/api/stage-three/premium-reveal','/api/stage-three/example'].includes(p))throw new AppError('此旧版功能已停用，请使用阶段任务',410);
   if(p==='/api/stage-three/enrollment'||p==='/api/stage-three/access'){
     const user=creatorAuth.require(req);
     if(method==='GET')return send(res,200,p.endsWith('/access')?stageEnrollments.access(user.id):stageEnrollments.status(user.id));
     if(method==='POST'&&p.endsWith('/enrollment')){validateOrigin(req);await body(req);return send(res,200,stageEnrollments.apply(user.id));}
     throw new AppError('接口不存在',404);
   }
-  if(p==='/api/journey') {
-    const user=creatorAuth.require(req);
-    if(method==='GET')return send(res,200,journeys.get(user.id));
-    if(method==='PATCH'){validateOrigin(req);return send(res,200,journeys.save(user.id,await body(req)));}
-    throw new AppError('接口不存在',404);
-  }
+  if(p==='/api/journey'){creatorAuth.require(req);throw new AppError('旧版阶段进度已停用，请读取阶段任务',410);}
   if(p==='/api/auth/session'&&method==='GET')return send(res,200,{user:creatorAuth.current(req)});
   if(['/api/auth/register','/api/auth/login','/api/auth/logout'].includes(p)&&method==='POST'){
     validateOrigin(req);const input=await body(req);
@@ -199,6 +197,7 @@ async function api(req, res, url, inScope=false) {
     validateOrigin(req);
     const input=await body(req);
     if(p.endsWith("logout")){adminAuth.logout(req);res.setHeader("Set-Cookie",adminAuth.cookie(""));return send(res,200,{ok:true});}
+    if(p.endsWith('setup')&&process.env.DRAMA_SETUP_TOKEN){const digest=x=>createHash('sha256').update(x).digest();if(!timingSafeEqual(digest(String(input.setupToken||'')),digest(process.env.DRAMA_SETUP_TOKEN)))throw new AppError('初始化令牌不正确',403);}
     const result=p.endsWith("setup")?adminAuth.setup(input):adminAuth.login(req,input);
     res.setHeader("Set-Cookie",adminAuth.cookie(result.token));return send(res,200,{username:result.username,role:result.role||'super',id:result.id||'super'});
   }
@@ -206,6 +205,12 @@ async function api(req, res, url, inScope=false) {
   if(management&&operator)operatorScope.guard(operator,p,method);
   if(p.startsWith("/api/admin/")) {
     const actor=adminAuth.requireAdmin(req);
+    if(p==='/api/admin/commission-policy'){
+      adminAuth.requireSuper(req);
+      if(method==='GET')return send(res,200,{...store.commissionSettings(),paymentMode:'manual'});
+      if(method==='POST'){validateOrigin(req);const input=await body(req);return send(res,200,store.audited(actor,'commission.policy','global',()=>store.setCommissionRate(input.rate),{rate:input.rate}));}
+      throw new AppError('接口不存在',404);
+    }
     if(p==='/api/admin/agents'&&method==='GET'){adminAuth.requireSuper(req);return send(res,200,{agents:adminAuth.agents().map(a=>({...a,customers:store.db.prepare('SELECT COUNT(*) AS n FROM creator_accounts c JOIN invitations i ON i.id=c.invite_id WHERE i.owner_id=?').get(a.id).n}))});}
     if(p==='/api/admin/agents'&&method==='POST'){adminAuth.requireSuper(req);validateOrigin(req);return send(res,201,adminAuth.createAgent(actor,await body(req)));}
     const agentState=p.match(/^\/api\/admin\/agents\/([^/]+)\/state$/);
@@ -366,7 +371,7 @@ async function api(req, res, url, inScope=false) {
   if (method === "POST" && restoredMaterial)
     return send(res, 200, store.audited(actor,"material.restore",restoredMaterial[1],()=>store.restoreMaterial(restoredMaterial[1])));
   if (method === "POST" && p === "/api/assignments")
-    return send(res, 201, store.claim(input.taskId));
+    return send(res, 201, store.claim(input.taskId,input.expected));
   if (method === "POST" && p === "/api/tasks") {
     await validateCoverPath(input.cover);
     return send(res, 201, store.audited(actor,"task.create","",()=>store.createTask(input)));
@@ -422,7 +427,7 @@ const server = http.createServer(async (req, res) => {
   try {
     const requestHost = new URL("http://" + req.headers.host).hostname;
     if (
-      !["localhost", "127.0.0.1", "[::1]", "terminal.local"].includes(
+      !["localhost", "127.0.0.1", "[::1]", "terminal.local",...(process.env.DRAMA_ALLOWED_HOSTS||'').split(',').map(x=>x.trim()).filter(Boolean)].includes(
         requestHost,
       )
     )

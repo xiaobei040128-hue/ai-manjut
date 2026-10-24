@@ -97,7 +97,7 @@ const parse = (v, fallback = {}) => {
 };
 const text = (v, max = 500) =>
   typeof v === "string" ? v.trim().slice(0, max) : "";
-export function createStore(file) {
+export function createStore(file, {fixtures=false}={}) {
   if (file !== ":memory:") mkdirSync(dirname(file), { recursive: true });
   const db = new DatabaseSync(file);
   db.exec(
@@ -127,6 +127,14 @@ export function createStore(file) {
  `);
   if (!db.prepare("PRAGMA table_info(notifications)").all().some((c) => c.name === "task_id"))
     db.exec("ALTER TABLE notifications ADD COLUMN task_id TEXT REFERENCES tasks(id)");
+  if (!db.prepare('PRAGMA table_info(tasks)').all().some(c=>c.name==='stage')) db.exec('ALTER TABLE tasks ADD COLUMN stage INTEGER NOT NULL DEFAULT 1');
+  db.exec(`CREATE TABLE IF NOT EXISTS commission_policy(id INTEGER PRIMARY KEY CHECK(id=1),rate_bps INTEGER,updated_at TEXT NOT NULL);
+    INSERT OR IGNORE INTO commission_policy VALUES(1,NULL,'');
+    CREATE TABLE IF NOT EXISTS assignment_terms(assignment_id TEXT PRIMARY KEY REFERENCES assignments(id),amount INTEGER NOT NULL,commission INTEGER NOT NULL,rate_bps INTEGER,stage INTEGER NOT NULL);
+    INSERT OR IGNORE INTO assignment_terms SELECT a.id,t.deposit,t.commission,NULL,t.stage FROM assignments a JOIN tasks t ON t.id=a.task_id;`);
+  const policy=()=>db.prepare('SELECT * FROM commission_policy WHERE id=1').get();
+  const quote=row=>{const rate=policy().rate_bps;return {...row,commission:rate===null?row.commission:Math.round(row.deposit*rate/10000),commission_rate_bps:rate};};
+  function frozenTask(a,t){const terms=db.prepare('SELECT * FROM assignment_terms WHERE assignment_id=?').get(a.id);return terms?{...t,deposit:terms.amount,commission:terms.commission,commission_rate_bps:terms.rate_bps,stage:terms.stage}:t;}
   const context = new AsyncLocalStorage();
   const owner = () => context.getStore() || 'legacy';
   const scoped = () => !!context.getStore();
@@ -179,7 +187,7 @@ export function createStore(file) {
         "",
         now(),
       );
-      run(
+      if(fixtures)run(
         "INSERT INTO ledger(kind,amount,balance_after,note,operation_key,created_at) VALUES(?,?,?,?,?,?)",
         "credit",
         200000,
@@ -204,7 +212,7 @@ export function createStore(file) {
     cover,
     badge,
     slots,
-  ] of catalog)
+  ] of (fixtures?catalog:[]))
     run(
       "INSERT OR IGNORE INTO tasks(id,title,platform,episodes,language,deposit,commission,posts,genre,description,cover,badge,slots,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
       id,
@@ -241,13 +249,13 @@ export function createStore(file) {
   function ledger(id, kind, amount, note, operation) {
     const userId=id?get('SELECT owner_id FROM assignments WHERE id=?',id).owner_id:owner();
     const current=balance(userId);
-    if(current+amount<0)throw new AppError('测试余额不足，请先查看钱包中的可用余额',409);
+    if(current+amount<0)throw new AppError('可用余额不足，请先查看钱包中的可用余额',409);
     run("INSERT INTO ledger(assignment_id,kind,amount,balance_after,note,operation_key,created_at,owner_id) VALUES(?,?,?,?,?,?,?,?)",id,kind,amount,current+amount,note,operation,now(),userId);
   }
   function task(row) {
     if (!row) return null;
     return {
-      ...row,
+      ...quote(row),
       materials: all(
         "SELECT * FROM materials WHERE task_id=? AND active=1 ORDER BY created_at,id",
         row.id,
@@ -288,7 +296,7 @@ export function createStore(file) {
     }));
     return {
       ...a,
-      task: getTask(a.task_id),
+      task: frozenTask(a,getTask(a.task_id)),
       draft: parse(a.draft),
       uploads: all(
         "SELECT * FROM uploads WHERE assignment_id=? ORDER BY created_at,id",
@@ -315,13 +323,13 @@ export function createStore(file) {
     const bookmarks = all("SELECT task_id FROM creator_bookmarks WHERE user_id=?",owner()).map((x) => x.task_id);
     const saved = new Set(bookmarks);
     const materials = group(all("SELECT * FROM materials WHERE active=1 ORDER BY created_at,id"), "task_id");
-    const tasks = all("SELECT * FROM tasks ORDER BY created_at,id").map((row) => ({...row,materials:materials.get(row.id)||[],bookmarked:saved.has(row.id),remaining:Math.max(0,row.slots-(taken.get(row.id)||0)),tags:[row.genre,row.language,row.platform],regions:["US","UK","CA"]}));
+    const tasks = all("SELECT * FROM tasks ORDER BY created_at,id").map((row) => ({...quote(row),materials:materials.get(row.id)||[],bookmarked:saved.has(row.id),remaining:Math.max(0,row.slots-(taken.get(row.id)||0)),tags:[row.genre,row.language,row.platform],regions:["US","UK","CA"]}));
     const taskMap = new Map(tasks.map((t) => [t.id,t]));
     const uploads = group(all("SELECT * FROM uploads WHERE assignment_id IS NOT NULL ORDER BY created_at,id"), "assignment_id");
     const evidence = group(all("SELECT su.submission_id,u.* FROM uploads u JOIN submission_uploads su ON su.upload_id=u.id ORDER BY u.created_at,u.id"), "submission_id");
     const submissions = group(all("SELECT * FROM submissions ORDER BY version DESC").map((s) => ({...s,links:parse(s.links,[]),uploads:(evidence.get(s.id)||[]).map(({submission_id,...u})=>u)})), "assignment_id");
     const events = group(all("SELECT * FROM events ORDER BY id"), "assignment_id");
-    const assignments = rawAssignments.map((a) => ({...a,task:taskMap.get(a.task_id),draft:parse(a.draft),uploads:uploads.get(a.id)||[],events:events.get(a.id)||[],submissions:submissions.get(a.id)||[]}));
+    const assignments = rawAssignments.map((a) => ({...a,task:frozenTask(a,taskMap.get(a.task_id)),draft:parse(a.draft),uploads:uploads.get(a.id)||[],events:events.get(a.id)||[],submissions:submissions.get(a.id)||[]}));
     const hasFunds=!!get("SELECT name FROM sqlite_master WHERE type='table' AND name='fund_requests'");
     const withdrawalHeld=hasFunds?get("SELECT COALESCE(SUM(amount),0) AS n FROM fund_requests WHERE kind='withdrawal' AND status IN ('review','paying')"+(scoped()?" AND user_id=?":""),...(scoped()?[owner()]:[])).n:0;
     const rows = scoped()?all("SELECT * FROM ledger WHERE owner_id=? ORDER BY id DESC",owner()):all("SELECT * FROM ledger ORDER BY id DESC");
@@ -331,13 +339,13 @@ export function createStore(file) {
         available: balance(),
         withdrawalHeld,
         held: withdrawalHeld + get(
-          "SELECT COALESCE(SUM(t.deposit),0) AS n FROM assignments a JOIN tasks t ON t.id=a.task_id WHERE a.status IN ('active','review','revision')"+(scoped()?" AND a.owner_id=?":""),...(scoped()?[owner()]:[]),
+          "SELECT COALESCE(SUM(COALESCE(f.amount,t.deposit)),0) AS n FROM assignments a JOIN tasks t ON t.id=a.task_id LEFT JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.status IN ('active','review','revision')"+(scoped()?" AND a.owner_id=?":""),...(scoped()?[owner()]:[]),
         ).n,
         earned: get(
           "SELECT COALESCE(SUM(amount),0) AS n FROM ledger WHERE kind='reward'"+(scoped()?" AND owner_id=?":""),...(scoped()?[owner()]:[]),
         ).n,
         currency: "USD",
-        testMode: true,
+        testMode: false,
       },
       counts: {
         active: assignments.filter((a) =>
@@ -360,7 +368,7 @@ export function createStore(file) {
     if (!["active", "revision"].includes(a.status))
       throw new AppError("当前任务状态不允许修改", 409);
   }
-  function claim(taskId) {
+  function claim(taskId,expected) {
     return atomic(() => {
       const t = getTask(taskId);
       if (!t.active) throw new AppError("该任务已暂停领取", 409);
@@ -369,6 +377,12 @@ export function createStore(file) {
         taskId,owner(),
       );
       if (old) return assignment(old.id);
+      if(policy().rate_bps!==null && scoped()){
+        if(t.stage===2&&!get("SELECT a.id FROM assignments a JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.owner_id=? AND a.status='completed' AND f.stage=1",owner()))throw new AppError('请先完成第一阶段任务并通过审核',403);
+        if(t.stage===3&&!get("SELECT id FROM stage_enrollments WHERE user_id=? AND status='approved' ORDER BY rowid DESC LIMIT 1",owner()))throw new AppError('请先完成第三阶段报名审核',403);
+      }
+      if(!fixtures&&policy().rate_bps===null)throw new AppError('平台尚未配置佣金比例',409);
+      if(policy().rate_bps!==null&&scoped()&&(!expected||expected.amount!==t.deposit||expected.commission!==t.commission||expected.rateBps!==t.commission_rate_bps))throw new AppError('任务金额或佣金规则已更新，请刷新后确认领取',409);
       if (t.remaining < 1) throw new AppError("任务名额已满", 409);
       const id = randomUUID(),
         created = now(),
@@ -381,8 +395,9 @@ export function createStore(file) {
         created,
         deadline,owner(),
       );
+      run('INSERT INTO assignment_terms VALUES(?,?,?,?,?)',id,t.deposit,t.commission,t.commission_rate_bps,t.stage);
       ledger(id, "hold", -t.deposit, "领取任务 · " + t.title, "claim:" + id);
-      event(id, "claimed", "任务已领取，测试额度已冻结");
+      event(id, "claimed", "任务已领取，任务本金已冻结");
       notify("新任务已领取", t.title + " · 请在 48 小时内完成发布", id);
       return assignment(id);
     });
@@ -543,22 +558,22 @@ export function createStore(file) {
           id,
           "release",
           a.task.deposit,
-          "预付测试额度返还 · " + a.task.title,
+          "任务本金返还 · " + a.task.title,
           "release:" + id,
         );
         ledger(
           id,
           "reward",
           a.task.commission,
-          "任务测试佣金 · " + a.task.title,
+          "任务佣金 · " + a.task.title,
           "reward:" + id,
         );
         event(
           id,
           "approved",
-          "审核通过，预付测试额度已返还，佣金已记入测试账本",
+          "审核通过，任务本金已返还，佣金已记入资金账本",
         );
-        notify("任务审核通过", a.task.title + " · 测试佣金已到账", id);
+        notify("任务审核通过", a.task.title + " · 任务佣金已到账", id);
       } else {
         event(id, "changes", "审核要求修改：" + reason);
         notify("任务需要修改", reason, id);
@@ -579,8 +594,8 @@ export function createStore(file) {
         "取消任务返还 · " + a.task.title,
         "cancel:" + id,
       );
-      event(id, "cancelled", "任务已取消，冻结测试额度已返还");
-      notify("任务已取消", a.task.title + " · 测试额度已返还", id);
+      event(id, "cancelled", "任务已取消，冻结任务本金已返还");
+      notify("任务已取消", a.task.title + " · 任务本金已返还", id);
       return assignment(id);
     });
   }
@@ -597,8 +612,9 @@ export function createStore(file) {
       !["中文", "英文"].includes(language)
     )
       throw new AppError("请完整填写剧集名称、简介、发布平台与语言");
+    if(!/^(?:0|[1-9]\d{0,5})(?:\.\d{1,2})?$/.test(String(input.deposit)))throw new AppError('任务金额最多保留两位小数');
     const deposit = Math.round(Number(input.deposit) * 100),
-      commission = Math.round(Number(input.commission) * 100),
+      commission = policy().rate_bps===null?Math.round(Number(input.commission) * 100):Math.round(deposit*policy().rate_bps/10000),
       posts = Number(input.posts),
       episodes = Number(input.episodes),
       slots = Number(input.slots ?? 30);
@@ -629,10 +645,11 @@ export function createStore(file) {
       )
     )
       throw new AppError("请选择或上传有效封面");
-    return {title,description,platform,language,genre:genre||"都市剧情",deposit,commission,posts,episodes,slots,cover};
+    const stage=Number(input.stage??1);if(![1,2,3].includes(stage))throw new AppError('请选择第一、二或三阶段');
+    return {title,description,platform,language,genre:genre||"都市剧情",deposit,commission,posts,episodes,slots,cover,stage};
   }
   function createTask(input) {
-    const {title,description,platform,language,genre,deposit,commission,posts,episodes,slots,cover}=validateTask(input);
+    const {title,description,platform,language,genre,deposit,commission,posts,episodes,slots,cover,stage}=validateTask(input);
     const id = randomUUID();
     run(
       "INSERT INTO tasks(id,title,platform,episodes,language,deposit,commission,posts,genre,description,cover,badge,slots,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
@@ -651,11 +668,14 @@ export function createStore(file) {
       slots,
       now(),
     );
+    run('UPDATE tasks SET stage=? WHERE id=?',stage,id);
     notify("任务已发布", title + " 已在任务大厅上架", null, id);
     return getTask(id);
   }
   return {
     db,
+    commissionSettings:policy,
+    setCommissionRate(rate){if(!/^(?:0|[1-9]\d?)(?:\.\d{1,2})?$|^100(?:\.0{1,2})?$/.test(String(rate)))throw new AppError('佣金比例须为 0–100，最多两位小数');const bps=Math.round(Number(rate)*100);run('UPDATE commission_policy SET rate_bps=?,updated_at=? WHERE id=1',bps,now());return policy();},
     asUser:(id,fn)=>context.run(id,fn),
     summary,
     getTask,
@@ -671,10 +691,12 @@ export function createStore(file) {
     updateTask(id,input) {
       return atomic(() => {
         const old=getTask(id),next=validateTask({...old,deposit:old.deposit/100,commission:old.commission/100,...input});
+        if(policy().rate_bps!==null&&input.commission!==undefined&&Math.round(Number(input.commission)*100)!==next.commission)throw new AppError('佣金由统一比例计算，不能单独修改',409);
         const claims=get("SELECT COUNT(*) AS n FROM assignments WHERE task_id=?",id).n;
-        if(claims && ["deposit","commission","posts","platform","language"].some(key=>next[key]!==old[key])) throw new AppError("已有领取记录，金额、发布数量、平台和语言已锁定",409);
+        if(claims && ["deposit","commission","posts","platform","language","stage"].some(key=>next[key]!==old[key])) throw new AppError("已有领取记录，金额、发布数量、平台和语言已锁定",409);
         if(next.slots < old.slots-old.remaining) throw new AppError("开放名额不能小于已使用名额",409);
         run("UPDATE tasks SET title=?,description=?,platform=?,language=?,genre=?,deposit=?,commission=?,posts=?,episodes=?,slots=?,cover=? WHERE id=?",next.title,next.description,next.platform,next.language,next.genre,next.deposit,next.commission,next.posts,next.episodes,next.slots,next.cover,id);
+        run('UPDATE tasks SET stage=? WHERE id=?',next.stage,id);
         return getTask(id);
       });
     },
