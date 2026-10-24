@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, date, money } from "../api";
 import { countryName } from "../countries";
 import { Modal, Badge } from "./components";
@@ -17,8 +17,11 @@ export default function CustomerDetails({
     [error, setError] = useState(""),
     [success, setSuccess] = useState(""),
     [confirm, setConfirm] = useState(false);
+  const alive=useRef(true),lock=useRef(false);
+  useEffect(()=>{alive.current=true;return()=>{alive.current=false;};},[]);
   async function action(kind: "notes" | "revoke-sessions") {
-    if (busy) return;
+    if (lock.current) return;
+    lock.current=true;
     setBusy(true);
     setError("");
     setSuccess("");
@@ -28,17 +31,19 @@ export default function CustomerDetails({
         "POST",
         kind === "notes" ? { note } : {},
       );
+      if(!alive.current)return;
       setSuccess(
         kind === "notes"
           ? "内部备注已保存"
           : "已退出此客户的全部设备，需要重新登录",
       );
       setConfirm(false);
-      await onRefresh();
+      try { await onRefresh(); } catch { if(alive.current)setError("操作已保存，客户列表暂未刷新；请刷新核对，无需重复操作。"); }
     } catch (e) {
-      setError((e as Error).message);
+      if(alive.current)setError((e as Error).message);
     } finally {
-      setBusy(false);
+      lock.current=false;
+      if(alive.current)setBusy(false);
     }
   }
   return (

@@ -59,7 +59,7 @@ export default function Finance({isSuper=true}:{isSuper?:boolean}) {
     } | null>(null),
     [page, setPage] = useState(1),
     key = useRef("");
-  const alive=useRef(true),version=useRef(0),mutation=useRef(false);
+  const alive=useRef(true),version=useRef(0),mutation=useRef(false),privateVersion=useRef(0);
   async function load() {
     const current=++version.current;
     const next=await api<Snapshot>("/admin/finance");
@@ -70,9 +70,10 @@ export default function Finance({isSuper=true}:{isSuper?:boolean}) {
     const read=()=>{if(!mutation.current)void load().catch(e=>{if(alive.current)setError(e.message);});};
     read();
     const timer=setInterval(()=>{if(document.visibilityState==='visible')read();},15000);
-    return()=>{alive.current=false;version.current++;clearInterval(timer);};
+    return()=>{alive.current=false;version.current++;privateVersion.current++;clearInterval(timer);};
   },[]);
   function open(t: Target) {
+    privateVersion.current++;
     setTarget(t);
     setNote("");
     setReference("");
@@ -106,6 +107,7 @@ export default function Finance({isSuper=true}:{isSuper?:boolean}) {
               },
       );
       if(!alive.current)return;
+      privateVersion.current++;
       setTarget(null);
       setPrivate(null);
       setSuccess("操作已保存。");
@@ -652,7 +654,7 @@ export default function Finance({isSuper=true}:{isSuper?:boolean}) {
           description={
             "操作对象 #" + target.id.slice(0, 8) + " · 每次处理均会写入操作日志"
           }
-          onClose={() => !busy && (setTarget(null), setPrivate(null))}
+          onClose={() => {if(!busy){privateVersion.current++;setTarget(null);setPrivate(null);}}}
         >
           <form className="ad-creator-form" onSubmit={perform}>
             {["identity", "bank"].includes(target.type) && (
@@ -664,20 +666,12 @@ export default function Finance({isSuper=true}:{isSuper?:boolean}) {
                   type="button"
                   className="ad-button secondary"
                   onClick={async () => {
+                    const current=++privateVersion.current;
                     try {
-                      setPrivate(
-                        await api(
-                          "/admin/finance/" +
-                            target.type +
-                            "/" +
-                            target.id +
-                            "/reveal",
-                          "POST",
-                          {},
-                        ),
-                      );
-                    } catch (e) {
-                      setError((e as Error).message);
+                      const details=await api<NonNullable<typeof privateData>>("/admin/finance/"+target.type+"/"+target.id+"/reveal","POST",{});
+                      if(alive.current&&current===privateVersion.current)setPrivate(details);
+                    } catch(e) {
+                      if(alive.current&&current===privateVersion.current)setError((e as Error).message);
                     }
                   }}
                 >

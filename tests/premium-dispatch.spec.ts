@@ -59,3 +59,27 @@ test('successful deposit approval remains confirmed when list refresh fails',asy
  const snapshot=await(await page.request.get('/api/finance')).json();expect(snapshot.requests.find((r:{id:string})=>r.id===deposit.id).status).toBe('completed');
  await page.unroute('**/api/admin/finance');await page.getByRole('button',{name:'刷新',exact:true}).click();await expect(row).toContainText('已到账');await expect(row.getByRole('button',{name:'审核通过',exact:true})).toHaveCount(0);
 });
+
+test('delayed identity reveal cannot populate another customer review dialog',async({page})=>{
+ const post=async(path:string,data:unknown)=>{const r=await page.request.post('/api'+path,{data,headers:{'X-Workspace-Request':'1'}});expect(r.ok(),await r.text()).toBeTruthy();return r.json();};
+ await post('/admin/login',{username:'dispatch-browser',password:'DispatchBrowserQA123!'});const invite=await post('/admin/invitations',{});
+ const photo={data:Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),Buffer.alloc(20)]).toString('base64')};
+ for(const [suffix,name,number] of [['a','甲方实名','FIRSTPASSPORT1'],['b','乙方实名','SECONDPASSPORT2']]){await post('/auth/register',{email:'identity-race-'+suffix+'@example.invalid',password:'DispatchBrowserQA123!',inviteCode:invite.code});await post('/finance/identity',{name,documentType:'护照',number,frontPhoto:photo,backPhoto:photo});}
+ await page.goto('/admin#finance');await page.getByRole('button',{name:/实名认证/}).click();
+ const rowA=page.getByRole('row').filter({hasText:'identity-race-a@example.invalid'}),rowB=page.getByRole('row').filter({hasText:'identity-race-b@example.invalid'});
+ await rowA.getByRole('button',{name:'查看资料'}).click();
+ let release!:()=>void,capture!:()=>void;const held=new Promise<void>(r=>{release=r;}),captured=new Promise<void>(r=>{capture=r;});
+ await page.route('**/api/admin/finance/identity/*/reveal',async route=>{const response=await route.fetch();capture();await held;await route.fulfill({response});});
+ const dialog=page.getByRole('dialog');await dialog.getByRole('button',{name:'查看完整审核资料'}).click();await captured;
+ await dialog.getByRole('button',{name:'关闭对话框'}).click();await rowB.getByRole('button',{name:'查看资料'}).click();release();await page.unrouteAll({behavior:'wait'});
+ await expect(dialog.getByText('FIRSTPASSPORT1',{exact:true})).toHaveCount(0);await expect(dialog.getByText('甲方实名',{exact:true})).toHaveCount(0);
+ await dialog.getByRole('button',{name:'查看完整审核资料'}).click();await expect(dialog.getByText('SECONDPASSPORT2',{exact:true})).toBeVisible();await expect(dialog.getByText('乙方实名',{exact:true})).toBeVisible();
+});
+
+test('customer note success is preserved when directory refresh fails',async({page})=>{
+ const login=await page.request.post('/api/admin/login',{data:{username:'dispatch-browser',password:'DispatchBrowserQA123!'},headers:{'X-Workspace-Request':'1'}});expect(login.ok()).toBeTruthy();
+ await page.goto('/admin#accounts');await page.getByRole('textbox',{name:'搜索客户',exact:true}).fill('identity-race-b@example.invalid');await page.getByRole('button',{name:'客户档案',exact:true}).click();
+ const dialog=page.getByRole('dialog');await dialog.getByRole('textbox',{name:'内部备注',exact:true}).fill('已核对客户资料，等待后续跟进');
+ await page.route('**/api/admin/accounts',route=>route.abort());await dialog.getByRole('button',{name:'保存内部备注'}).click();await expect(dialog.getByRole('status')).toContainText('内部备注已保存');await expect(dialog.getByRole('alert')).toContainText('无需重复操作');
+ await page.unroute('**/api/admin/accounts');const customers=await(await page.request.get('/api/admin/accounts')).json();expect(customers.users.find((u:{email:string})=>u.email==='identity-race-b@example.invalid').admin_note).toBe('已核对客户资料，等待后续跟进');
+});
