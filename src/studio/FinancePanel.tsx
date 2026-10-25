@@ -163,7 +163,7 @@ export default function FinancePanel({
   const load = useCallback(async () => {
     const request = ++version.current;
     const snapshot = await api<FinanceSnapshot>("/finance");
-    if (mounted.current && request === version.current) setData(snapshot);
+    if (mounted.current && request === version.current){setData(snapshot);setForm(old=>snapshot.cards.some(c=>c.id===old.cardId&&c.status==='approved')?old:{...old,cardId:snapshot.cards.find(c=>c.status==='approved')?.id||''});}
     return snapshot;
   }, []);
   useEffect(() => {
@@ -196,7 +196,7 @@ export default function FinancePanel({
     setModal(kind);
   }
   useEffect(()=>{
-    const requested=new URLSearchParams(location.search).get('finance');if(requested==='card'||requested==='withdrawal')open(requested);
+    const query=new URLSearchParams(location.search),requested=query.get('finance');if(requested==='card'||requested==='withdrawal'){query.delete('finance');history.replaceState(null,'','/?'+query.toString());open(requested);}
   },[]);
   async function refresh() {
     if (refreshing) return;
@@ -219,6 +219,13 @@ export default function FinancePanel({
     }
     const kind = modal;
     if (!kind) return;
+    if(modal==='withdrawal'){
+      const amount=/^(?:0|[1-9]\d{0,5})(?:\.\d{1,2})?$/.test(form.amount||'')?Math.round(Number(form.amount)*100):0;
+      if(!data){setError('正在读取余额，请稍后再试');return;}
+      if(amount<100){setError('最低提款金额为 $1.00');return;}
+      if(amount>data.account.available){setError('余额不足，可用余额 '+money(data.account.available));return;}
+      if(!data.cards.some(c=>c.id===form.cardId&&c.status==='approved')){setError('请选择提款方式');return;}
+    }
     submitting.current = true;
     keyboard.hide();
     setBusy(true);
@@ -292,6 +299,8 @@ export default function FinancePanel({
   );
   const approvedCards =
     data?.cards.filter((c) => c.status === "approved") || [];
+  const withdrawalCents=Math.round(Number(form.amount||0)*100);
+  const insufficient=modal==='withdrawal'&&!!data&&Number.isFinite(withdrawalCents)&&withdrawalCents>data.account.available;
   const requests =
     data?.requests.filter(
       (r) =>
@@ -524,7 +533,9 @@ export default function FinancePanel({
               )}
               {["deposit", "withdrawal"].includes(modal) && (
                 <>
+                  {modal==='withdrawal'&&<div className="withdrawal-available"><span>可用余额</span><b>{data?money(data.account.available):'读取中…'}</b></div>}
                   {field("金额（USD）", "amount", "至少 1 USD，最多两位小数")}
+                  {insufficient&&<p className="s-error-box" role="alert">余额不足，最多可申请 {money(data!.account.available)}。</p>}
                   {modal === "deposit" ? (
                     <>
                       {field(
@@ -539,7 +550,7 @@ export default function FinancePanel({
                   ) : (
                     <>
                       <label>
-                        收款提款方式
+                        收款方式
                         <select
                           required
                           value={form.cardId || ""}
@@ -550,6 +561,7 @@ export default function FinancePanel({
                             }))
                           }
                         >
+                          <option value="" disabled>请选择提款方式</option>
                           {approvedCards.map((c) => (
                             <option value={c.id} key={c.id}>
                               {c.bank} {c.number_mask}
@@ -569,7 +581,7 @@ export default function FinancePanel({
                   {error}
                 </p>
               )}
-              <button className="s-auth-submit" disabled={busy}>
+              <button className="s-auth-submit" disabled={busy||modal==='withdrawal'&&(!data||insufficient||!form.cardId||withdrawalCents<100||!Number.isFinite(withdrawalCents))}>
                 {busy ? "正在提交…" : modal==='card'?"保存提款方式":"提交审核"}
               </button>
             </form>

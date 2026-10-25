@@ -32,7 +32,7 @@ export function createFinance(store,dataDir){
  function money(userId,kind,amount,note,operation){const balance=db.prepare('SELECT COALESCE(SUM(amount),0) AS n FROM ledger WHERE owner_id=?').get(userId).n;if(balance+amount<0)throw new AppError('可用余额不足',409);db.prepare('INSERT INTO ledger(kind,amount,balance_after,note,operation_key,created_at,owner_id) VALUES(?,?,?,?,?,?,?)').run(kind,amount,balance+amount,note,operation,stamp(),userId);}
  const requestRows=id=>db.prepare('SELECT f.*,b.bank,b.number_mask FROM fund_requests f LEFT JOIN bank_cards b ON b.id=f.card_id'+(id?' WHERE f.user_id=?':'')+' ORDER BY f.created_at DESC').all(...(id?[id]:[]));
  return {
-  snapshot(id){const u=user(id);return {identity:safeIdentity(identity(id)),cards:db.prepare('SELECT * FROM bank_cards WHERE user_id=? ORDER BY created_at DESC').all(id).map(safeCard),requests:requestRows(id),account:{frozen:!!u.frozen,freeze_reason:u.freeze_reason}};},
+  snapshot(id){const u=user(id);return {identity:safeIdentity(identity(id)),cards:db.prepare('SELECT * FROM bank_cards WHERE user_id=? ORDER BY created_at DESC').all(id).map(safeCard),requests:requestRows(id),account:{available:db.prepare('SELECT COALESCE(SUM(amount),0) n FROM ledger WHERE owner_id=?').get(id).n,frozen:!!u.frozen,freeze_reason:u.freeze_reason}};},
   admin(owners=null){
    if(owners!==null&&(!Array.isArray(owners)||owners.some(id=>typeof id!=='string')))throw new AppError('无效客户范围');
    const selected=owners===null?null:JSON.stringify(owners),args=[selected,selected];
