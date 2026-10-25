@@ -47,18 +47,16 @@ export default function RegistrationReward({amount,onClose,onStart}:{amount:numb
     <div className="registration-scene-shade" aria-hidden="true"/>
     <div className="registration-brand"><BrandMark/><span>STUDIO</span></div>
     <button ref={close} className="registration-close" aria-label="Skip welcome animation" onClick={onClose}><Cross2Icon/></button>
-    <span className="registration-scene-caption">YOUR NEXT CHAPTER</span>
    </div>
    <div className="registration-copy">
-    <span className="registration-eyebrow"><span/>REGISTRATION COMPLETE</span>
+    <span className="registration-eyebrow"><CheckIcon/>REGISTRATION COMPLETE</span>
     <h2 id="registration-reward-title">Welcome <em>aboard.</em></h2>
-    <p id="registration-reward-description">A new story. A little head start.</p>
+    <p id="registration-reward-description">Your first chapter starts here.</p>
     <div className="registration-amount">
-     <div className="registration-gift-label"><span>01 / WELCOME GIFT</span><small>Made for your first chapter.</small></div>
+     <div className="registration-gift-label"><span>YOUR WELCOME GIFT</span></div>
      <strong aria-label={money(amount)}><span aria-hidden="true">{money(shown)}</span></strong>
      <div className="registration-credit" aria-live="polite">{ready?<><CheckIcon/>Added to your available balance</>:<>Revealing your welcome reward</>}</div>
     </div>
-    <p className="registration-note">A one-time welcome, already in your wallet.</p>
     <button className="registration-start" disabled={!ready} onClick={onStart}>Start creating<ArrowRightIcon/></button>
     <div className="registration-tools">
      <button className="registration-replay" onClick={()=>void replay()}><ReloadIcon/>Replay welcome</button>
