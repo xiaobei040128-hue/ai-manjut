@@ -363,7 +363,7 @@ export function createStore(file, {fixtures=false}={}) {
         available: rows.reduce((sum,row)=>sum+row.amount,0),
         withdrawalHeld,
         coverHeld,
-        held: coverHeld + withdrawalHeld + get(
+        held: coverHeld + (get("SELECT name FROM sqlite_master WHERE type='table' AND name='community_license_orders'")?get("SELECT COALESCE(SUM(amount),0) n FROM community_license_orders WHERE state='purchased' AND "+whereOwner('owner_id'),...scopeArgs).n:0) + withdrawalHeld + get(
           "SELECT COALESCE(SUM(COALESCE(f.amount,t.deposit)),0) AS n FROM assignments a JOIN tasks t ON t.id=a.task_id LEFT JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.status IN ('active','review','revision') AND "+whereOwner("a.owner_id"),...scopeArgs,
         ).n,
         earned: rows.filter(row=>row.kind==='reward').reduce((sum,row)=>sum+row.amount,0),

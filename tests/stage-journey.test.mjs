@@ -24,16 +24,17 @@ test('original onboarding rewards and five explorations persist, validate, isola
   const request=finance.apply(a.id,{kind:'withdrawal',amount:'1',cardId:card.id,operationKey:'first-withdrawal-journey-01'});finance.review('qa','fund',request.id,{decision:'approve'});assert.equal(journey.sync(a.id).newcomer.graduate,false);
   finance.review('qa','fund',request.id,{decision:'paid',reference:'QA-PAID-JOURNEY-001'});const graduated=journey.sync(a.id);assert.equal(graduated.newcomer.complete,true);assert.equal(graduated.rewards[0].amount,200);assert.equal(journey.sync(a.id).rewards.length,0);assert.equal(as(()=>s.summary()).wallet.available,305);
   assert.equal(journey.snapshot(b.id).newcomer.complete,false);assert.throws(()=>journey.submit(b.id,{step:0,answer:0}),e=>e.status===403);
-  const inputs=[{answer:0},{genre:'奇幻爱情',read:true},{rating:4,review:'剧情和画面都很吸引人'},{shared:false}];
+  finance.adjust('qa',a.id,{direction:'credit',amount:'100',note:'版权购买测试资金',operationKey:'community-license-funding-01'});
+  const inputs=[{answer:0},{review:'我觉得人工智能漫剧的画面与剧情都很吸引人'},{genre:'荒岛求生与末日探险'}];let commissions=0;
   for(let step=0;step<5;step++){
    assert.equal(journey.snapshot(a.id).community.code,null);assert.throws(()=>journey.submit(a.id,{step,...inputs[step]}),e=>e.status===409);
    const revealed=journey.reveal(a.id);assert.equal(revealed.community.revealed,step);assert.equal(journey.reveal(a.id).community.revealed,step);
    if(step===0)assert.throws(()=>journey.submit(a.id,{step,answer:1}));
-   const payload=step===4?{code:revealed.community.code}:inputs[step];
+   let payload=inputs[step];if(step>=3){const q=revealed.community.license;assert.equal(q.amount,step===3?6789:4333);assert.equal(journey.reveal(a.id).community.license.commission,q.commission);const before=as(()=>s.summary()).wallet.available;journey.purchaseLicense(a.id,{step,orderId:q.id,amount:q.amount,commission:q.commission});assert.equal(as(()=>s.summary()).wallet.available,before-q.amount);const bought=journey.snapshot(a.id).community.license;assert.ok(bought.code);assert.throws(()=>journey.submit(a.id,{step,code:'wrong'}));commissions+=q.commission;payload={code:bought.code};}
    journey.submit(a.id,{step,...payload});assert.throws(()=>journey.submit(a.id,{step,...payload}),e=>e.status===409);
    assert.equal(journey.snapshot(a.id).community.completed,step+1);
   }
   assert.equal(enrollment.status(a.id).eligible,true);assert.equal(enrollment.status(b.id).eligible,false);
-  assert.equal(createStageJourney(s).snapshot(a.id).community.completed,5);assert.equal(journey.snapshot(b.id).community.completed,0);assert.equal(as(()=>s.summary()).wallet.available,305);
+  assert.equal(createStageJourney(s).snapshot(a.id).community.completed,5);assert.equal(journey.snapshot(b.id).community.completed,0);assert.equal(as(()=>s.summary()).wallet.available,10506+commissions);
  }finally{s.close();}
 });

@@ -172,6 +172,7 @@ async function api(req, res, url, inScope=false) {
       if(p==='/api/stage-journey/cover/submit')return send(res,200,stageJourney.submitCover(user.id,input));
       if(p==='/api/stage-journey/sync')return send(res,200,stageJourney.sync(user.id));
       if(p==='/api/stage-journey/reveal')return send(res,200,stageJourney.reveal(user.id));
+      if(p==='/api/stage-journey/license/purchase')return send(res,200,stageJourney.purchaseLicense(user.id,input));
       if(p==='/api/stage-journey/submit')return send(res,200,stageJourney.submit(user.id,input));
     }
     throw new AppError('接口不存在',404);
