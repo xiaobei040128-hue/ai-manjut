@@ -265,11 +265,11 @@ export default function Finance({isSuper=true}:{isSuper?:boolean}) {
             setQuery("");
           }}
         >
-          <span>银行卡待审核</span>
+          <span>提款方式待审核</span>
           <strong>
             {data?.cards.filter((r) => r.status === "review").length || 0}
           </strong>
-          <small>核对持卡人与实名资料</small>
+          <small>核对收款账户姓名与实名资料</small>
         </button>
       </section>
       <div className="ad-callout" style={{ marginBottom: 20 }}>
@@ -285,7 +285,7 @@ export default function Finance({isSuper=true}:{isSuper?:boolean}) {
               ["withdrawal", "提现审批"],
               ["deposit", "充值审批"],
               ["identity", "实名认证"],
-              ["bank", "银行卡"],
+              ["bank", "提款方式"],
               ["account", isSuper ? "账户与上下分" : "账户状态"],
             ].map(([id, label]) => (
               <button
