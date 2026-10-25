@@ -197,7 +197,7 @@ export default function FinancePanel({
     setModal(kind);
   }
   useEffect(()=>{
-    const query=new URLSearchParams(location.search),requested=query.get('finance');if(requested==='card'||requested==='withdrawal'){query.delete('finance');history.replaceState(null,'','/?'+query.toString());open(requested);}
+    const query=new URLSearchParams(location.search),requested=query.get('finance');if(requested==='card'||requested==='withdrawal'||requested==='deposit'){const amount=query.get('amount')||'';query.delete('finance');query.delete('amount');history.replaceState(null,'','/?'+query.toString());open(requested);if(requested==='deposit'&&/^(?:0|[1-9]\d{0,5})(?:\.\d{1,2})?$/.test(amount)&&Number(amount)>0)setForm(old=>({...old,amount}));}
   },[]);
   async function refresh() {
     if (refreshing) return;
@@ -312,6 +312,8 @@ export default function FinancePanel({
         (filter === "已结束" &&
           ["paid", "completed", "rejected"].includes(r.status)),
     ) || [];
+  const returnDesign=new URLSearchParams(location.search).get('returnDesign');
+  const returnHref=returnDesign&&['advanced','third','newcomer'].includes(returnDesign)?'/?view=app&design='+returnDesign:null;
   const identity = data?.identity;
   const receiptStatus = receipt?.id
     ? identity?.id === receipt.id
@@ -320,6 +322,7 @@ export default function FinancePanel({
     : undefined;
   return (
     <section className="s-finance">
+      {returnHref&&<a className="purchase-return" href={returnHref}>‹ 返回已领取的任务</a>}
       <div className="s-finance-title">
         <h2>账户与资金</h2>
         <button

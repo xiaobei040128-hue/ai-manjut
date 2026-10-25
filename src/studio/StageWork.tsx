@@ -6,6 +6,7 @@ import TaskCelebration from './TaskCelebration';
 import './stage-work.css';
 import {NewcomerProgress,type JourneySnapshot} from './NewcomerProgress';
 import CommunityJourney from './CommunityJourney';
+import PurchaseBalance from './PurchaseBalance';
 import JourneyEffects,{type JourneyEvent} from './JourneyEffects';
 import {playWelcomeChime,unlockWelcomeAudio} from './welcome-audio';
 import './license-gold.css';
@@ -112,7 +113,7 @@ export default function StageWork({stage}:{stage:number}){
  const availableStage=data?(data.stageThreeEligible||data.journey.community.completed===5||data.assignments.some(a=>a.status==='completed'&&a.task.stage===2)?3:data.journey.newcomer.complete?2:1):1;
  useEffect(()=>{if(data&&stage>availableStage)location.replace('/?view=app&design='+['newcomer','advanced','third'][availableStage-1]);},[data,stage,availableStage]);
  if(stage>1&&(!data||stage>availableStage))return <div className="studio native-mode stage-work"><p role="status">正在加载你的计划…</p>{connectionError&&<p role="alert">{connectionError}</p>}</div>;
- if(stage===2)return <CommunityJourney/>;
+ if(stage===2)return <CommunityJourney available={connectionError?null:data?.wallet.available??null} onWalletChange={load}/>;
  return <div className={'studio native-mode stage-work'+(stage===1?' newcomer-current-page':'')}>
   <JourneyEffects event={revealEvent} onClose={closeReveal}/>
   <TaskCelebration award={award} onClose={closeAward}/>
@@ -137,8 +138,8 @@ export default function StageWork({stage}:{stage:number}){
        <h4>剧情概览</h4><p>{task.description}</p>
        {stage!==3&&<><h4>本次任务</h4><p>使用本次作品素材，在 {task.platform} 完成 {task.posts} 条作品发布，并提交发布链接与截图。</p></>}
        </div><div className="stage-story-checkout"><div className="stage-purchase-summary"><div><span>{stage===3?'版权选购金额':'任务金额'}</span><b>{money(task.deposit)}</b></div><div><span>预计收入</span><b>{money(task.commission)}</b></div></div>
-       <button disabled={claiming||!eligible||dailyLimitReached||data.wallet.available<task.deposit||!task.active||task.remaining<1||!!connectionError} onClick={()=>void claim(task)}>{claiming?'正在处理…':stage===3?'购买版权 · '+money(task.deposit):'接受任务 · '+money(task.deposit)}</button>
-       {data.wallet.available<task.deposit&&<a href="/?view=app&page=wallet">余额不足，前往充值 →</a>}
+       {stage===3&&<PurchaseBalance amount={task.deposit} available={connectionError?null:data.wallet.available} returnDesign="third"/>}<button hidden={stage===3&&data.wallet.available<task.deposit} disabled={claiming||!eligible||dailyLimitReached||data.wallet.available<task.deposit||!task.active||task.remaining<1||!!connectionError} onClick={()=>void claim(task)}>{claiming?'正在处理…':stage===3?'购买版权 · '+money(task.deposit):'接受任务 · '+money(task.deposit)}</button>
+       {stage!==3&&data.wallet.available<task.deposit&&<a href="/?view=app&page=wallet">余额不足，前往充值 →</a>}
        <a href={'/?view=app&page=detail&task='+encodeURIComponent(task.id)}>查看素材与任务详情 →</a>
       </div></article>
       :<div className="stage-sealed-invitation"><div className="journey-invitation-art"><div className="journey-invitation-orbit"/><img src="/art/task-invitation-v1.png" alt="未揭晓的任务邀请"/></div><h3>好故事，即将与你相遇</h3>
