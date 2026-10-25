@@ -68,6 +68,7 @@ export function createFinance(store,dataDir){
     const mask=provider==='usdt'?number.slice(0,6)+'…'+number.slice(-6):'**** '+number.slice(-4);
     if(old)db.prepare("UPDATE bank_cards SET bank=?,holder=?,provider=?,network=?,status='review',note='',created_at=?,reviewed_at=NULL WHERE id=?").run(bank,holder,provider,network,stamp(),old.id);
     else{if(db.prepare('SELECT COUNT(*) n FROM bank_cards WHERE user_id=?').get(id).n>=10)throw new AppError('最多添加 10 个提款方式');db.prepare('INSERT INTO bank_cards(id,user_id,bank,holder,number_cipher,number_mask,fingerprint,created_at,provider,network) VALUES(?,?,?,?,?,?,?,?,?,?)').run(randomUUID(),id,bank,holder,encrypt(number),mask,fingerprint,stamp(),provider,network);}
+    if(provider!=='bank'){const saved=db.prepare('SELECT id FROM bank_cards WHERE user_id=? AND fingerprint=?').get(id,fingerprint);db.prepare("UPDATE bank_cards SET status='approved',reviewed_at=? WHERE id=?").run(stamp(),saved.id);store.notifyUser(id,'提款方式已添加','提款方式已保存，可以用于提现。','finance',saved.id);}
     return {ok:true};
    });
   },

@@ -187,7 +187,7 @@ export default function FinancePanel({
     setPhotos({});
     setForm({
       documentType: "居民身份证",
-      provider: "binance",
+      provider: "okx",
       network: "TRC20",
       cardId: data?.cards.find((c) => c.status === "approved")?.id || "",
     });
@@ -244,7 +244,7 @@ export default function FinancePanel({
       );
       if (!mounted.current) return;
       version.current++;
-      setReceipt({ kind: modalTitles[kind], id: result.id });
+      setReceipt({ kind: kind==='card'?'提款方式已添加':modalTitles[kind], id: result.id });
       setModal("");
       setPhotos({});
       setForm({});
@@ -334,7 +334,7 @@ export default function FinancePanel({
         <button onClick={() => open("card")}>
           <CardStackIcon />
           <b>提款方式</b>
-          <small>{approvedCards.length} 张已通过</small>
+          <small>{approvedCards.length} 个已添加</small>
         </button>
         <button onClick={() => open("identity")}>
           <PersonIcon />
@@ -441,7 +441,7 @@ export default function FinancePanel({
         open={!!modal}
         onOpenChange={(v) => !busy && !v && setModal("")}
         title={modal ? modalTitles[modal] : "账户申请"}
-        description="提交后需后台审批，请填写属于本人的资料。"
+        description={modal==='card'?"添加本人的收款账户，保存后即可使用。":"请填写属于本人的资料。"}
       >
         <div className="s-finance-sheet">
           <button
@@ -472,7 +472,7 @@ export default function FinancePanel({
           ) : modal === "withdrawal" &&
             (identity?.status !== "approved" || !approvedCards.length) ? (
             <div className="s-finance-notice">
-              提现前需实名认证和提款方式均审核通过。请先完成资料审核。
+              请先完成实名认证并添加提款方式。
             </div>
           ) : (
             <form onSubmit={submit}>
@@ -513,7 +513,7 @@ export default function FinancePanel({
               {modal === "card" && (
                 <>
                   <div className="payout-method-picker" role="group" aria-label="选择提款方式">
-                   {([['binance','币安','Binance UID'],['okx','OKX','账户 UID'],['usdt','USDT','链上收款地址']] as const).map(([value,label,hint])=><button key={value} type="button" aria-pressed={form.provider===value} onClick={()=>setForm(old=>({...old,provider:value,number:''}))}><span className={'payout-symbol '+value}>{value==='binance'?'◆':value==='okx'?'▪':'₮'}</span><b>{label}</b><small>{hint}</small></button>)}
+                   {([['okx','OKX','账户 UID'],['binance','币安','Binance UID'],['usdt','USDT','链上收款地址']] as const).map(([value,label,hint])=><button key={value} type="button" aria-pressed={form.provider===value} onClick={()=>setForm(old=>({...old,provider:value,number:''}))}><span className={'payout-symbol '+value}><img src={'/brands/'+(value==='binance'?'binance.ico':value==='usdt'?'usdt.svg':'okx.png')} alt={label+' 标志'}/></span><b>{label}</b><small>{hint}</small></button>)}
                   </div>
                   {form.provider==='usdt'&&<label>收款网络<select required value={form.network||'TRC20'} onChange={e=>setForm(old=>({...old,network:e.target.value,number:''}))}><option value="TRC20">TRON · TRC20</option><option value="ERC20">Ethereum · ERC20</option><option value="BEP20">BNB Smart Chain · BEP20</option></select></label>}
                   {field(form.provider==='usdt'?'USDT 收款地址':form.provider==='okx'?'OKX UID':'币安 UID','number',form.provider==='usdt'?'粘贴对应网络的收款地址':'填写本人账户 UID')}
@@ -569,7 +569,7 @@ export default function FinancePanel({
                 </p>
               )}
               <button className="s-auth-submit" disabled={busy}>
-                {busy ? "正在提交…" : "提交审核"}
+                {busy ? "正在提交…" : modal==='card'?"保存提款方式":"提交审核"}
               </button>
             </form>
           )}
