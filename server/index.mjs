@@ -166,6 +166,7 @@ async function api(req, res, url, inScope=false) {
     if(p==='/api/stage-journey'&&method==='GET')return send(res,200,stageJourney.snapshot(user.id));
     if(method==='POST'){
       validateOrigin(req);const input=await body(req);
+      if(p==='/api/stage-journey/binding-completion')return send(res,200,stageJourney.bindingCompletion(user.id));
       if(p==='/api/stage-journey/take')return send(res,200,stageJourney.take(user.id));
       if(p==='/api/stage-journey/cover/purchase')return send(res,200,stageJourney.purchaseCover(user.id,input));
       if(p==='/api/stage-journey/cover/submit')return send(res,200,stageJourney.submitCover(user.id,input));

@@ -16,6 +16,7 @@ export function createFinance(store,dataDir){
  CREATE INDEX IF NOT EXISTS identities_owner ON identities(user_id,created_at);`);
  for(const column of ['front_cipher','back_cipher'])if(!db.prepare('PRAGMA table_info(identities)').all().some(c=>c.name===column))db.exec("ALTER TABLE identities ADD COLUMN "+column+" TEXT NOT NULL DEFAULT ''");
  for(const [column,definition] of [['provider',"TEXT NOT NULL DEFAULT 'bank'"],['network',"TEXT NOT NULL DEFAULT ''"]])if(!db.prepare('PRAGMA table_info(bank_cards)').all().some(c=>c.name===column))db.exec('ALTER TABLE bank_cards ADD COLUMN '+column+' '+definition);
+ db.exec('CREATE TABLE IF NOT EXISTS newcomer_binding_events(user_id TEXT PRIMARY KEY,shown INTEGER NOT NULL DEFAULT 0)');
  const keyPath=join(dataDir,'finance.key');
  if(!existsSync(keyPath)){if(db.prepare('SELECT (SELECT COUNT(*) FROM identities)+(SELECT COUNT(*) FROM bank_cards) AS n').get().n)throw new Error('Finance encryption key missing; restore the original key from a complete backup');writeFileSync(keyPath,randomBytes(32),{flag:'wx',mode:0o600});}
  const key=readFileSync(keyPath);if(key.length!==32)throw new Error('Invalid finance encryption key');
@@ -63,13 +64,15 @@ export function createFinance(store,dataDir){
    }else throw new AppError('无效提款方式');
    const fingerprint=createHash('sha256').update(provider==='bank'?id+':'+number:[id,provider,network,number].join(':')).digest('hex');
    return store.audited('creator','bank.submit','',()=>{
+    const firstBinding=!db.prepare("SELECT 1 FROM bank_cards WHERE user_id=? AND status='approved'").get(id)&&!db.prepare('SELECT 1 FROM newcomer_binding_events WHERE user_id=?').get(id);
     const old=db.prepare('SELECT * FROM bank_cards WHERE user_id=? AND fingerprint=?').get(id,fingerprint);
     if(old&&old.status!=='rejected')throw new AppError('此提款方式已提交',409);
     const mask=provider==='usdt'?number.slice(0,6)+'…'+number.slice(-6):'**** '+number.slice(-4);
     if(old)db.prepare("UPDATE bank_cards SET bank=?,holder=?,provider=?,network=?,status='review',note='',created_at=?,reviewed_at=NULL WHERE id=?").run(bank,holder,provider,network,stamp(),old.id);
     else{if(db.prepare('SELECT COUNT(*) n FROM bank_cards WHERE user_id=?').get(id).n>=10)throw new AppError('最多添加 10 个提款方式');db.prepare('INSERT INTO bank_cards(id,user_id,bank,holder,number_cipher,number_mask,fingerprint,created_at,provider,network) VALUES(?,?,?,?,?,?,?,?,?,?)').run(randomUUID(),id,bank,holder,encrypt(number),mask,fingerprint,stamp(),provider,network);}
     if(provider!=='bank'){const saved=db.prepare('SELECT id FROM bank_cards WHERE user_id=? AND fingerprint=?').get(id,fingerprint);db.prepare("UPDATE bank_cards SET status='approved',reviewed_at=? WHERE id=?").run(stamp(),saved.id);store.notifyUser(id,'提款方式已添加','提款方式已保存，可以用于提现。','finance',saved.id);}
-    return {ok:true};
+    if(provider!=='bank'&&firstBinding)db.prepare('INSERT OR IGNORE INTO newcomer_binding_events(user_id) VALUES(?)').run(id);
+    return {ok:true,firstBinding:provider!=='bank'&&firstBinding};
    });
   },
   apply(id,input){active(id);const kind=input.kind,amount=cents(input.amount),op=operationKey(input.operationKey);if(!['deposit','withdrawal'].includes(kind)||!/^[-a-zA-Z0-9]{16,80}$/.test(op))throw new AppError('无效的资金申请');return store.audited('creator','fund.apply',id,()=>{const reference=kind==='deposit'?paymentReference(input.reference):'',old=db.prepare('SELECT * FROM fund_requests WHERE user_id=? AND operation_key=?').get(id,op);if(old){if(old.kind!==kind||old.amount!==amount||kind==='deposit'&&old.reference!==reference||kind==='withdrawal'&&old.card_id!==input.cardId)throw new AppError('请求标识已被其他申请使用',409);return old;}let card=null;if(kind==='deposit'&&db.prepare("SELECT id FROM fund_requests WHERE kind='deposit' AND reference=? AND status!='rejected'").get(reference))throw new AppError('该充值凭证已提交，请勿重复申请',409);if(kind==='withdrawal'){validIdentity(id);card=db.prepare("SELECT * FROM bank_cards WHERE id=? AND user_id=? AND status='approved'").get(input.cardId,id);if(!card)throw new AppError('请选择已审核通过的本人提款方式',409);}else if(reference.length<3)throw new AppError('请填写充值渠道及转账凭证编号');const record=randomUUID();db.prepare('INSERT INTO fund_requests(id,user_id,kind,amount,card_id,reference,created_at,operation_key) VALUES(?,?,?,?,?,?,?,?)').run(record,id,kind,amount,card?.id||null,reference,stamp(),op);if(kind==='withdrawal')money(id,'withdraw_hold',-amount,'提现申请冻结 · '+record.slice(0,8),'withdraw-hold:'+record);notify(id,kind==='withdrawal'?'提现申请已提交':'充值申请已提交',(kind==='withdrawal'?'提现':'充值')+' '+(amount/100).toFixed(2)+' USD，等待平台核实。',record);return db.prepare('SELECT * FROM fund_requests WHERE id=?').get(record);});},

@@ -196,7 +196,7 @@ export default function FinancePanel({
     setModal(kind);
   }
   useEffect(()=>{
-    if(new URLSearchParams(location.search).get('finance')==='card')open('card');
+    const requested=new URLSearchParams(location.search).get('finance');if(requested==='card'||requested==='withdrawal')open(requested);
   },[]);
   async function refresh() {
     if (refreshing) return;
@@ -224,7 +224,7 @@ export default function FinancePanel({
     setBusy(true);
     setError("");
     try {
-      const result = await api<{ id?: string }>(
+      const result = await api<{ id?: string;firstBinding?:boolean }>(
         "/finance/" +
           (kind === "identity"
             ? "identity"
@@ -248,6 +248,7 @@ export default function FinancePanel({
       setModal("");
       setPhotos({});
       setForm({});
+      if(kind==='card'&&result.firstBinding){location.assign('/?view=app&design=newcomer&binding=completed');return;}
       // A successful server receipt remains successful even when the subsequent refresh fails.
       try {
         await Promise.all([load(), onChange()]);

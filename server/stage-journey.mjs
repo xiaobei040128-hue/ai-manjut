@@ -30,6 +30,7 @@ export function createStageJourney(store){
  }
  return {
   snapshot,
+  bindingCompletion(id){return store.asUser(id,()=>store.audited(id,'newcomer.binding.notice',id,()=>{const event=db.prepare('SELECT shown FROM newcomer_binding_events WHERE user_id=?').get(id);if(!event||event.shown)return {show:false};db.prepare('UPDATE newcomer_binding_events SET shown=1 WHERE user_id=?').run(id);return {show:true};}));},
   take(id){return store.asUser(id,()=>store.audited(id,'newcomer.take',id,()=>{
    const state=snapshot(id),step=state.onboarding.step;if(step===null)throw new AppError('当前计划已完成',409);
    db.prepare('INSERT OR IGNORE INTO onboarding_reveals(owner_id,step,created_at) VALUES(?,?,?)').run(id,step,new Date().toISOString());

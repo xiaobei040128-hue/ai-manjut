@@ -93,6 +93,14 @@ export default function StageWork({stage}:{stage:number}){
  const blockedByCurrent=!!data?.assignments.some(live),blockedByOffer=!!data?.offer&&!offer;
  const dailyLimitReached=stage===3&&!!data&&data.dispatch.claimed>=data.dispatch.limit;
 
+ useEffect(()=>{
+  if(stage!==1||!data?.journey.newcomer.card)return;
+  const query=new URLSearchParams(location.search);
+  if(query.get('binding')==='completed'){
+   query.delete('binding');history.replaceState(null,'','/?'+query.toString());
+   void api<{show:boolean}>('/stage-journey/binding-completion','POST',{}).then(result=>{if(mounted.current&&result.show)setRevealEvent({kind:'complete',nonce:Date.now(),title:'绑定任务已完成',subtitle:'提款方式已保存。准备好后，领取下一份任务。'});}).catch(()=>{});
+  }
+ },[stage,data?.journey.newcomer.card]);
  const availableStage=data?(data.stageThreeEligible||data.journey.community.completed===5||data.assignments.some(a=>a.status==='completed'&&a.task.stage===2)?3:data.journey.newcomer.complete?2:1):1;
  useEffect(()=>{if(data&&stage>availableStage)location.replace('/?view=app&design='+['newcomer','advanced','third'][availableStage-1]);},[data,stage,availableStage]);
  if(stage>1&&(!data||stage>availableStage))return <div className="studio native-mode stage-work"><p role="status">正在加载你的计划…</p>{connectionError&&<p role="alert">{connectionError}</p>}</div>;
