@@ -138,5 +138,12 @@
     "genre": "灵异悬疑",
     "description": "一家人搬进一栋低价买来的旧宅，第一晚开始，房子里的灯会自己亮起，墙上的照片也每天多出一个从未见过的人...",
     "cover": "/stories/the-house-that-remembers.webp"
+  },
+  {
+    "id": "murder-at-30000-feet",
+    "title": "Murder at 30,000 Feet",
+    "genre": "航空悬疑",
+    "description": "跨洋航班起飞两小时后，一名乘客死在锁死的头等舱洗手间。飞机无法降落，而凶手一定还在三百名乘客之中...",
+    "cover": "/stories/murder-at-30000-feet.png"
   }
 ]
