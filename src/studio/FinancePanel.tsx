@@ -256,6 +256,7 @@ export default function FinancePanel({
       setModal("");
       setPhotos({});
       setForm({});
+      if(kind==='withdrawal'){location.assign('/?view=app&design=newcomer&withdrawal=submitted');return;}
       if(kind==='card'&&result.firstBinding){location.assign('/?view=app&design=newcomer&binding=completed');return;}
       // A successful server receipt remains successful even when the subsequent refresh fails.
       try {

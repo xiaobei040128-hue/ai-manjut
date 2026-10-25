@@ -101,6 +101,14 @@ export default function StageWork({stage}:{stage:number}){
    void api<{show:boolean}>('/stage-journey/binding-completion','POST',{}).then(result=>{if(mounted.current&&result.show)setRevealEvent({kind:'complete',nonce:Date.now(),title:'绑定任务已完成',subtitle:'提款方式已保存。准备好后，领取下一份任务。'});}).catch(()=>{});
   }
  },[stage,data?.journey.newcomer.card]);
+ const withdrawalState=data?.journey.pendingWithdrawal?.status;
+ const priorWithdrawal=useRef<string|undefined>(undefined);
+ useEffect(()=>{
+  if(stage!==1||!data)return;
+  if(priorWithdrawal.current&&data.journey.newcomer.withdrawal&&!data.journey.pendingWithdrawal)setRevealEvent({kind:'complete',nonce:Date.now(),title:'提款任务已完成',subtitle:'款项已出，新手成长计划已完成。'});
+  priorWithdrawal.current=withdrawalState;
+  const query=new URLSearchParams(location.search);if(query.has('withdrawal')){query.delete('withdrawal');history.replaceState(null,'','/?'+query.toString());}
+ },[stage,withdrawalState,data?.journey.newcomer.withdrawal]);
  const availableStage=data?(data.stageThreeEligible||data.journey.community.completed===5||data.assignments.some(a=>a.status==='completed'&&a.task.stage===2)?3:data.journey.newcomer.complete?2:1):1;
  useEffect(()=>{if(data&&stage>availableStage)location.replace('/?view=app&design='+['newcomer','advanced','third'][availableStage-1]);},[data,stage,availableStage]);
  if(stage>1&&(!data||stage>availableStage))return <div className="studio native-mode stage-work"><p role="status">正在加载你的计划…</p>{connectionError&&<p role="alert">{connectionError}</p>}</div>;

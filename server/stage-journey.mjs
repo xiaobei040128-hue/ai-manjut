@@ -26,7 +26,8 @@ export function createStageJourney(store){
   const n=newcomer(id),states=[true,n.identity,n.experience,n.card,n.withdrawal,n.graduate];
   const running=db.prepare("SELECT 1 FROM assignments a JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.owner_id=? AND f.stage=1 AND a.status IN ('active','review','revision')").get(id);
   const found=running?2:states.findIndex(done=>!done),step=found<0?null:found;
-  return {newcomer:n,cover:covers.snapshot(id),onboarding:{step,revealed:step!==null&&(!!running||!!db.prepare('SELECT 1 FROM onboarding_reveals WHERE owner_id=? AND step=?').get(id,step))},community:progress(id)};
+  const pendingWithdrawal=db.prepare("SELECT id,status,amount,created_at FROM fund_requests WHERE user_id=? AND kind='withdrawal' AND status IN ('review','paying') ORDER BY created_at DESC LIMIT 1").get(id)||null;
+  return {pendingWithdrawal,newcomer:n,cover:covers.snapshot(id),onboarding:{step,revealed:step!==null&&(step===4&&!!pendingWithdrawal||!!running||!!db.prepare('SELECT 1 FROM onboarding_reveals WHERE owner_id=? AND step=?').get(id,step))},community:progress(id)};
  }
  return {
   snapshot,
