@@ -16,6 +16,7 @@ import {
   ClockIcon,
   ReloadIcon,
   ChevronDownIcon,
+  Cross2Icon,
 } from "@radix-ui/react-icons";
 import { BottomSheet, KeyboardInput, useKeyboard } from "../mobile";
 import { api, date, money } from "../api";
@@ -31,7 +32,7 @@ const modalTitles = {
   identity: "实名认证",
   card: "添加提款方式",
   deposit: "充值申请",
-  withdrawal: "申请提现",
+  withdrawal: "申请提款",
 };
 const short = (id: string) => id.slice(0, 8).toUpperCase();
 function RequestRecord({ record: r }: { record: FundRequest }) {
@@ -453,10 +454,11 @@ export default function FinancePanel({
         title={modal ? modalTitles[modal] : "账户申请"}
         description={modal==='card'?"添加本人的收款账户，保存后即可使用。":"请填写属于本人的资料。"}
       >
-        <div className="s-finance-sheet">
+        <div className={'s-finance-sheet'+(modal==='withdrawal'?' is-withdrawal':'')}>
           <button
             type="button"
             className="s-finance-close"
+            aria-label="关闭"
             disabled={busy}
             onClick={() => {
               keyboard.hide();
@@ -464,7 +466,7 @@ export default function FinancePanel({
               setPhotos({});
             }}
           >
-            关闭
+            <Cross2Icon/>
           </button>
           {modal === "identity" &&
           identity &&
@@ -570,7 +572,7 @@ export default function FinancePanel({
                         </select>
                       </label>
                       <p>
-                        提交后冻结对应额度；审核通过显示“出款中”，后台登记出款结果后显示“已出款”。拒绝后返还冻结额度。
+                        提交后由平台处理，到账进度可在提款记录查看。
                       </p>
                     </>
                   )}
@@ -582,7 +584,7 @@ export default function FinancePanel({
                 </p>
               )}
               <button className="s-auth-submit" disabled={busy||modal==='withdrawal'&&(!data||insufficient||!form.cardId||withdrawalCents<100||!Number.isFinite(withdrawalCents))}>
-                {busy ? "正在提交…" : modal==='card'?"保存提款方式":"提交审核"}
+                {busy ? "正在提交…" : modal==='card'?"保存提款方式":modal==='withdrawal'?"申请提款":"提交审核"}
               </button>
             </form>
           )}
