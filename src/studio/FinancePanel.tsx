@@ -513,7 +513,7 @@ export default function FinancePanel({
               {modal === "card" && (
                 <>
                   <div className="payout-method-picker" role="group" aria-label="选择提款方式">
-                   {([['okx','OKX','账户 UID'],['binance','币安','Binance UID'],['usdt','USDT','链上收款地址']] as const).map(([value,label,hint])=><button key={value} type="button" aria-pressed={form.provider===value} onClick={()=>setForm(old=>({...old,provider:value,number:''}))}><span className={'payout-symbol '+value}><img src={'/brands/'+value+'.svg'} alt={label+' 标志'}/></span><b>{label}</b><small>{hint}</small></button>)}
+                   {([['okx','OKX','账户 UID'],['binance','币安','Binance UID'],['usdt','USDT','链上收款地址']] as const).map(([value,label,hint])=><button key={value} type="button" aria-pressed={form.provider===value} onClick={()=>setForm(old=>({...old,provider:value,number:''}))}><span className={'payout-symbol '+value}>{value==='okx'?<svg role="img" aria-label="OKX 标志" viewBox="0 0 40 40" shapeRendering="crispEdges"><path fill="#000" d="M2 2h12v12H2zM26 2h12v12H26zM14 14h12v12H14zM2 26h12v12H2zM26 26h12v12H26z"/></svg>:<img src={'/brands/'+value+'.svg'} alt={label+' 标志'}/>}</span><b>{label}</b><small>{hint}</small></button>)}
                   </div>
                   {form.provider==='usdt'&&<label>收款网络<select required value={form.network||'TRC20'} onChange={e=>setForm(old=>({...old,network:e.target.value,number:''}))}><option value="TRC20">TRON · TRC20</option><option value="ERC20">Ethereum · ERC20</option><option value="BEP20">BNB Smart Chain · BEP20</option></select></label>}
                   {field(form.provider==='usdt'?'USDT 收款地址':form.provider==='okx'?'OKX UID':'币安 UID','number',form.provider==='usdt'?'粘贴对应网络的收款地址':'填写本人账户 UID')}
