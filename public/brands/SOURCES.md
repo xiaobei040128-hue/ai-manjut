@@ -5,3 +5,5 @@ Brand assets downloaded from official domains:
 - Tether: https://tether.to/images/logoCircle.svg
 
 Trademarks belong to their respective owners. Used to identify withdrawal destinations.
+
+Display SVG assets: Binance mark from https://github.com/spothq/cryptocurrency-icons/blob/master/svg/color/bnb.svg ; OKX five-square vector matches the official 200px asset geometry. Tether uses its original official SVG. Original raster references remain for provenance.
