@@ -16,12 +16,12 @@ test('three-stage production workflow uses server amounts and one ledger settlem
  expect((await agentContext.request.post('http://127.0.0.1:4191/api/admin/commission-policy',{data:{rate:'99'},headers:{'X-Workspace-Request':'1'}})).status()).toBe(403);await agentContext.close();
  await page.goto('/?view=app&design=newcomer');await expect(page.getByRole('heading',{name:'第 1 阶段任务'})).toBeVisible();
  await page.getByRole('button',{name:'冻结 $100.00 并领取',exact:true}).click({force:true});await expect(page).toHaveURL(/assignment=/);
- let assignment=(await call('/bootstrap')).assignments[0];expect(assignment.task.commission).toBe(500);expect((await call('/bootstrap')).wallet.available).toBe(40000);
+ let assignment=(await call('/bootstrap')).assignments[0];expect(assignment.task.commission).toBe(500);expect((await call('/bootstrap')).wallet.available).toBe(40100);
  await call('/admin/commission-policy',{rate:'10'});
  async function complete(a:{id:string}){const image=await call('/assignments/'+a.id+'/uploads',{name:'proof.png',data:Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),Buffer.alloc(20)]).toString('base64')});await call('/assignments/'+a.id+'/submit',{links:['https://example.invalid/e2e/'+a.id],uploadIds:[image.id]});await call('/assignments/'+a.id+'/review',{decision:'approve'});await call('/assignments/'+a.id+'/review',{decision:'approve'});}
- await complete(assignment);expect((await call('/bootstrap')).wallet.available).toBe(50500);
+ await complete(assignment);expect((await call('/bootstrap')).wallet.available).toBe(50600);
  await page.goto('/?view=app&design=advanced');await page.getByRole('button',{name:'冻结 $200.00 并领取',exact:true}).click({force:true});await expect(page).toHaveURL(/assignment=/);
- assignment=(await call('/bootstrap')).assignments.find((a:{task:{stage:number}})=>a.task.stage===2);expect(assignment.task.commission).toBe(2000);await complete(assignment);expect((await call('/bootstrap')).wallet.available).toBe(52500);
+ assignment=(await call('/bootstrap')).assignments.find((a:{task:{stage:number}})=>a.task.stage===2);expect(assignment.task.commission).toBe(2000);await complete(assignment);expect((await call('/bootstrap')).wallet.available).toBe(52600);
  await page.goto('/?view=app&design=third');await expect(page.getByRole('button',{name:'申请报名',exact:true})).toBeVisible();
  let releaseEnrollment!:()=>void,captureEnrollment!:()=>void;
  const heldEnrollment=new Promise<void>(resolve=>{releaseEnrollment=resolve;}),capturedEnrollment=new Promise<void>(resolve=>{captureEnrollment=resolve;});
@@ -34,10 +34,10 @@ test('three-stage production workflow uses server amounts and one ledger settlem
  const enrollment=(await call('/admin/stage-enrollments')).enrollments[0];await call('/admin/stage-enrollments/'+enrollment.id+'/review',{decision:'approve'});
  await page.goto('/?view=app&design=third');await page.getByRole('button',{name:'冻结 $300.00 并领取',exact:true}).click({force:true});await expect(page.getByRole('dialog')).toBeVisible();await page.screenshot({path:'../visual-premium-reveal.png',animations:'disabled'});await page.setViewportSize({width:740,height:360});await page.getByRole('button',{name:'开启高阶创作 →'}).scrollIntoViewIfNeeded();await expect(page.getByRole('button',{name:'开启高阶创作 →'})).toBeInViewport();await page.setViewportSize({width:320,height:568});await page.getByRole('button',{name:'开启高阶创作 →'}).scrollIntoViewIfNeeded();await expect(page.getByRole('button',{name:'开启高阶创作 →'})).toBeInViewport();await page.screenshot({path:'../visual-premium-small-screen.png',animations:'disabled'});await page.setViewportSize({width:430,height:920});await page.getByRole('button',{name:'开启高阶创作 →'}).click();await expect(page).toHaveURL(/assignment=/);
  assignment=(await call('/bootstrap')).assignments.find((a:{task:{stage:number}})=>a.task.stage===3);await call('/assignments/'+assignment.id+'/cancel',{});await call('/assignments/'+assignment.id+'/cancel',{});
- const final=await call('/bootstrap');expect(final.wallet.available).toBe(52500);expect(final.wallet.held).toBe(0);expect(final.wallet.earned).toBe(2500);
+ const final=await call('/bootstrap');expect(final.wallet.available).toBe(52600);expect(final.wallet.held).toBe(0);expect(final.wallet.earned).toBe(2500);
  const q=await call('/tasks/'+tasks[2].id),claimThird=()=>call('/assignments',{taskId:q.id,expected:{amount:q.deposit,commission:q.commission,rateBps:q.commission_rate_bps}});
  const ordinary=await claimThird();expect(ordinary.task.premium).toBe(0);expect(ordinary.task.dispatch_sequence).toBe(2);await call('/assignments/'+ordinary.id+'/cancel',{});
- const repeated=await claimThird();expect(repeated.task.premium).toBe(1);expect(repeated.task.dispatch_sequence).toBe(3);await complete(repeated);expect((await call('/bootstrap')).wallet.available).toBe(55500);
+ const repeated=await claimThird();expect(repeated.task.premium).toBe(1);expect(repeated.task.dispatch_sequence).toBe(3);await complete(repeated);expect((await call('/bootstrap')).wallet.available).toBe(55600);
  await page.goto('/?view=app&design=third');await expect(page.getByRole('dialog')).toBeVisible();await expect(page.getByRole('dialog')).toContainText('佣金已到账');await page.screenshot({path:'../visual-premium-settled.png',animations:'disabled'});await page.getByRole('button',{name:'查看任务记录 →'}).click();await expect(page).toHaveURL(/assignment=/);
  expect((await page.request.post('/api/stage-three/example',{data:{source:'demo',balance:'500'},headers:{'X-Workspace-Request':'1'}})).status()).toBe(410);
  await page.goto('/?view=app&design=third');await expect(page.getByRole('heading',{name:'第 3 阶段任务'})).toBeVisible();await page.screenshot({path:'../stage-finance-verified.png',fullPage:true});

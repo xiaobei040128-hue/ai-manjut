@@ -21,7 +21,7 @@ test('activity rewards enforce budgets, fixed amounts, operator scope and once-o
   async function user(email,code=invite.code){return (await auth.register(req,{email,password:'RewardQA123',inviteCode:code})).user.id;}
   const u1=await user('reward-one@example.com'),u2=await user('reward-two@example.com'),u3=await user('reward-three@example.com'),foreign=await user('reward-foreign@example.com',inviteB.code);
   const balance=id=>s.asUser(id,()=>s.summary().wallet.available);
-  assert.equal(balance(u1),0);
+  assert.equal(balance(u1),100);
   assert.throws(()=>rewards.create(agent,{name:'禁止创建',amount:'1',budget:'10',operatorId:a.id}),e=>e.status===403);
   assert.throws(()=>scope.guard(agent,'/api/admin/finance/account/'+u1+'/adjust','POST'),e=>e.status===403);
   const c=rewards.create(superOp,{name:'读者评价活动',amount:'1.25',budget:'2.50',operatorId:a.id});
@@ -30,10 +30,10 @@ test('activity rewards enforce budgets, fixed amounts, operator scope and once-o
   assert.throws(()=>rewards.grant(agent,c.id,{...input,userId:foreign}),e=>e.status===403);
   assert.throws(()=>rewards.grant(agent,c.id,{...input,confirm:false}));
   assert.throws(()=>rewards.grant(agent,c.id,{...input,operationKey:'a'.repeat(81)}),e=>e.status===400);
-  assert.equal(balance(u1),0);
+  assert.equal(balance(u1),100);
   assert.deepEqual(rewards.snapshot(other).campaigns,[]);
-  const receipt=rewards.grant(agent,c.id,input);assert.equal(receipt.amount,125);assert.equal(balance(u1),125);
-  assert.equal(rewards.grant(agent,c.id,input).id,receipt.id);assert.equal(balance(u1),125);
+  const receipt=rewards.grant(agent,c.id,input);assert.equal(receipt.amount,125);assert.equal(balance(u1),225);
+  assert.equal(rewards.grant(agent,c.id,input).id,receipt.id);assert.equal(balance(u1),225);
   assert.throws(()=>rewards.grant(agent,c.id,{...input,reason:'不同的发放原因'}),e=>e.status===409);
   assert.throws(()=>rewards.grant(agent,c.id,{...input,operationKey:randomUUID()}),e=>e.status===409);
   finance.freeze('reward-admin',u2,{frozen:true,reason:'QA freeze customer'});
@@ -42,11 +42,11 @@ test('activity rewards enforce budgets, fixed amounts, operator scope and once-o
   rewards.state(superOp,c.id,{active:false});assert.throws(()=>rewards.grant(agent,c.id,{...input,userId:u2,operationKey:randomUUID()}),e=>e.status===409);rewards.state(superOp,c.id,{active:true});
   // An audit failure must roll back grant, wallet entry and notification together.
   s.db.exec("CREATE TRIGGER fail_activity_audit BEFORE INSERT ON admin_audit WHEN NEW.action='activity.grant' BEGIN SELECT RAISE(ABORT,'QA forced audit failure'); END;");
-  const second={...input,userId:u2,operationKey:randomUUID()};assert.throws(()=>rewards.grant(agent,c.id,second));assert.equal(balance(u2),0);assert.equal(rewards.snapshot(superOp).grants.length,1);
-  s.db.exec('DROP TRIGGER fail_activity_audit');rewards.grant(agent,c.id,second);assert.equal(balance(u2),125);
+  const second={...input,userId:u2,operationKey:randomUUID()};assert.throws(()=>rewards.grant(agent,c.id,second));assert.equal(balance(u2),100);assert.equal(rewards.snapshot(superOp).grants.length,1);
+  s.db.exec('DROP TRIGGER fail_activity_audit');rewards.grant(agent,c.id,second);assert.equal(balance(u2),225);
   assert.throws(()=>rewards.grant(agent,c.id,{...input,userId:u3,operationKey:randomUUID()}),e=>e.status===409);
   assert.equal(rewards.snapshot(agent).campaigns[0].spent,250);assert.equal(rewards.snapshot(other).grants.length,0);
-  const ledger=s.db.prepare("SELECT * FROM ledger WHERE kind='activity_reward'").all();assert.equal(ledger.length,2);assert.ok(ledger.every(l=>l.balance_after===125));
+  const ledger=s.db.prepare("SELECT * FROM ledger WHERE kind='activity_reward'").all();assert.equal(ledger.length,2);assert.ok(ledger.every(l=>l.balance_after===225));
   assert.equal(s.db.prepare('SELECT COUNT(*) AS n FROM notifications WHERE owner_id=?').get(u1).n>0,true);
   assert.ok(s.auditLog().some(a=>a.action==='activity.grant'&&a.actor===agent.username&&a.detail.campaignId===c.id));
  } finally {s.close();await rm(dir,{recursive:true,force:true});}

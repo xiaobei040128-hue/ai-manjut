@@ -28,13 +28,13 @@ test('customer directory scopes private metadata and money; session revocation p
     const first=await auth.register(req,{email:'owned@example.com',password:'Testing1234',inviteCode:invite.code,country:'GE'}),second=await auth.register(req,{email:'other@example.com',password:'Testing1234',inviteCode:other.code,country:'CN'});
     finance.adjust('test-agent',first.user.id,{amount:'25.30',direction:'credit',note:'Explicit test funding',operationKey:'customer-directory-test-funds'});
     auth.updateNote('test-agent',first.user.id,{note:'Internal follow-up only'});
-    const rows=customerDirectory(store,auth,scope,operator);assert.equal(rows.length,1);const row=rows[0];assert.equal(row.country,'US');assert.equal(row.country_source,'ip');assert.equal(row.registration_ip,'8.8.8.8');assert.equal(row.agent_username,'test-agent');assert.equal(row.identity_status,'not_submitted');assert.equal(row.wallet.available,2530);assert.equal(row.wallet.total,2530);assert.equal(row.admin_note,'Internal follow-up only');assert.equal(row.session_count,1);
+    const rows=customerDirectory(store,auth,scope,operator);assert.equal(rows.length,1);const row=rows[0];assert.equal(row.country,'US');assert.equal(row.country_source,'ip');assert.equal(row.registration_ip,'8.8.8.8');assert.equal(row.agent_username,'test-agent');assert.equal(row.identity_status,'not_submitted');assert.equal(row.wallet.available,2630);assert.equal(row.wallet.total,2630);assert.equal(row.admin_note,'Internal follow-up only');assert.equal(row.session_count,1);
     assert.ok(!JSON.stringify(rows).includes('password_hash'));assert.ok(!JSON.stringify(rows).includes('other@example.com'));
     assert.throws(()=>scope.guard(operator,'/api/admin/accounts/'+second.user.id+'/notes','POST'),e=>e.status===403);
     assert.throws(()=>scope.guard(operator,'/api/admin/accounts/'+second.user.id+'/revoke-sessions','POST'),e=>e.status===403);
     scope.guard(operator,'/api/admin/accounts/'+first.user.id+'/notes','POST');
     const sessionReq={...req,headers:{cookie:auth.cookie(first.token).split(';')[0]}};assert.equal(auth.current(sessionReq).country,'US');assert.ok(!JSON.stringify(auth.current(sessionReq)).includes('Internal follow-up'));
     await auth.login({...req,socket:{remoteAddress:'114.114.114.114'}},{email:first.user.email,password:'Testing1234'});assert.equal(auth.current(sessionReq).country,'CN');
-    auth.revokeSessions('test-agent',first.user.id);assert.equal(auth.current(sessionReq),null);assert.equal(customerDirectory(store,auth,scope,operator)[0].wallet.available,2530);
+    auth.revokeSessions('test-agent',first.user.id);assert.equal(auth.current(sessionReq),null);assert.equal(customerDirectory(store,auth,scope,operator)[0].wallet.available,2630);
   }finally{store.close();if(!resolve(folder).startsWith(root+sep))throw new Error('Unsafe test cleanup');await rm(folder,{recursive:true,force:true});}
 });

@@ -2192,7 +2192,7 @@ function Studio({
                                 .includes(ledgerSearch.trim().toLowerCase()) ||
                               money(r.amount).includes(ledgerSearch.trim())) &&
                             (ledgerFilter === "全部" ||
-                              (ledgerFilter === "活动奖励" && r.kind === "activity_reward") ||
+                              (ledgerFilter === "活动奖励" && ["activity_reward","registration_reward"].includes(r.kind)) ||
                               (ledgerFilter === "佣金" &&
                                 r.kind === "reward") ||
                               (ledgerFilter === "冻结" &&
@@ -2217,7 +2217,7 @@ function Studio({
                             }
                           >
                             <span className={"s-ledger-icon " + r.kind}>
-                              {["reward", "activity_reward"].includes(r.kind) ? (
+                              {["reward", "activity_reward","registration_reward"].includes(r.kind) ? (
                                 <StarIcon />
                               ) : r.kind === "hold" ? (
                                 <LockClosedIcon />
@@ -2254,7 +2254,7 @@ function Studio({
                             .includes(ledgerSearch.trim().toLowerCase()) ||
                           money(r.amount).includes(ledgerSearch.trim())) &&
                         (ledgerFilter === "全部" ||
-                          (ledgerFilter === "活动奖励" && r.kind === "activity_reward") ||
+                          (ledgerFilter === "活动奖励" && ["activity_reward","registration_reward"].includes(r.kind)) ||
                           (ledgerFilter === "佣金" && r.kind === "reward") ||
                           (ledgerFilter === "冻结" &&
                             ["hold", "withdraw_hold"].includes(r.kind)) ||

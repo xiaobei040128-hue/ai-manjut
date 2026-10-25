@@ -174,7 +174,7 @@ async function api(req, res, url, inScope=false) {
     validateOrigin(req);const input=await body(req);
     if(p.endsWith('logout')){creatorAuth.logout(req);res.setHeader('Set-Cookie',creatorAuth.cookie(''));return send(res,200,{ok:true});}
     const result=await creatorAuth[p.endsWith('register')?'register':'login'](req,input);
-    res.setHeader('Set-Cookie',creatorAuth.cookie(result.token));return send(res,p.endsWith('register')?201:200,{user:result.user});
+    res.setHeader('Set-Cookie',creatorAuth.cookie(result.token));return send(res,p.endsWith('register')?201:200,{user:result.user,...(result.registrationReward?{registrationReward:result.registrationReward}:{})});
   }
   const management=p.startsWith('/api/admin/')||p.startsWith('/api/manage/')||['/api/export/backup','/api/export/workspace','/api/assets'].includes(p)||(p==='/api/export/ledger'&&url.searchParams.get('scope')==='all')||(method!=='GET'&&(p==='/api/tasks'||/^\/api\/tasks\/[^/]+(?:\/active|\/materials)?$/.test(p)||p.startsWith('/api/materials/')||/^\/api\/assignments\/[^/]+\/review$/.test(p)));
   const publicRead=method==='GET'&&(p==='/api/health'||p==='/api/tasks'||/^\/api\/tasks\/[^/]+(?:\/materials)?$/.test(p));

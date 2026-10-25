@@ -27,7 +27,7 @@ await record({event:'start',durationMs:duration,intervalMs:interval,directory,po
 try{
  await start();adminCookie=(await call('','/admin/setup','POST',{username:'upgrade-soak-admin',password:'IsolatedSoakQA123!'})).cookie;
  await request(adminCookie,'/admin/commission-policy','POST',{rate:'5'});const invite=await request(adminCookie,'/admin/invitations','POST',{});
- for(const suffix of ['a','b']){const registered=await call('','/auth/register','POST',{email:'upgrade-soak-'+suffix+'@example.invalid',password:'IsolatedSoakQA123!',inviteCode:invite.code},201),user={id:registered.data.user.id,cookie:registered.cookie,expected:200000,earned:0};users.push(user);await request(adminCookie,'/admin/finance/account/'+user.id+'/adjust','POST',{direction:'credit',amount:'2000',note:'Isolated continuous workflow fixture',operationKey:randomUUID()});}
+ for(const suffix of ['a','b']){const registered=await call('','/auth/register','POST',{email:'upgrade-soak-'+suffix+'@example.invalid',password:'IsolatedSoakQA123!',inviteCode:invite.code},201),user={id:registered.data.user.id,cookie:registered.cookie,expected:200100,earned:0};users.push(user);await request(adminCookie,'/admin/finance/account/'+user.id+'/adjust','POST',{direction:'credit',amount:'2000',note:'Isolated continuous workflow fixture',operationKey:randomUUID()});}
  const task=await request(adminCookie,'/tasks','POST',{title:'持续运行验证任务',description:'只用于隔离测试，上传作品并审核',stage:1,platform:'TikTok',language:'中文',genre:'持续验证',deposit:'100',posts:1,episodes:1,slots:10000,cover:'/art/hero-v2.webp'});
  while(Date.now()<deadline){round++;
   const taskQuote=await request(users[0].cookie,'/tasks/'+task.id),quote={amount:taskQuote.deposit,commission:taskQuote.commission,rateBps:taskQuote.commission_rate_bps};

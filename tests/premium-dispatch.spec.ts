@@ -83,3 +83,14 @@ test('customer note success is preserved when directory refresh fails',async({pa
  await page.route('**/api/admin/accounts',route=>route.abort());await dialog.getByRole('button',{name:'保存内部备注'}).click();await expect(dialog.getByRole('status')).toContainText('内部备注已保存');await expect(dialog.getByRole('alert')).toContainText('无需重复操作');
  await page.unroute('**/api/admin/accounts');const customers=await(await page.request.get('/api/admin/accounts')).json();expect(customers.users.find((u:{email:string})=>u.email==='identity-race-b@example.invalid').admin_note).toBe('已核对客户资料，等待后续跟进');
 });
+
+test('registration immediately credits one dollar and celebrates once, with no repeat on login',async({page})=>{
+ const headers={'X-Workspace-Request':'1'};await page.request.post('/api/admin/login',{data:{username:'dispatch-browser',password:'DispatchBrowserQA123!'},headers});
+ const invitation=await(await page.request.post('/api/admin/invitations',{data:{},headers})).json();await page.request.post('/api/auth/logout',{data:{},headers});
+ await page.goto('/?view=app&auth=register');await page.getByLabel('邮箱',{exact:true}).fill('welcome-browser@example.invalid');await page.getByPlaceholder('至少 8 位字符').fill('WelcomeBrowserQA123!');await page.getByLabel('确认密码',{exact:true}).fill('WelcomeBrowserQA123!');await page.getByLabel('邀请码',{exact:true}).fill(invitation.code);await page.getByRole('button',{name:'注册并进入'}).click();
+ const dialog=page.getByRole('dialog',{name:'注册成功，欢迎加入！'});await expect(dialog).toBeVisible();await expect(dialog.getByText('$1.00',{exact:true})).toBeVisible();await expect(dialog).toContainText('已计入可用余额');
+ const registered=await(await page.request.get('/api/bootstrap')).json();expect(registered.wallet.available).toBe(100);expect(registered.wallet.earned).toBe(0);expect(registered.ledger.filter((r:{kind:string})=>r.kind==='registration_reward')).toHaveLength(1);
+ await page.screenshot({path:'../registration-reward-verified.png',animations:'disabled'});await dialog.getByRole('button',{name:'先进入首页'}).click();await expect(dialog).toHaveCount(0);await page.reload();await expect(dialog).toHaveCount(0);
+ await page.request.post('/api/auth/logout',{data:{},headers});await page.goto('/?view=app');await page.getByLabel('邮箱',{exact:true}).fill('welcome-browser@example.invalid');await page.getByPlaceholder('至少 8 位字符').fill('WelcomeBrowserQA123!');await page.getByRole('button',{name:'登录创作者账号'}).click();await expect(page.getByRole('button',{name:'创作者中心'})).toBeVisible();await expect(dialog).toHaveCount(0);
+ const loggedIn=await(await page.request.get('/api/bootstrap')).json();expect(loggedIn.wallet.available).toBe(100);expect(loggedIn.ledger.filter((r:{kind:string})=>r.kind==='registration_reward')).toHaveLength(1);
+});

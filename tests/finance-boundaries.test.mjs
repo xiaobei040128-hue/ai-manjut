@@ -15,7 +15,7 @@ async function fixture(run){
   const photo=(await readFile('public/art/poster0.png')).toString('base64');
   const identity=finance.identity(user.id,{name:'边界测试',documentType:'护照',number:'BOUNDARY123',frontPhoto:{data:photo},backPhoto:{data:photo}});finance.review('qa','identity',identity.id,{decision:'approve'});
   for(const number of ['0000000000001111','0000000000002222']){finance.card(user.id,{bank:'测试银行',holder:'边界测试',number});const card=finance.snapshot(user.id).cards.find(c=>c.status==='review');finance.review('qa','bank',card.id,{decision:'approve'});}
-  finance.adjust('qa',user.id,{direction:'credit',amount:'200',note:'isolated fixture',operationKey:randomUUID()});
+  finance.adjust('qa',user.id,{direction:'credit',amount:'199',note:'isolated fixture',operationKey:randomUUID()});
   await run({store,auth,finance,user,cards:finance.snapshot(user.id).cards,balance:()=>store.asUser(user.id,()=>store.summary().wallet.available)});
  }finally{store.close();await rm(dir,{recursive:true,force:true});}
 }

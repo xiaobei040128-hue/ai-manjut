@@ -181,7 +181,11 @@ export function createCreatorAuth(store, port) {
         db.prepare("UPDATE invitations SET used=used+1 WHERE id=?").run(
           invite.id,
         );
+        const rewardId='registration:'+id;
+        db.prepare("INSERT INTO ledger(kind,amount,balance_after,note,operation_key,created_at,owner_id) VALUES('registration_reward',100,100,?,?,?,?)").run('新手任务奖励 · 注册成功',rewardId,created,id);
+        store.notifyUser(id,'新手奖励已到账','注册成功，1.00 USD 新手奖励已计入可用余额，可在钱包查看。','finance',rewardId);
         return {
+          registrationReward:{id:rewardId,amount:100,currency:'USD'},
           user: {
             id,
             email,

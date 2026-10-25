@@ -1,3 +1,4 @@
+import RegistrationReward from "./RegistrationReward";
 import {BrandMark} from "../Brand";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
@@ -35,6 +36,7 @@ export default function CreatorAccess({
     [visible, setVisible] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
+  const [registrationReward,setRegistrationReward]=useState<{id:string;amount:number}|null>(null);
   const generation = useRef(0), mutation = useRef(false);
   const keyboard = useKeyboard(),
     native =
@@ -64,6 +66,7 @@ export default function CreatorAccess({
       generation.current++;
       setLoading(false);
       setUser(null);
+      setRegistrationReward(null);
       setPassword("");
       setError(
         (event as CustomEvent<string>).detail || "登录已过期，请重新登录",
@@ -91,7 +94,7 @@ export default function CreatorAccess({
     setBusy(true);
     setError("");
     try {
-      const result = await api<{ user: CreatorUser }>("/auth/" + mode, "POST", {
+      const result = await api<{ user: CreatorUser; registrationReward?:{id:string;amount:number} }>("/auth/" + mode, "POST", {
         email,
         password,
         ...(mode === "register" ? { inviteCode } : {}),
@@ -100,6 +103,7 @@ export default function CreatorAccess({
       setPassword("");
       setConfirmation("");
       setInvite("");
+      if(mode==='register'&&result.registrationReward)setRegistrationReward(result.registrationReward);
       setUser(result.user);
     } catch (e) {
       if (version === generation.current) setError((e as Error).message);
@@ -116,6 +120,7 @@ export default function CreatorAccess({
     finally { mutation.current = false; }
     keyboard.hide();
     setUser(null);
+    setRegistrationReward(null);
     setMode("login");
     setVisible(false);
     setPassword("");
@@ -123,7 +128,7 @@ export default function CreatorAccess({
     setError("");
     history.replaceState(null, "", "/?view=app&page=profile");
   }
-  if (user) return <>{children(user, logout)}</>;
+  if (user) return <>{children(user, logout)}{registrationReward&&<RegistrationReward amount={registrationReward.amount} onClose={()=>setRegistrationReward(null)} onStart={()=>{setRegistrationReward(null);location.assign('/?view=app&design=newcomer');}}/>}</>;
   return (
     <div className={"studio s-auth " + (native ? "native-mode" : "")}>
       <MobileScroll className="s-auth-scroll">

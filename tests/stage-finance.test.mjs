@@ -17,7 +17,7 @@ test('production stages freeze server quotes and settle once, independent of lat
   const auth=createCreatorAuth(s,4986),finance=createFinance(s,dir),scope=createOperatorScope(s),enroll=createStageEnrollments(s,scope);
   const inv=auth.createInvite('stage-admin',{},'super'),req={headers:{},socket:{remoteAddress:'stage-qa'}};
   const user=(await auth.register(req,{email:'stage-qa@example.invalid',password:'StageFinanceQA123!',inviteCode:inv.code})).user;
-  finance.adjust('stage-admin',user.id,{direction:'credit',amount:'1000',note:'Isolated QA funding',operationKey:'stage-test-funding-0001'});
+  finance.adjust('stage-admin',user.id,{direction:'credit',amount:'999',note:'Isolated QA funding',operationKey:'stage-test-funding-0001'});
   for(const invalid of ['-1','100.01','1e2','0.001',null,''])assert.throws(()=>s.setCommissionRate(invalid));
   s.setCommissionRate('5');
   const tasks=[1,2,3].map(stage=>s.createTask({title:'阶段任务 '+stage,description:'发布一条合规作品',platform:'TikTok',language:'中文',genre:'剧情',deposit:'100',commission:'999',posts:1,episodes:1,slots:10,cover:'/art/hero-v2.webp',stage}));
@@ -26,7 +26,7 @@ test('production stages freeze server quotes and settle once, independent of lat
   const poor=(await auth.register(req,{email:'stage-unfunded@example.invalid',password:'StageFinanceQA123!',inviteCode:inv.code})).user;
   assert.throws(()=>s.asUser(poor.id,()=>s.claim(tasks[0].id,quote(tasks[0]))),e=>e.status===409);
   assert.equal(s.db.prepare('SELECT COUNT(*) n FROM assignments WHERE owner_id=?').get(poor.id).n,0);
-  assert.equal(s.asUser(poor.id,()=>s.summary()).wallet.available,0);
+  assert.equal(s.asUser(poor.id,()=>s.summary()).wallet.available,100);
   const as=fn=>s.asUser(user.id,fn);
   assert.throws(()=>as(()=>s.claim(tasks[1].id,quote(tasks[1]))),e=>e.status===403);
   assert.throws(()=>as(()=>s.claim(tasks[0].id,{amount:1,commission:500,rateBps:500})),e=>e.status===409);
