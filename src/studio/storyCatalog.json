@@ -145,5 +145,26 @@
     "genre": "航空悬疑",
     "description": "跨洋航班起飞两小时后，一名乘客死在锁死的头等舱洗手间。飞机无法降落，而凶手一定还在三百名乘客之中...",
     "cover": "/stories/murder-at-30000-feet.png"
+  },
+  {
+    "id": "the-last-circus-in-town",
+    "title": "The Last Circus in Town",
+    "genre": "奇幻悬疑",
+    "description": "一个落魄女孩加入只在雨夜出现的流动马戏团。她很快发现，台上的“魔术”都是真的，而每位观众离场时都会失去一段记忆...",
+    "cover": "/stories/the-last-circus-in-town.webp"
+  },
+  {
+    "id": "the-queen-of-the-desert-casino",
+    "title": "The Queen of the Desert Casino",
+    "genre": "赌场悬疑",
+    "description": "她只是沙漠赌场里最低级的发牌员，却在一夜之间赢走老板全部资产。第二天，五个家族同时派人来找她，因为她赢到的并不只是钱...",
+    "cover": "/stories/the-queen-of-the-desert-casino.webp"
+  },
+  {
+    "id": "the-city-under-the-sea",
+    "title": "The City Under the Sea",
+    "genre": "深海科幻",
+    "description": "深海维修员在海底电缆旁发现一扇不属于任何国家的金属门。门后是一座灯火通明的城市，而里面的人已经等待她二十年...",
+    "cover": "/stories/the-city-under-the-sea.webp"
   }
 ]

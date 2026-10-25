@@ -37,7 +37,7 @@ test('premium triggers are per-customer, multiple, opt-in, immutable after claim
   finance.adjust('dispatch-admin',a2.id,{direction:'debit',amount:'490',note:'Insufficient balance test',operationKey:'drain-'+a2.id});cancel(a2,unset.id);finance.adjust('dispatch-admin',a2.id,{direction:'debit',amount:'10',note:'Drain refunded amount',operationKey:'drain-refund-'+a2.id});
   assert.throws(()=>claim(a2),e=>e.status===409);assert.equal(service.list(agentA).customers.find(c=>c.id===a2.id).claimedThrough,1);
   for(let n=4;n<=20;n++){const assignment=claim(a);assert.equal(assignment.task.dispatch_sequence,n);assert.equal(assignment.task.premium,0);cancel(a,assignment.id);}
-  assert.throws(()=>claim(a),e=>e.status===409);assert.equal(service.list(agentA).customers.find(c=>c.id===a.id).claimedThrough,20);
+  const retry=claim(a);assert.equal(retry.task.dispatch_sequence,21);assert.equal(s.asUser(a.id,()=>s.dispatchStatus()).completed,0);cancel(a,retry.id);
   assert.equal(service.list(agentB).customers[0].claimedThrough,2);
  }finally{s.close();}
 });

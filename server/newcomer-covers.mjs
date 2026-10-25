@@ -1,3 +1,5 @@
+import {readFileSync} from 'node:fs';
+const lawyerArtwork=JSON.parse(readFileSync(new URL('./newcomer-artwork.json',import.meta.url),'utf8'));
 import {randomBytes,randomInt,randomUUID} from 'node:crypto';
 import {AppError} from './store.mjs';
 export const NEWCOMER_COVER_PRICE=188;
@@ -32,7 +34,7 @@ export function createNewcomerCovers(store){
    const hasOffers=!!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='stage_task_offers'").get();
    const prior=hasOffers?db.prepare('SELECT task_id FROM stage_task_offers WHERE owner_id=? AND stage=1 AND assignment_id IS NULL AND retired=0').get(id):null;
    const selected=tasks.find(t=>t.id===prior?.task_id)||tasks[randomInt(tasks.length)];
-   const artwork={title:selected.title,cover:selected.cover,description:selected.description,episodes:selected.episodes,language:selected.language,genre:selected.genre};
+   const artwork={title:selected.title,cover:selected.cover,description:selected.description,episodes:selected.title===lawyerArtwork.title?null:selected.episodes,language:selected.title===lawyerArtwork.title?'':selected.language,genre:selected.genre};
    db.prepare('INSERT INTO newcomer_cover_orders(id,owner_id,source_task_id,artwork,created_at) VALUES(?,?,?,?,?)').run(randomUUID(),id,selected.id,JSON.stringify(artwork),new Date().toISOString());
    // Preserve superseded, unpaid offers in the audit history without blocking later stages.
    if(hasOffers)db.prepare('UPDATE stage_task_offers SET retired=1 WHERE owner_id=? AND stage=1 AND assignment_id IS NULL').run(id);

@@ -16,7 +16,7 @@ export function createStageDispatch(store){
  db.exec('CREATE UNIQUE INDEX IF NOT EXISTS stage_offer_pending ON stage_task_offers(owner_id) WHERE assignment_id IS NULL AND retired=0');
  if(!db.prepare('PRAGMA table_info(stage_task_offers)').all().some(c=>c.name==='story'))db.exec('ALTER TABLE stage_task_offers ADD COLUMN story TEXT');
  db.exec('CREATE TABLE IF NOT EXISTS third_story_queues(owner_id TEXT NOT NULL,day TEXT NOT NULL,story_order TEXT NOT NULL,PRIMARY KEY(owner_id,day))');
- function storyFor(user){const day=shanghaiDay();let saved=db.prepare('SELECT story_order FROM third_story_queues WHERE owner_id=? AND day=?').get(user,day);if(!saved){const order=stories.map(s=>s.id);for(let i=order.length-1;i>0;i--){const j=randomInt(i+1);[order[i],order[j]]=[order[j],order[i]];}db.prepare('INSERT INTO third_story_queues VALUES(?,?,?)').run(user,day,JSON.stringify(order));saved={story_order:JSON.stringify(order)};}const order=JSON.parse(saved.story_order),missing=stories.map(s=>s.id).filter(id=>!order.includes(id));if(missing.length){order.push(...missing);db.prepare('UPDATE third_story_queues SET story_order=? WHERE owner_id=? AND day=?').run(JSON.stringify(order),user,day);}return stories.find(s=>s.id===order[store.dispatchStatus().claimed]);}
+ function storyFor(user){return stories.find(s=>s.id===store.asUser(user,()=>store.dispatchStatus()).nextStoryId);}
  const pending=user=>db.prepare('SELECT * FROM stage_task_offers WHERE owner_id=? AND assignment_id IS NULL AND retired=0').get(user);
  const allowed=(user,id)=>!!db.prepare('SELECT 1 FROM assignments WHERE owner_id=? AND task_id=? UNION ALL SELECT 1 FROM stage_task_offers WHERE owner_id=? AND task_id=? LIMIT 1').get(user,id,user,id);
  const active=user=>db.prepare("SELECT id FROM assignments WHERE owner_id=? AND status IN ('active','review','revision') LIMIT 1").get(user);
@@ -26,7 +26,7 @@ export function createStageDispatch(store){
   if(stage===1&&db.prepare("SELECT 1 FROM assignments a JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.owner_id=? AND a.status='completed' AND f.stage=1").get(user))throw new AppError('新手体验任务已完成',409);
   if(stage===2&&!db.prepare("SELECT 1 FROM assignments a JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.owner_id=? AND a.status='completed' AND f.stage=1").get(user))throw new AppError('请先完成第一阶段任务并通过审核',403);
   if(stage===3&&!db.prepare("SELECT 1 FROM stage_enrollments WHERE user_id=? AND status='approved'").get(user))throw new AppError('请先完成第三阶段报名审核',403);
-  if(stage===3&&store.dispatchStatus().claimed>=20)throw new AppError('今日第三阶段20单已领取完毕，请明日再来',409);
+  if(stage===3){const plan=store.dispatchStatus();if(plan.complete||plan.waiting||plan.claimed>=plan.limit)throw new AppError(plan.complete?'五天作品计划已全部完成':'本批任务已领取，请完成后于下一天开启新一批',409);}
  }
  function offer(row){if(!row)return null;const task=store.getTask(row.task_id);if(row.stage===3){let story=row.story?JSON.parse(row.story):storyFor(row.owner_id);if(story&&!row.story)db.prepare('UPDATE stage_task_offers SET story=? WHERE id=?').run(JSON.stringify(story),row.id);return {id:row.id,stage:3,reservedAmount:balance.amount(row.owner_id,'stage',row.id),task:{...task,...story, id:task.id,episodes:null,platform:'',language:'',catalogStoryId:story?.id}};}return {id:row.id,stage:row.stage,task};}
  function visible(user,summary){
@@ -56,6 +56,7 @@ export function createStageDispatch(store){
    const tasks=store.summary().tasks.filter(t=>t.stage===stage&&t.remaining>0);
    if(!tasks.length)throw new AppError('本阶段暂无可派发任务，请稍后再来',409);
    const nextStory=stage===3?storyFor(user):null;
+   if(nextStory&&store.allTasks().some(t=>t.stage===3&&t.title===nextStory.title)&&!tasks.some(t=>t.title===nextStory.title))throw new AppError('当前作品暂不可领取，请联系平台处理',409);
    const selected=(nextStory?tasks.find(t=>t.title===nextStory.title):null)||tasks[randomInt(tasks.length)],id=randomUUID();
    db.prepare('INSERT INTO stage_task_offers(id,owner_id,stage,task_id,created_at) VALUES(?,?,?,?,?)').run(id,user,stage,selected.id,new Date().toISOString());
    if(stage===3)balance.reserve(user,'stage',id,selected.deposit,selected.title);

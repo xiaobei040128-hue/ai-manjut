@@ -1,3 +1,4 @@
+import {initializeThirdPlan,thirdPlan,bindThirdPlan} from './third-plan.mjs';
 import { AsyncLocalStorage } from "node:async_hooks";
 import { DatabaseSync } from "node:sqlite";
 import { randomUUID } from "node:crypto";
@@ -138,6 +139,7 @@ export function createStore(file, {fixtures=false}={}) {
   for(const [column,type] of [['premium','INTEGER NOT NULL DEFAULT 0'],['sequence','INTEGER'],['dispatch_day','TEXT']])if(!db.prepare('PRAGMA table_info(assignment_terms)').all().some(c=>c.name===column))db.exec('ALTER TABLE assignment_terms ADD COLUMN '+column+' '+type);
   db.exec("CREATE TABLE IF NOT EXISTS premium_dispatch_policy(user_id TEXT NOT NULL,day TEXT NOT NULL,sequences TEXT NOT NULL,revision INTEGER NOT NULL,updated_by TEXT NOT NULL,updated_at TEXT NOT NULL,PRIMARY KEY(user_id,day))");
   if(!db.prepare('PRAGMA table_info(commission_policy)').all().some(c=>c.name==='revision'))db.exec('ALTER TABLE commission_policy ADD COLUMN revision INTEGER NOT NULL DEFAULT 0');
+  initializeThirdPlan(db);
   const policy=()=>db.prepare('SELECT * FROM commission_policy WHERE id=1').get();
   const quote=(row,rate=policy().rate_bps)=>{return {...row,premium:0,commission:rate===null?row.commission:Math.round(row.deposit*rate/10000),commission_rate_bps:rate};};
   function frozenTask(a,t,terms=db.prepare('SELECT * FROM assignment_terms WHERE assignment_id=?').get(a.id)){return terms?{...t,deposit:terms.amount,commission:terms.commission,commission_rate_bps:terms.rate_bps,stage:terms.stage,premium:terms.premium,dispatch_sequence:terms.sequence,dispatch_day:terms.dispatch_day}:t;}
@@ -408,6 +410,7 @@ export function createStore(file, {fixtures=false}={}) {
       if(!fixtures&&policy().rate_bps===null)throw new AppError('平台尚未配置佣金比例',409);
       if(policy().rate_bps!==null&&scoped()&&(!expected||expected.amount!==t.deposit||expected.commission!==t.commission||expected.rateBps!==t.commission_rate_bps))throw new AppError('任务金额或佣金规则已更新，请刷新后确认领取',409);
       if (t.remaining < 1) throw new AppError("任务名额已满", 409);
+      if(t.stage===3){const plan=thirdPlan(db,owner());if(plan.complete||plan.waiting||plan.claimed>=plan.limit)throw new AppError(plan.complete?'五天作品计划已全部完成':'请完成当前批次，下一天再开启新任务',409);if(get("SELECT id FROM assignments a JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.owner_id=? AND f.stage=3 AND a.status IN ('active','review','revision')",owner()))throw new AppError('请先完成当前作品',409);}
       const id = randomUUID(),
         created = now(),
         deadline = new Date(Date.now() + 48 * 3600e3).toISOString();
@@ -420,8 +423,9 @@ export function createStore(file, {fixtures=false}={}) {
         deadline,owner(),
       );
       let sequence=null,dispatchDay=null,premium=0;
-      if(t.stage===3){dispatchDay=shanghaiDay();sequence=get('SELECT COALESCE(MAX(f.sequence),0)+1 n FROM assignment_terms f JOIN assignments a ON a.id=f.assignment_id WHERE a.owner_id=? AND f.dispatch_day=?',owner(),dispatchDay).n;if(sequence>20)throw new AppError('今日第三阶段20单已领取完毕，请明日再来',409);const config=get('SELECT sequences FROM premium_dispatch_policy WHERE user_id=? AND day=?',owner(),dispatchDay);premium=config&&JSON.parse(config.sequences).includes(sequence)?1:0;}
+      if(t.stage===3){dispatchDay=shanghaiDay();sequence=get('SELECT COALESCE(MAX(f.sequence),0)+1 n FROM assignment_terms f JOIN assignments a ON a.id=f.assignment_id WHERE a.owner_id=? AND f.dispatch_day=?',owner(),dispatchDay).n;const config=get('SELECT sequences FROM premium_dispatch_policy WHERE user_id=? AND day=?',owner(),dispatchDay);premium=config&&JSON.parse(config.sequences).includes(sequence)?1:0;}
       run('INSERT INTO assignment_terms(assignment_id,amount,commission,rate_bps,stage,premium,sequence,dispatch_day) VALUES(?,?,?,?,?,?,?,?)',id,t.deposit,t.commission,t.commission_rate_bps,t.stage,premium,sequence,dispatchDay);
+      if(t.stage===3)bindThirdPlan(db,owner(),id);
       ledger(id, "hold", -t.deposit, "领取任务 · " + t.title, "claim:" + id);
       event(id, "claimed", "任务已领取，任务本金已冻结");
       notify(premium?"高阶任务已领取":"新任务已领取", t.title + " · 请在 48 小时内完成发布", id);
@@ -702,7 +706,7 @@ export function createStore(file, {fixtures=false}={}) {
   }
   return {
     db,
-    dispatchStatus(){const day=shanghaiDay();return {day,claimed:get('SELECT COALESCE(MAX(f.sequence),0) n FROM assignment_terms f JOIN assignments a ON a.id=f.assignment_id WHERE a.owner_id=? AND f.dispatch_day=?',owner(),day).n,limit:20};},
+    dispatchStatus(){return thirdPlan(db,owner());},
     notifications:notificationPage,
     notifyUser,
     commissionSettings:policy,

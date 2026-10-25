@@ -1,3 +1,4 @@
+import {syncStoryTasks} from './sync-story-tasks.mjs';
 import {createStageJourney} from './stage-journey.mjs';
 import {createStageDispatch} from './stage-dispatch.mjs';
 import {createPremiumDispatch} from './premium-dispatch.mjs';
@@ -47,6 +48,7 @@ const stageEnrollments=createStageEnrollments(store,operatorScope);
 const premiumDispatch=createPremiumDispatch(store,operatorScope);
 const stageDispatch=createStageDispatch(store);
 const stageJourney=createStageJourney(store);
+syncStoryTasks(store);
 const production = args.includes("--production");
 let backupActive = false;
 const types = {
@@ -156,7 +158,7 @@ async function upload(input, assignmentId, actor) {
 const quote = (value) => '"' + String(value ?? "").replace(/"/g, '""') + '"';
 async function validateCoverPath(cover) {
   if(typeof cover !== "string" || !cover.startsWith("/art/"))return;
-  if(!/^\/art\/[a-zA-Z0-9_-]+\.(png|jpe?g|webp|gif)$/.test(cover) || !(await stat(join(root,"public",cover.slice(1))).catch(()=>null))?.isFile())throw new AppError("封面文件不存在，请重新选择或上传");
+  if(!/^\/(?:art|stories)\/[a-zA-Z0-9_-]+\.(png|jpe?g|webp|gif)$/.test(cover) || !(await stat(join(root,"public",cover.slice(1))).catch(()=>null))?.isFile())throw new AppError("封面文件不存在，请重新选择或上传");
 }
 async function api(req, res, url, inScope=false) {
   const p = url.pathname,

@@ -17,7 +17,7 @@ type Snapshot=Bootstrap&{
  journey:JourneySnapshot;
  offer:{id:string;stage:number;task:Task;reservedAmount:number|null}|null;
  commissionPolicy:{rate_bps:number|null};
- dispatch:{day:string;claimed:number;limit:number};
+ dispatch:{day:string;today:string;batch:number;days:number;total:number;totalCompleted:number;completed:number;claimed:number;limit:number;quotas:number[];waiting:boolean;complete:boolean};
  stageTwoEligible:boolean;
  stageThreeEligible:boolean;
 };
@@ -99,7 +99,7 @@ export default function StageWork({stage}:{stage:number}){
  const assignments=data?.assignments.filter(a=>a.task.stage===stage)||[];
  const current=assignments.find(live),offer=data?.offer?.stage===stage?data.offer:null,task=offer?.task;
  const blockedByCurrent=!!data?.assignments.some(live),blockedByOffer=!!data?.offer&&!offer;
- const dailyLimitReached=stage===3&&!!data&&data.dispatch.claimed>=data.dispatch.limit;
+ const dailyLimitReached=stage===3&&!!data&&(data.dispatch.waiting||data.dispatch.complete||data.dispatch.claimed>=data.dispatch.limit);
 
  useEffect(()=>{
   if(stage!==1||!data?.journey.newcomer.card)return;
@@ -136,7 +136,8 @@ export default function StageWork({stage}:{stage:number}){
 
     {!ready?<section><h2>任务暂未开放</h2><p>平台正在配置佣金规则，请稍后刷新。</p></section>:<>
      {!eligible&&stage===3&&<EnrollmentCard/>}
-     {stage===3&&<div className="stage-daily-count"><span>{data.dispatch.day} · 北京时间</span><b>今日进度 {data.dispatch.claimed} / {data.dispatch.limit}</b>{dailyLimitReached&&<small>今日名额已用完，未完成任务仍可继续。</small>}</div>}
+     {stage===3&&<section className="third-plan-progress" aria-label="五天作品计划"><div className="third-plan-heading"><div><small>五天作品计划</small><h2>{data.dispatch.complete?'全部作品已完成':`第 ${data.dispatch.batch} 批 · ${data.dispatch.limit} 部作品`}</h2></div><strong>{data.dispatch.totalCompleted}<span> / {data.dispatch.total}</span></strong></div><progress aria-label="作品总进度" value={data.dispatch.totalCompleted} max={data.dispatch.total}/><ol className="third-plan-days">{data.dispatch.quotas.map((count,i)=><li key={i} className={data.dispatch.complete||i+1<data.dispatch.batch?'is-complete':i+1===data.dispatch.batch?'is-current':''}><span>{i+1<data.dispatch.batch||data.dispatch.complete?'✓':String(i+1).padStart(2,'0')}</span><b>{count} 部</b><small>{data.dispatch.complete||i+1<data.dispatch.batch?'已完成':i+1===data.dispatch.batch?'当前批次':'待开启'}</small></li>)}</ol><p>{data.dispatch.complete?'24 部作品已全部通过审核，计划已完成。':data.dispatch.waiting?'本批已全部完成，下一天（北京时间）开启下一批。':`本批已完成 ${data.dispatch.completed} / ${data.dispatch.limit} 部。未完成会保留；全部通过审核后开启下一批，每天最多一批。`}</p></section>}
+
      {(stage!==1||!!current&&data.journey.onboarding.step===2&&data.journey.onboarding.revealed)&&<section id="experience-task" className="stage-task-list"><h2>{current?'进行中的作品':offer?'本次作品':'开启你的下一段故事'}</h2>
       {current?<article className="stage-task-card"><img src={current.task.cover} alt=""/><div><h3>{current.task.title}</h3><p>{statusText[current.status]}</p><button onClick={()=>location.assign(assignmentUrl(current.id))}>继续当前任务</button></div></article>
       :task?<article className="stage-task-card stage-story-card"><div className="stage-story-poster"><img src={task.cover} alt={task.title+'封面'}/><span>{task.genre} · {task.language}</span></div><div className="stage-story-copy">
@@ -150,8 +151,8 @@ export default function StageWork({stage}:{stage:number}){
        {stage===3&&<button className="purchase-release" disabled={claiming} onClick={()=>void discardOffer()}>取消领取，退回余额</button>}
        <a href={'/?view=app&page=detail&task='+encodeURIComponent(task.id)}>查看素材与任务详情 →</a>
       </div></article>
-      :<div className="stage-sealed-invitation"><div className="journey-invitation-art"><div className="journey-invitation-orbit"/><img src="/art/task-invitation-v1.png" alt="未揭晓的任务邀请"/></div><h3>好故事，即将与你相遇</h3>
-       <button disabled={claiming||!eligible||dailyLimitReached||blockedByCurrent||blockedByOffer||!!connectionError} onClick={()=>void draw()}>{claiming?'正在开启…':'领取任务'}</button>
+      :<div className="stage-sealed-invitation"><div className="journey-invitation-art"><div className="journey-invitation-orbit"/><img src="/art/task-invitation-v1.png" alt="未揭晓的任务邀请"/></div><h3>{data.dispatch.complete?'这一季的故事，已全部完成':data.dispatch.waiting?'本批已完成，明天继续':'好故事，即将与你相遇'}</h3>
+       <button disabled={claiming||!eligible||dailyLimitReached||blockedByCurrent||blockedByOffer||!!connectionError} onClick={()=>void draw()}>{claiming?'正在开启…':data.dispatch.complete?'计划已完成':data.dispatch.waiting?'等待下一批':'领取任务'}</button>
        {blockedByCurrent&&<p>请先完成并通过审核已接受的任务。</p>}{blockedByOffer&&<p>请先接受其他阶段已领取的任务。</p>}
       </div>}
      </section>}

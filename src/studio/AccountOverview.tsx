@@ -1,3 +1,4 @@
+import type {JourneySnapshot} from './NewcomerProgress';
 import {useEffect,useState} from "react";
 import {PersonIcon,CardStackIcon,LockClosedIcon,ChevronRightIcon,CheckIcon,CopyIcon,ReaderIcon,ArrowRightIcon} from "@radix-ui/react-icons";
 import {api,date} from "../api";
@@ -11,8 +12,8 @@ export function AccountReadiness({id,createdAt,onWallet}:{id:string;createdAt:st
  {error&&<p className="v3-inline-error" role="alert">{error}</p>}<footer><LockClosedIcon/>认证状态与钱包审批记录同步</footer></section>;
 }
 export function JourneyRecord(){
- const [data,setData]=useState<{assignments:{status:string;task:{stage:number}}[]}|null>(null);
- useEffect(()=>{let active=true;void api<{assignments:{status:string;task:{stage:number}}[]}>('/stage-finance').then(v=>{if(active)setData(v);}).catch(()=>{});return()=>{active=false;};},[]);
- const done=data?.assignments.filter(a=>a.status==='completed')||[],stage=done.some(a=>a.task.stage===2)?3:done.some(a=>a.task.stage===1)?2:1;
+ const [data,setData]=useState<{stageThreeEligible:boolean;journey:JourneySnapshot;assignments:{status:string;task:{stage:number}}[]}|null>(null);
+ useEffect(()=>{let active=true;void api<{stageThreeEligible:boolean;journey:JourneySnapshot;assignments:{status:string;task:{stage:number}}[]}>('/stage-finance').then(v=>{if(active)setData(v);}).catch(()=>{});return()=>{active=false;};},[]);
+ const done=data?.assignments.filter(a=>a.status==='completed')||[],stage=data?.stageThreeEligible||data?.journey.community.completed===5||done.some(a=>a.task.stage===2)?3:data?.journey.newcomer.complete?2:1;
  return <a className="v3-journey-record" href={'/?view=app&design='+['newcomer','advanced','third'][stage-1]}><span className="v3-journey-icon"><ReaderIcon/></span><div><small>阶段任务</small><b>第 {stage} 阶段 · 已审核完成 {done.length} 项</b></div><ArrowRightIcon/></a>;
 }
