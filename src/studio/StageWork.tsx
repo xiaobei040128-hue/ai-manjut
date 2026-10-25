@@ -136,7 +136,7 @@ export default function StageWork({stage}:{stage:number}){
        <div className="stage-story-specs">{stage===3?<span>{task.genre}</span>:<><span>{task.episodes} 集</span><span>{task.platform}</span><span>{task.language}</span></>}</div>
        <h4>剧情概览</h4><p>{task.description}</p>
        {stage!==3&&<><h4>本次任务</h4><p>使用本次作品素材，在 {task.platform} 完成 {task.posts} 条作品发布，并提交发布链接与截图。</p></>}
-       <div className="stage-purchase-summary"><div><span>{stage===3?'版权选购金额':'任务金额'}</span><b>{money(task.deposit)}</b></div><div><span>预计收入</span><b>{money(task.commission)}</b></div></div>
+       </div><div className="stage-story-checkout"><div className="stage-purchase-summary"><div><span>{stage===3?'版权选购金额':'任务金额'}</span><b>{money(task.deposit)}</b></div><div><span>预计收入</span><b>{money(task.commission)}</b></div></div>
        <button disabled={claiming||!eligible||dailyLimitReached||data.wallet.available<task.deposit||!task.active||task.remaining<1||!!connectionError} onClick={()=>void claim(task)}>{claiming?'正在处理…':stage===3?'购买版权 · '+money(task.deposit):'接受任务 · '+money(task.deposit)}</button>
        {data.wallet.available<task.deposit&&<a href="/?view=app&page=wallet">余额不足，前往充值 →</a>}
        <a href={'/?view=app&page=detail&task='+encodeURIComponent(task.id)}>查看素材与任务详情 →</a>
