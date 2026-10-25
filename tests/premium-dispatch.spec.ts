@@ -104,14 +104,9 @@ test('registration immediately credits one dollar and celebrates once, with no r
  await expect.poll(()=>page.evaluate(()=>(window as unknown as {welcomeAudioStats:{starts:number[]}}).welcomeAudioStats.starts.length)).toBe(3);
  const offsets=await page.evaluate(()=>(window as unknown as {welcomeAudioStats:{starts:number[]}}).welcomeAudioStats.starts);
  expect(offsets[0]).toBeGreaterThan(1.5);expect(offsets[0]).toBeLessThan(1.8);
- await dialog.getByRole('button',{name:'Mute welcome sound',exact:true}).click();
- await dialog.getByRole('button',{name:'Replay welcome',exact:true}).click();
- await expect(dialog.getByRole('button',{name:'Start creating'})).toBeEnabled();
- expect(await page.evaluate(()=>(window as unknown as {welcomeAudioStats:{starts:number[]}}).welcomeAudioStats.starts.length)).toBe(3);
- await dialog.getByRole('button',{name:'Enable welcome sound and replay',exact:true}).click();
- await expect.poll(()=>page.evaluate(()=>(window as unknown as {welcomeAudioStats:{starts:number[]}}).welcomeAudioStats.starts.length)).toBe(6);
- await expect(dialog.getByRole('button',{name:'Start creating'})).toBeEnabled();
-
+ await expect(dialog.getByRole('button',{name:'Replay welcome',exact:true})).toHaveCount(0);
+ await expect(dialog.getByRole('button',{name:'Mute welcome sound',exact:true})).toHaveCount(0);
+ await expect(dialog.locator('.registration-brand')).toHaveCount(0);
  const registered=await(await page.request.get('/api/bootstrap')).json();expect(registered.wallet.available).toBe(100);expect(registered.wallet.earned).toBe(0);expect(registered.ledger.filter((r:{kind:string})=>r.kind==='registration_reward')).toHaveLength(1);
  await expect(page.locator('.registration-character')).toBeVisible();await expect.poll(()=>page.locator('.registration-character').evaluate((image:HTMLImageElement)=>image.complete&&image.naturalWidth>0)).toBe(true);
  await page.screenshot({path:'../registration-reward-verified.png',animations:'disabled'});await page.setViewportSize({width:320,height:568});await dialog.getByRole('button',{name:'Start creating'}).scrollIntoViewIfNeeded();await expect(dialog.getByRole('button',{name:'Start creating'})).toBeInViewport();await page.screenshot({path:'../registration-reward-small-screen.png',animations:'disabled'});await page.setViewportSize({width:430,height:920});await dialog.getByRole('button',{name:'Explore the studio'}).click();await expect(dialog).toHaveCount(0);await page.reload();await expect(dialog).toHaveCount(0);
