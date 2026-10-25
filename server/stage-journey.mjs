@@ -11,7 +11,7 @@ export function createStageJourney(store){
   const identity=has("SELECT 1 FROM identities WHERE user_id=? AND status='approved'",id);
   const experience=has("SELECT 1 FROM assignments a JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.owner_id=? AND f.stage=1 AND a.status='completed'",id)||has("SELECT 1 FROM newcomer_cover_orders WHERE owner_id=? AND state='completed'",id);
   const card=has("SELECT 1 FROM bank_cards WHERE user_id=? AND status='approved'",id);
-  const withdrawal=has("SELECT 1 FROM fund_requests WHERE user_id=? AND kind='withdrawal' AND status='paid'",id);
+  const withdrawal=has("SELECT 1 FROM fund_requests WHERE user_id=? AND kind='withdrawal' AND (status='paid' OR newcomer_task=1)",id);
   const graduate=has("SELECT 1 FROM ledger WHERE owner_id=? AND operation_key='newcomer-graduate:'||owner_id",id);
   return {registration,identity,experience,card,withdrawal,graduate,complete:identity&&experience&&card&&withdrawal&&graduate};
  }
@@ -27,7 +27,7 @@ export function createStageJourney(store){
   const running=db.prepare("SELECT 1 FROM assignments a JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.owner_id=? AND f.stage=1 AND a.status IN ('active','review','revision')").get(id);
   const found=running?2:states.findIndex(done=>!done),step=found<0?null:found;
   const pendingWithdrawal=db.prepare("SELECT id,status,amount,created_at FROM fund_requests WHERE user_id=? AND kind='withdrawal' AND status IN ('review','paying') ORDER BY created_at DESC LIMIT 1").get(id)||null;
-  return {pendingWithdrawal,newcomer:n,cover:covers.snapshot(id),onboarding:{step,revealed:step!==null&&(step===4&&!!pendingWithdrawal||!!running||!!db.prepare('SELECT 1 FROM onboarding_reveals WHERE owner_id=? AND step=?').get(id,step))},community:progress(id)};
+  return {pendingWithdrawal,newcomer:n,withdrawalInProgress:!!pendingWithdrawal,cover:covers.snapshot(id),onboarding:{step,revealed:step!==null&&(step===4&&!!pendingWithdrawal||!!running||!!db.prepare('SELECT 1 FROM onboarding_reveals WHERE owner_id=? AND step=?').get(id,step))},community:progress(id)};
  }
  return {
   snapshot,
@@ -43,7 +43,7 @@ export function createStageJourney(store){
   sync(id){return store.asUser(id,()=>store.audited(id,'journey.sync',id,()=>{
    const n=newcomer(id),rewards=[];
    if(n.identity&&grant(id,100,'newcomer-identity:'+id,'实名认证奖励 · 1.00 USD'))rewards.push({id:'newcomer-identity:'+id,amount:100});
-   if(n.identity&&n.experience&&n.card&&n.withdrawal&&grant(id,200,'newcomer-graduate:'+id,'首次提现完成 · 新手毕业奖励 2.00 USD'))rewards.push({id:'newcomer-graduate:'+id,amount:200});
+   if(n.identity&&n.experience&&n.card&&n.withdrawal&&grant(id,200,'newcomer-graduate:'+id,'新手计划完成 · 毕业奖励 2.00 USD'))rewards.push({id:'newcomer-graduate:'+id,amount:200});
    const current=snapshot(id);if(current.onboarding.step===2&&current.onboarding.revealed&&!current.cover&&!db.prepare("SELECT 1 FROM assignments a JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.owner_id=? AND f.stage=1 AND a.status IN ('active','review','revision')").get(id))covers.reveal(id);
    return {...snapshot(id),rewards};
   }));},
