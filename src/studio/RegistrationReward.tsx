@@ -15,18 +15,23 @@ export default function RegistrationReward({amount,onClose,onStart}:{amount:numb
   return()=>{cancelAnimationFrame(frame);document.body.style.overflow=overflow;previous?.focus();};
  },[amount]);
  return createPortal(<div lang="en" className={'registration-reward'+(ready?' is-ready':' is-intro')} onKeyDown={e=>{if(e.key==='Escape'){e.preventDefault();onClose();}if(e.key==='Tab'){const buttons=dialog.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)');if(!buttons?.length)return;const first=buttons[0],last=buttons[buttons.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}}}>
-  <img className="registration-character" src="/art/welcome-guide-v2.webp" alt="" aria-hidden="true" fetchPriority="high"/><div className="registration-scene-shade" aria-hidden="true"/><div className="registration-scan" aria-hidden="true"/>
-  <div className="registration-confetti" aria-hidden="true">{Array.from({length:20},(_,i)=><i key={i} style={{'--i':i} as React.CSSProperties}/>)}</div>
   <div ref={dialog} className="registration-award" role="dialog" aria-modal="true" aria-labelledby="registration-reward-title" aria-describedby="registration-reward-description">
-   <button ref={close} className="registration-close" aria-label="Skip welcome animation" onClick={onClose}><Cross2Icon/></button>
-   <div className="registration-brand"><BrandMark/><span>STUDIO</span></div>
+   <div className="registration-hero">
+    <img className="registration-character" src="/art/welcome-guide-v3.webp" alt="" aria-hidden="true" fetchPriority="high"/>
+    <div className="registration-scene-shade" aria-hidden="true"/><div className="registration-scan" aria-hidden="true"/>
+    <div className="registration-confetti" aria-hidden="true">{Array.from({length:14},(_,i)=><i key={i} style={{'--i':i} as React.CSSProperties}/>)}</div>
+    <button ref={close} className="registration-close" aria-label="Skip welcome animation" onClick={onClose}><Cross2Icon/></button>
+    <div className="registration-brand"><BrandMark/><span>STUDIO</span></div>
+   </div>
+   <div className="registration-copy">
    <span className="registration-eyebrow">YOUR STORY STARTS HERE</span>
    <h2 id="registration-reward-title">Welcome aboard.</h2>
-   <p id="registration-reward-description">Registration complete.<br/>A little welcome. A new beginning.</p>
+   <p id="registration-reward-description">Registration complete. Your story starts now.</p>
    <div className="registration-amount"><span>YOUR WELCOME REWARD</span><strong aria-label={money(amount)}><span aria-hidden="true">{money(shown)}</span></strong><small aria-live="polite">{ready?<><CheckIcon/>Added to your available balance</>:<>Revealing your welcome reward</>}</small></div>
-   <p className="registration-note">Already in your wallet. No claim needed.<br/>A one-time reward for your new account.</p>
+   <p className="registration-note">A one-time welcome, already in your wallet.</p>
    <button ref={primary} className="registration-start" disabled={!ready} onClick={onStart}>Start creating<ArrowRightIcon/></button>
    <button className="registration-home" onClick={onClose}>{ready?'Explore the studio':'Skip intro'}</button>
+   </div>
   </div>
  </div>,document.body);
 }
