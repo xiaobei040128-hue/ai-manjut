@@ -19,7 +19,7 @@ const titles:Record<Page,{title:string;sub:string}>={commission:{title:'金额�
 const currentRoute=()=>{const [path,search='']=location.hash.slice(1).split('?');return {page:(nav.some(n=>n.id===path)?path:'dashboard') as Page,task:new URLSearchParams(search).get('task')||''}};
 const tone=(status:string)=>({review:'amber',active:'purple',completed:'green',revision:'red',cancelled:'neutral'}[status]||'neutral');
 const shortId=(id:string)=>id.slice(0,8).toUpperCase();
-const ledgerKind:Record<string,string>={registration_reward:'注册新手奖励',activity_reward:'活动奖励',deposit:'充值入账',withdraw_hold:'提现冻结',withdraw_refund:'提现返还',admin_credit:'后台上分',admin_debit:'后台下分',credit:'初始额度',reward:'任务佣金',hold:'任务冻结',release:'任务结算返还',refund:'任务取消返还'};
+const ledgerKind:Record<string,string>={onboarding_reward:'成长奖励',registration_reward:'注册新手奖励',activity_reward:'活动奖励',deposit:'充值入账',withdraw_hold:'提现冻结',withdraw_refund:'提现返还',admin_credit:'后台上分',admin_debit:'后台下分',credit:'初始额度',reward:'任务佣金',hold:'任务冻结',release:'任务结算返还',refund:'任务取消返还'};
 const localDay=(date:Date)=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(date);
 type DialogState={kind:'edit'|'review'|'pause'|'archive'|'video';id?:string}|null;
 

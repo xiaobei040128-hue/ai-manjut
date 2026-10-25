@@ -10,7 +10,7 @@ export async function unlockWelcomeAudio(): Promise<boolean> {
 export function welcomeAudioReady(): boolean { return context?.state === 'running'; }
 export function playWelcomeChime(delaySeconds: number): () => void {
   const audio = context;
-  if (!audio || audio.state !== 'running') return () => {};
+  if (document.visibilityState === 'hidden' || !audio || audio.state !== 'running') return () => {};
   const nodes: OscillatorNode[] = [];
   const gains: GainNode[] = [];
   const cancel = () => { audio.removeEventListener('statechange', onState); nodes.forEach(n => { try { n.stop(); } catch {} n.disconnect(); }); gains.forEach(n => n.disconnect()); };

@@ -2192,7 +2192,7 @@ function Studio({
                                 .includes(ledgerSearch.trim().toLowerCase()) ||
                               money(r.amount).includes(ledgerSearch.trim())) &&
                             (ledgerFilter === "全部" ||
-                              (ledgerFilter === "活动奖励" && ["activity_reward","registration_reward"].includes(r.kind)) ||
+                              (ledgerFilter === "活动奖励" && ["activity_reward","registration_reward","onboarding_reward"].includes(r.kind)) ||
                               (ledgerFilter === "佣金" &&
                                 r.kind === "reward") ||
                               (ledgerFilter === "冻结" &&
@@ -2217,7 +2217,7 @@ function Studio({
                             }
                           >
                             <span className={"s-ledger-icon " + r.kind}>
-                              {["reward", "activity_reward","registration_reward"].includes(r.kind) ? (
+                              {["reward", "activity_reward","registration_reward","onboarding_reward"].includes(r.kind) ? (
                                 <StarIcon />
                               ) : r.kind === "hold" ? (
                                 <LockClosedIcon />
@@ -2254,7 +2254,7 @@ function Studio({
                             .includes(ledgerSearch.trim().toLowerCase()) ||
                           money(r.amount).includes(ledgerSearch.trim())) &&
                         (ledgerFilter === "全部" ||
-                          (ledgerFilter === "活动奖励" && ["activity_reward","registration_reward"].includes(r.kind)) ||
+                          (ledgerFilter === "活动奖励" && ["activity_reward","registration_reward","onboarding_reward"].includes(r.kind)) ||
                           (ledgerFilter === "佣金" && r.kind === "reward") ||
                           (ledgerFilter === "冻结" &&
                             ["hold", "withdraw_hold"].includes(r.kind)) ||
@@ -2341,25 +2341,13 @@ function Studio({
                     </button>
                   </div>
                   <div className="s-menu-group">
-                    <a href="/?view=app&design=third"><ReaderIcon/><span>第三阶段</span><small>报名与每日记录</small><ChevronRightIcon/></a>
                     <button onClick={() => go("planner")}>
                       <VideoIcon />
                       <span>创作工作室</span>
                       <small>分镜与发布检查</small>
                       <ChevronRightIcon />
                     </button>
-                    <a href="/?view=app&design=newcomer">
-                      <StarIcon />
-                      <span>新手成长计划</span>
-
-                      <ChevronRightIcon />
-                    </a>
-                    <a href="/?view=app&design=advanced">
-                      <LightningBoltIcon />
-                      <span>进阶创作计划</span>
-
-                      <ChevronRightIcon />
-                    </a>
+                    <button onClick={() => go("hall", true)}><StarIcon/><span>我的成长计划</span><ChevronRightIcon/></button>
                   </div>
                   <div className="s-menu-group">
                     <button onClick={() => go("help")}>
@@ -3064,7 +3052,7 @@ function Studio({
               </p>
               <h4>阶段任务与历史记录</h4>
               <p>
-                三个阶段使用后台发布的任务金额和统一佣金比例。已领取任务按领取时确认的金额与比例结算。
+                以当前作品展示的金额、完成佣金和任务要求为准。接受后可在任务记录中查看。
               </p>
               <h4>提交与审核</h4>
               <p>

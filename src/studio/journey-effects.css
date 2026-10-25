@@ -409,3 +409,4 @@
 .j-celebration .j-continue {
   font-family: inherit;
 }
+.j-celebration .j-emblem,.j-celebration .j-burst,.j-celebration .premium-cinematic{pointer-events:none}.j-celebration .j-close{z-index:10;cursor:pointer}.j-celebration .j-continue{position:relative;z-index:2}

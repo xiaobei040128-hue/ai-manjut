@@ -153,7 +153,7 @@ export async function api<T>(
     throw new Error("服务连接中断，请稍后重试");
   }
   if (!response.ok) {
-    const creatorPath=['/bootstrap','/journey','/finance','/notifications','/stage-finance','/assignments'].some(prefix=>path===prefix||path.startsWith(prefix+'/')||path.startsWith(prefix+'?'));
+    const creatorPath=['/bootstrap','/journey','/finance','/notifications','/stage-journey','/stage-finance','/assignments'].some(prefix=>path===prefix||path.startsWith(prefix+'/')||path.startsWith(prefix+'?'));
     if (response.status===401&&creatorPath || response.status===403&&['/bootstrap','/stage-finance'].includes(path))
       window.dispatchEvent(
         new CustomEvent("creator-session-expired", { detail: result.error }),

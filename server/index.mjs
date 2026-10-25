@@ -1,3 +1,5 @@
+import {createStageJourney} from './stage-journey.mjs';
+import {createStageDispatch} from './stage-dispatch.mjs';
 import {createPremiumDispatch} from './premium-dispatch.mjs';
 import {createStageEnrollments} from "./stage-enrollments.mjs";
 import {createActivityRewards} from "./activity-rewards.mjs";
@@ -43,6 +45,8 @@ const operatorScope=createOperatorScope(store);
 const activityRewards=createActivityRewards(store,operatorScope);
 const stageEnrollments=createStageEnrollments(store,operatorScope);
 const premiumDispatch=createPremiumDispatch(store,operatorScope);
+const stageDispatch=createStageDispatch(store);
+const stageJourney=createStageJourney(store);
 const production = args.includes("--production");
 let backupActive = false;
 const types = {
@@ -157,9 +161,27 @@ async function validateCoverPath(cover) {
 async function api(req, res, url, inScope=false) {
   const p = url.pathname,
     method = req.method;
+  if(p.startsWith('/api/stage-journey')){
+    const user=creatorAuth.require(req);
+    if(p==='/api/stage-journey'&&method==='GET')return send(res,200,stageJourney.snapshot(user.id));
+    if(method==='POST'){
+      validateOrigin(req);const input=await body(req);
+      if(p==='/api/stage-journey/take')return send(res,200,store.asUser(user.id,()=>store.audited(user.id,'journey.receive',user.id,()=>{const state=stageJourney.take(user.id);return {...state,...(state.onboarding.step===2?{offer:stageDispatch.draw(user.id,1)}:{})};})));
+      if(p==='/api/stage-journey/sync')return send(res,200,stageJourney.sync(user.id));
+      if(p==='/api/stage-journey/reveal')return send(res,200,stageJourney.reveal(user.id));
+      if(p==='/api/stage-journey/submit')return send(res,200,stageJourney.submit(user.id,input));
+    }
+    throw new AppError('接口不存在',404);
+  }
   if(p==='/api/stage-finance'&&method==='GET'){
     const user=creatorAuth.require(req),settings=store.commissionSettings();
-    return store.asUser(user.id,()=>{const summary=store.summary();return send(res,200,{...summary,commissionPolicy:settings,dispatch:store.dispatchStatus(),paymentMode:'manual',stageTwoEligible:summary.assignments.some(a=>a.status==='completed'&&a.task.stage===1),stageThreeEligible:stageEnrollments.status(user.id).enrollment?.status==='approved'});});
+    return store.asUser(user.id,()=>{const summary=stageDispatch.visible(user.id,store.summary());return send(res,200,{...summary,offer:stageDispatch.pending(user.id),journey:stageJourney.snapshot(user.id),commissionPolicy:settings,dispatch:store.dispatchStatus(),paymentMode:'manual',stageTwoEligible:stageJourney.snapshot(user.id).newcomer.complete,stageThreeEligible:stageEnrollments.status(user.id).enrollment?.status==='approved'});});
+  }
+  if(['/api/stage-finance/draw','/api/stage-finance/accept'].includes(p)&&method==='POST'){
+    const user=creatorAuth.require(req);validateOrigin(req);const input=await body(req);
+    if(p.endsWith('/draw')&&input.stage===2)throw new AppError('请在当前成长计划中继续探索',403);
+    if(p.endsWith('/draw')&&input.stage===1&&stageJourney.snapshot(user.id).onboarding.step!==2)throw new AppError('请先完成当前任务',403);
+    return send(res,200,p.endsWith('/draw')?stageDispatch.draw(user.id,input.stage):stageDispatch.accept(user.id,input.offerId,input.expected));
   }
   if(['/api/stage-three/premium-reveal','/api/stage-three/example'].includes(p))throw new AppError('此旧版功能已停用，请使用阶段任务',410);
   if(p==='/api/stage-three/enrollment'||p==='/api/stage-three/access'){
@@ -276,9 +298,9 @@ async function api(req, res, url, inScope=false) {
     if(p==='/api/notifications'){
       const rawBefore=url.searchParams.get('before'),rawLimit=url.searchParams.get('limit'),rawUnread=url.searchParams.get('unread');
       if(rawBefore!==null&&!/^[1-9]\d*$/.test(rawBefore)||rawLimit!==null&&!/^[1-9]\d*$/.test(rawLimit)||rawUnread!==null&&!['0','1'].includes(rawUnread))throw new AppError('无效消息分页参数');
-      return send(res,200,store.notifications({before:rawBefore===null?undefined:Number(rawBefore),limit:rawLimit===null?20:Number(rawLimit),unread:rawUnread==='1'}));
+      const page=store.notifications({before:rawBefore===null?undefined:Number(rawBefore),limit:rawLimit===null?20:Number(rawLimit),unread:rawUnread==='1'});const user=creatorAuth.require(req);return send(res,200,{...page,unreadCount:stageDispatch.visible(user.id,store.summary()).notificationsUnread,notifications:page.notifications.filter(n=>!n.task_id||stageDispatch.allowed(user.id,n.task_id))});
     }
-    if (p === "/api/bootstrap") return send(res, 200, store.summary());
+    if (p === "/api/bootstrap") return send(res, 200, stageDispatch.visible(creatorAuth.require(req).id,store.summary()));
     if (p === "/api/export/backup") {
       const actor=adminAuth.requireAdmin(req);
       if (backupActive) throw new AppError("正在生成备份，请稍后重试", 409);
@@ -287,13 +309,14 @@ async function api(req, res, url, inScope=false) {
       finally { backupActive = false; }
     }
     if (p === "/api/tasks")
-      return send(res, 200, { tasks: store.summary().tasks });
+      return send(res, 200, { tasks: stageDispatch.visible(creatorAuth.current(req)?.id||'guest',store.summary()).tasks });
     if (p === "/api/manage/tasks") {
       adminAuth.requireAdmin(req);
       return send(res, 200, { tasks: store.allTasks() });
     }
     const taskMaterials = p.match(/^\/api\/tasks\/([^/]+)\/materials$/);
     if (taskMaterials) {
+      if(!adminAuth.current(req)&&!stageDispatch.allowed(creatorAuth.current(req)?.id||'guest',taskMaterials[1]))throw new AppError('任务尚未揭晓',404);
       if(url.searchParams.get("all")==="1")adminAuth.requireAdmin(req);
       return send(res, 200, {
         materials: store.listMaterials(
@@ -352,7 +375,7 @@ async function api(req, res, url, inScope=false) {
       return res.end(csv);
     }
     const task = p.match(/^\/api\/tasks\/([^/]+)$/);
-    if (task) return send(res, 200, store.getTask(task[1]));
+    if (task) {if(!adminAuth.current(req)&&!stageDispatch.allowed(creatorAuth.current(req)?.id||'guest',task[1]))throw new AppError('任务尚未揭晓',404);return send(res, 200, store.getTask(task[1]));}
     const a = p.match(/^\/api\/assignments\/([^/]+)$/);
     if (a) return send(res, 200, store.assignment(a[1]));
     throw new AppError("接口不存在", 404);
@@ -376,7 +399,7 @@ async function api(req, res, url, inScope=false) {
   if (method === "POST" && restoredMaterial)
     return send(res, 200, store.audited(actor,"material.restore",restoredMaterial[1],()=>store.restoreMaterial(restoredMaterial[1])));
   if (method === "POST" && p === "/api/assignments")
-    return send(res, 201, store.claim(input.taskId,input.expected));
+    return send(res, 201, stageDispatch.acceptTask(creatorAuth.require(req).id,input.taskId,input.expected));
   if (method === "POST" && p === "/api/tasks") {
     await validateCoverPath(input.cover);
     return send(res, 201, store.audited(actor,"task.create","",()=>store.createTask(input)));
@@ -391,8 +414,10 @@ async function api(req, res, url, inScope=false) {
   if (method === "POST" && p === "/api/assets")
     return send(res, 201, await upload(input, null, actor));
   const bookmark = p.match(/^\/api\/tasks\/([^/]+)\/bookmark$/);
-  if (method === "POST" && bookmark)
+  if (method === "POST" && bookmark){
+    if(!stageDispatch.allowed(creatorAuth.require(req).id,bookmark[1]))throw new AppError("任务尚未揭晓",404);
     return send(res, 200, store.bookmark(bookmark[1]));
+  }
   const active = p.match(/^\/api\/tasks\/([^/]+)\/active$/);
   if (method === "PATCH" && active) {
     if (typeof input.active !== "boolean")
@@ -447,7 +472,7 @@ const server = http.createServer(async (req, res) => {
       const materialAdmin=adminAuth.state(req).authenticated;
       if(!materialAdmin)creatorAuth.require(req);
       const record = store.materialPath(url.pathname);
-      if (!record || (!materialAdmin && !record.active)) throw new AppError("素材不存在", 404);
+      if (!record || (!materialAdmin && (!record.active||!stageDispatch.allowed(creatorAuth.require(req).id,record.task_id)))) throw new AppError("素材不存在", 404);
       const filename = url.pathname.slice(11);
       if (!/^[a-f0-9-]+\.(mp4|webm|txt|srt)$/.test(filename))
         throw new AppError("素材不存在", 404);
