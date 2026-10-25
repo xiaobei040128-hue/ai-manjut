@@ -1,3 +1,6 @@
+import {readFileSync} from 'node:fs';
+import {shanghaiDay} from './time.mjs';
+const stories=JSON.parse(readFileSync(new URL('../src/studio/storyCatalog.json',import.meta.url),'utf8'));
 import {randomInt,randomUUID} from 'node:crypto';
 import {AppError} from './store.mjs';
 
@@ -10,6 +13,9 @@ export function createStageDispatch(store){
  if(!db.prepare('PRAGMA table_info(stage_task_offers)').all().some(c=>c.name==='retired')){db.exec('ALTER TABLE stage_task_offers ADD COLUMN retired INTEGER NOT NULL DEFAULT 0; DROP INDEX IF EXISTS stage_offer_pending;');}
  if(!db.prepare("SELECT sql FROM sqlite_master WHERE type='index' AND name='stage_offer_pending'").get()?.sql.includes('retired'))db.exec('DROP INDEX IF EXISTS stage_offer_pending');
  db.exec('CREATE UNIQUE INDEX IF NOT EXISTS stage_offer_pending ON stage_task_offers(owner_id) WHERE assignment_id IS NULL AND retired=0');
+ if(!db.prepare('PRAGMA table_info(stage_task_offers)').all().some(c=>c.name==='story'))db.exec('ALTER TABLE stage_task_offers ADD COLUMN story TEXT');
+ db.exec('CREATE TABLE IF NOT EXISTS third_story_queues(owner_id TEXT NOT NULL,day TEXT NOT NULL,story_order TEXT NOT NULL,PRIMARY KEY(owner_id,day))');
+ function storyFor(user){const day=shanghaiDay();let saved=db.prepare('SELECT story_order FROM third_story_queues WHERE owner_id=? AND day=?').get(user,day);if(!saved){const order=stories.map(s=>s.id);for(let i=order.length-1;i>0;i--){const j=randomInt(i+1);[order[i],order[j]]=[order[j],order[i]];}db.prepare('INSERT INTO third_story_queues VALUES(?,?,?)').run(user,day,JSON.stringify(order));saved={story_order:JSON.stringify(order)};}return stories.find(s=>s.id===JSON.parse(saved.story_order)[store.dispatchStatus().claimed]);}
  const pending=user=>db.prepare('SELECT * FROM stage_task_offers WHERE owner_id=? AND assignment_id IS NULL AND retired=0').get(user);
  const allowed=(user,id)=>!!db.prepare('SELECT 1 FROM assignments WHERE owner_id=? AND task_id=? UNION ALL SELECT 1 FROM stage_task_offers WHERE owner_id=? AND task_id=? LIMIT 1').get(user,id,user,id);
  const active=user=>db.prepare("SELECT id FROM assignments WHERE owner_id=? AND status IN ('active','review','revision') LIMIT 1").get(user);
@@ -21,7 +27,7 @@ export function createStageDispatch(store){
   if(stage===3&&!db.prepare("SELECT 1 FROM stage_enrollments WHERE user_id=? AND status='approved'").get(user))throw new AppError('请先完成第三阶段报名审核',403);
   if(stage===3&&store.dispatchStatus().claimed>=20)throw new AppError('今日第三阶段20单已领取完毕，请明日再来',409);
  }
- function offer(row){return row?{id:row.id,stage:row.stage,task:store.getTask(row.task_id)}:null;}
+ function offer(row){if(!row)return null;const task=store.getTask(row.task_id);if(row.stage===3){let story=row.story?JSON.parse(row.story):storyFor(row.owner_id);if(story&&!row.story)db.prepare('UPDATE stage_task_offers SET story=? WHERE id=?').run(JSON.stringify(story),row.id);return {id:row.id,stage:3,task:{...task,...story, id:task.id,episodes:null,platform:'',language:'',catalogStoryId:story?.id}};}return {id:row.id,stage:row.stage,task};}
  function visible(user,summary){
   const ids=new Set(db.prepare('SELECT task_id FROM assignments WHERE owner_id=? UNION SELECT task_id FROM stage_task_offers WHERE owner_id=? AND assignment_id IS NULL AND retired=0').all(user,user).map(r=>r.task_id));
   const notices=summary.notifications.filter(n=>!n.task_id||ids.has(n.task_id));
@@ -37,7 +43,8 @@ export function createStageDispatch(store){
    if(store.commissionSettings().rate_bps===null)throw new AppError('平台尚未配置佣金比例',409);
    const tasks=store.summary().tasks.filter(t=>t.stage===stage&&t.remaining>0);
    if(!tasks.length)throw new AppError('本阶段暂无可派发任务，请稍后再来',409);
-   const selected=tasks[randomInt(tasks.length)],id=randomUUID();
+   const nextStory=stage===3?storyFor(user):null;
+   const selected=(nextStory?tasks.find(t=>t.title===nextStory.title):null)||tasks[randomInt(tasks.length)],id=randomUUID();
    db.prepare('INSERT INTO stage_task_offers(id,owner_id,stage,task_id,created_at) VALUES(?,?,?,?,?)').run(id,user,stage,selected.id,new Date().toISOString());
    return offer(pending(user));
   }));},

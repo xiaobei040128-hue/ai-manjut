@@ -665,7 +665,7 @@ export function createStore(file, {fixtures=false}={}) {
       throw new AppError("金额、发布数量、集数或名额超出范围");
     const cover = text(input.cover, 300);
     if (
-      !/^\/art\/[a-zA-Z0-9_.-]+$/.test(cover) &&
+      !/^\/(?:art|stories)\/[a-zA-Z0-9_.-]+$/.test(cover) &&
       !get(
         "SELECT id FROM uploads WHERE path=? AND assignment_id IS NULL",
         cover,

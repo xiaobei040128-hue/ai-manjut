@@ -133,10 +133,10 @@ export default function StageWork({stage}:{stage:number}){
       {current?<article className="stage-task-card"><img src={current.task.cover} alt=""/><div><h3>{current.task.title}</h3><p>{statusText[current.status]}</p><button onClick={()=>location.assign(assignmentUrl(current.id))}>继续当前任务</button></div></article>
       :task?<article className="stage-task-card stage-story-card"><div className="stage-story-poster"><img src={task.cover} alt={task.title+'封面'}/><span>{task.genre} · {task.language}</span></div><div className="stage-story-copy">
        <small className="stage-story-eyebrow">{stage===3?'COPYRIGHT COLLECTION':'YOUR NEXT STORY'}</small><h3>{task.title}</h3>
-       <div className="stage-story-specs"><span>{task.episodes} 集</span><span>{task.platform}</span><span>{task.language}</span></div>
+       <div className="stage-story-specs">{stage===3?<span>{task.genre}</span>:<><span>{task.episodes} 集</span><span>{task.platform}</span><span>{task.language}</span></>}</div>
        <h4>剧情概览</h4><p>{task.description}</p>
-       <h4>本次任务</h4><p>使用本次作品素材，在 {task.platform} 完成 {task.posts} 条作品发布，并提交发布链接与截图。</p>
-       <div className="stage-purchase-summary"><div><span>{stage===3?'版权选购金额':'任务金额'}</span><b>{money(task.deposit)}</b></div><div><span>完成后可得佣金</span><b>{money(task.commission)}</b></div></div>
+       {stage!==3&&<><h4>本次任务</h4><p>使用本次作品素材，在 {task.platform} 完成 {task.posts} 条作品发布，并提交发布链接与截图。</p></>}
+       <div className="stage-purchase-summary"><div><span>{stage===3?'版权选购金额':'任务金额'}</span><b>{money(task.deposit)}</b></div><div><span>预计收入</span><b>{money(task.commission)}</b></div></div>
        <button disabled={claiming||!eligible||dailyLimitReached||data.wallet.available<task.deposit||!task.active||task.remaining<1||!!connectionError} onClick={()=>void claim(task)}>{claiming?'正在处理…':stage===3?'购买版权 · '+money(task.deposit):'接受任务 · '+money(task.deposit)}</button>
        {data.wallet.available<task.deposit&&<a href="/?view=app&page=wallet">余额不足，前往充值 →</a>}
        <a href={'/?view=app&page=detail&task='+encodeURIComponent(task.id)}>查看素材与任务详情 →</a>
