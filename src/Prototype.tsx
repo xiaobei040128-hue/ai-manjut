@@ -7,6 +7,7 @@ import StageHub from "./studio/StageHub";
 import DesignBoundary from "./studio/DesignBoundary";
 import "./studio/platform-upgrade.css";
 import "./studio/experience-v3.css";
+import "./studio/page-polish.css";
 import FinancePanel from "./studio/FinancePanel";
 import CreatorAccess, { type CreatorUser } from "./studio/CreatorAccess";
 import {
@@ -2393,7 +2394,7 @@ function Studio({
                   </div>
                   <div className="s-profile-footer">
                     <b>STORIES. CREATE. CONNECT.</b>
-                    <span>漫剧 STUDIO · 本地版 2.0</span>
+                    <span>漫剧 STUDIO · 创作者平台</span>
                     <small>账号记录自动保存，关闭页面后仍会保留。</small>
                   </div>
                 </>
