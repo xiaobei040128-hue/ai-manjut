@@ -355,13 +355,15 @@ export function createStore(file, {fixtures=false}={}) {
     const assignments = rawAssignments.map((a) => ({...a,task:frozenTask(a,taskMap.get(a.task_id),frozenTerms.get(a.id)),draft:parse(a.draft),uploads:uploads.get(a.id)||[],events:events.get(a.id)||[],submissions:submissions.get(a.id)||[]}));
     const hasFunds=!!get("SELECT name FROM sqlite_master WHERE type='table' AND name='fund_requests'");
     const withdrawalHeld=hasFunds?get("SELECT COALESCE(SUM(amount),0) AS n FROM fund_requests WHERE kind='withdrawal' AND status IN ('review','paying') AND "+whereOwner("user_id"),...scopeArgs).n:0;
+    const coverHeld=get("SELECT name FROM sqlite_master WHERE type='table' AND name='newcomer_cover_orders'")?get("SELECT COALESCE(SUM(amount),0) n FROM newcomer_cover_orders WHERE state='purchased' AND "+whereOwner('owner_id'),...scopeArgs).n:0;
     const rows = all('SELECT * FROM ledger WHERE '+whereOwner('owner_id')+' ORDER BY id DESC',...scopeArgs);
     return {
       profile: personalOwner?get("SELECT * FROM creator_profiles WHERE user_id=?",personalOwner):null,
       wallet: {
         available: rows.reduce((sum,row)=>sum+row.amount,0),
         withdrawalHeld,
-        held: withdrawalHeld + get(
+        coverHeld,
+        held: coverHeld + withdrawalHeld + get(
           "SELECT COALESCE(SUM(COALESCE(f.amount,t.deposit)),0) AS n FROM assignments a JOIN tasks t ON t.id=a.task_id LEFT JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.status IN ('active','review','revision') AND "+whereOwner("a.owner_id"),...scopeArgs,
         ).n,
         earned: rows.filter(row=>row.kind==='reward').reduce((sum,row)=>sum+row.amount,0),

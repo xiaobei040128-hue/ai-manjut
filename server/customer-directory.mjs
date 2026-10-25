@@ -19,16 +19,17 @@ export function customerDirectory(store, auth, scope, operator) {
   return rows.map((row) => {
     const extra = record.get(now, row.id);
     const { task_held, withdrawal_held, ...fields } = extra;
+    const coverHeld=db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='newcomer_cover_orders'").get()?db.prepare("SELECT COALESCE(SUM(amount),0) n FROM newcomer_cover_orders WHERE owner_id=? AND state='purchased'").get(row.id).n:0;
     return {
       ...row,
       ...fields,
       identity_status: extra.identity_status || "not_submitted",
       wallet: {
         ...row.wallet,
-        held: task_held + withdrawal_held,
-        taskHeld: task_held,
+        held: task_held + withdrawal_held + coverHeld,
+        taskHeld: task_held + coverHeld,
         withdrawalHeld: withdrawal_held,
-        total: row.wallet.available + task_held + withdrawal_held,
+        total: row.wallet.available + task_held + withdrawal_held + coverHeld,
       },
     };
   });

@@ -9,6 +9,7 @@ import CommunityJourney from './CommunityJourney';
 import JourneyEffects,{type JourneyEvent} from './JourneyEffects';
 import {playWelcomeChime,unlockWelcomeAudio} from './welcome-audio';
 import './license-gold.css';
+import NewcomerCover from './NewcomerCover';
 
 type Snapshot=Bootstrap&{
  journey:JourneySnapshot;
@@ -54,7 +55,7 @@ export default function StageWork({stage}:{stage:number}){
 
  async function takeNewcomer(){
   if(claimLock.current)return;claimLock.current=true;readVersion.current++;setClaiming(true);setError('');void unlockWelcomeAudio();
-  try{const result=await api<JourneySnapshot&{offer?:Snapshot['offer']}>('/stage-journey/take','POST',{});await load();if(mounted.current){setRevealEvent({kind:'task',nonce:Date.now(),title:result.offer?'这一单，正式揭晓':'新的任务已开启',subtitle:result.offer?.task.title||'属于你的下一步，从这里开始。'});stopStageAudio.current();stopStageAudio.current=playWelcomeChime(0);}}
+  try{const result=await api<JourneySnapshot&{offer?:Snapshot['offer']}>('/stage-journey/take','POST',{});await load();if(mounted.current){setRevealEvent({kind:'task',nonce:Date.now(),title:result.cover?'你的版权封面已揭晓':'新的任务已开启',subtitle:result.cover?.artwork.title||'属于你的下一步，从这里开始。'});stopStageAudio.current();stopStageAudio.current=playWelcomeChime(0);}}
   catch(e){if(mounted.current)setError((e as Error).message);}finally{claimLock.current=false;if(mounted.current)setClaiming(false);}
  }
  async function draw(){
@@ -104,14 +105,15 @@ export default function StageWork({stage}:{stage:number}){
    {error&&<p role="alert">{error}</p>}
    {connectionError&&<div role="alert" className="stage-connection-error"><p>{connectionError}{data?'，当前显示上次读取的记录。':''}</p><button disabled={loading} onClick={()=>void load()}>重新连接</button></div>}
    {!data&&!connectionError&&<p role="status">正在加载…</p>}
-   {stage===1&&<NewcomerProgress data={data?.journey||null} onTake={()=>void takeNewcomer()} busy={claiming} experienceCommission={assignments.filter(a=>a.status==='completed').reduce((n,a)=>n+a.task.commission,0)}/>}
+   {stage===1&&<NewcomerProgress data={data?.journey||null} onTake={()=>void takeNewcomer()} busy={claiming} experienceCommission={assignments.filter(a=>a.status==='completed').reduce((n,a)=>n+a.task.commission,0)+(data?.journey.cover?.state==='completed'?(data.journey.cover.commission||0):0)}/>}
+   {stage===1&&data?.journey.onboarding.step===2&&data.journey.onboarding.revealed&&!current&&<NewcomerCover data={data.journey} onUpdate={next=>{setData(previous=>previous?{...previous,journey:next}:previous);void load();}} onComplete={commission=>{setRevealEvent({kind:'reward',nonce:Date.now(),amount:money(commission),title:'封面任务已完成',subtitle:'版权码已核验，佣金已到账。'});stopStageAudio.current();stopStageAudio.current=playWelcomeChime(0);}}/>}
    {stage===3&&<section className="journey-third-hero"><small>DISCOVER YOUR NEXT STORY</small><h2>探索下一部好作品</h2><p>发现好故事，开启你的下一份创作。</p></section>}
    {data&&<>
     {stage===3&&<div className="stage-balance-line"><span>可用余额</span><b>{money(data.wallet.available)}</b><a href="/?view=app&page=wallet">钱包 →</a></div>}
     {!ready?<section><h2>任务暂未开放</h2><p>平台正在配置佣金规则，请稍后刷新。</p></section>:<>
      {!eligible&&stage===3&&<EnrollmentCard/>}
      {stage===3&&<div className="stage-daily-count"><span>{data.dispatch.day} · 北京时间</span><b>今日进度 {data.dispatch.claimed} / {data.dispatch.limit}</b>{dailyLimitReached&&<small>今日名额已用完，未完成任务仍可继续。</small>}</div>}
-     {(stage!==1||data.journey.onboarding.step===2&&data.journey.onboarding.revealed)&&<section id="experience-task" className="stage-task-list"><h2>{current?'进行中的作品':offer?'本次作品':'开启你的下一段故事'}</h2>
+     {(stage!==1||!!current&&data.journey.onboarding.step===2&&data.journey.onboarding.revealed)&&<section id="experience-task" className="stage-task-list"><h2>{current?'进行中的作品':offer?'本次作品':'开启你的下一段故事'}</h2>
       {current?<article className="stage-task-card"><img src={current.task.cover} alt=""/><div><h3>{current.task.title}</h3><p>{statusText[current.status]}</p><button onClick={()=>location.assign(assignmentUrl(current.id))}>继续当前任务</button></div></article>
       :task?<article className="stage-task-card stage-story-card"><div className="stage-story-poster"><img src={task.cover} alt={task.title+'封面'}/><span>{task.genre} · {task.language}</span></div><div className="stage-story-copy">
        <small className="stage-story-eyebrow">{stage===3?'COPYRIGHT COLLECTION':'YOUR NEXT STORY'}</small><h3>{task.title}</h3>

@@ -6,13 +6,16 @@ export function createStageDispatch(store){
  const db=store.db;
  db.exec(`CREATE TABLE IF NOT EXISTS stage_task_offers(
   id TEXT PRIMARY KEY,owner_id TEXT NOT NULL,stage INTEGER NOT NULL,task_id TEXT NOT NULL,
-  assignment_id TEXT,created_at TEXT NOT NULL);
-  CREATE UNIQUE INDEX IF NOT EXISTS stage_offer_pending ON stage_task_offers(owner_id) WHERE assignment_id IS NULL;`);
- const pending=user=>db.prepare('SELECT * FROM stage_task_offers WHERE owner_id=? AND assignment_id IS NULL').get(user);
+  assignment_id TEXT,created_at TEXT NOT NULL);`);
+ if(!db.prepare('PRAGMA table_info(stage_task_offers)').all().some(c=>c.name==='retired')){db.exec('ALTER TABLE stage_task_offers ADD COLUMN retired INTEGER NOT NULL DEFAULT 0; DROP INDEX IF EXISTS stage_offer_pending;');}
+ if(!db.prepare("SELECT sql FROM sqlite_master WHERE type='index' AND name='stage_offer_pending'").get()?.sql.includes('retired'))db.exec('DROP INDEX IF EXISTS stage_offer_pending');
+ db.exec('CREATE UNIQUE INDEX IF NOT EXISTS stage_offer_pending ON stage_task_offers(owner_id) WHERE assignment_id IS NULL AND retired=0');
+ const pending=user=>db.prepare('SELECT * FROM stage_task_offers WHERE owner_id=? AND assignment_id IS NULL AND retired=0').get(user);
  const allowed=(user,id)=>!!db.prepare('SELECT 1 FROM assignments WHERE owner_id=? AND task_id=? UNION ALL SELECT 1 FROM stage_task_offers WHERE owner_id=? AND task_id=? LIMIT 1').get(user,id,user,id);
  const active=user=>db.prepare("SELECT id FROM assignments WHERE owner_id=? AND status IN ('active','review','revision') LIMIT 1").get(user);
  function eligible(user,stage){
   if(![1,2,3].includes(stage))throw new AppError('无效阶段');
+  if(stage===1&&db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='newcomer_cover_orders'").get()&&db.prepare('SELECT 1 FROM newcomer_cover_orders WHERE owner_id=?').get(user))throw new AppError('请继续当前版权封面任务',409);
   if(stage===1&&db.prepare("SELECT 1 FROM assignments a JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.owner_id=? AND a.status='completed' AND f.stage=1").get(user))throw new AppError('新手体验任务已完成',409);
   if(stage===2&&!db.prepare("SELECT 1 FROM assignments a JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.owner_id=? AND a.status='completed' AND f.stage=1").get(user))throw new AppError('请先完成第一阶段任务并通过审核',403);
   if(stage===3&&!db.prepare("SELECT 1 FROM stage_enrollments WHERE user_id=? AND status='approved'").get(user))throw new AppError('请先完成第三阶段报名审核',403);
@@ -20,9 +23,9 @@ export function createStageDispatch(store){
  }
  function offer(row){return row?{id:row.id,stage:row.stage,task:store.getTask(row.task_id)}:null;}
  function visible(user,summary){
-  const ids=new Set(db.prepare('SELECT task_id FROM assignments WHERE owner_id=? UNION SELECT task_id FROM stage_task_offers WHERE owner_id=? AND assignment_id IS NULL').all(user,user).map(r=>r.task_id));
+  const ids=new Set(db.prepare('SELECT task_id FROM assignments WHERE owner_id=? UNION SELECT task_id FROM stage_task_offers WHERE owner_id=? AND assignment_id IS NULL AND retired=0').all(user,user).map(r=>r.task_id));
   const notices=summary.notifications.filter(n=>!n.task_id||ids.has(n.task_id));
-  return {...summary,tasks:summary.tasks.filter(t=>ids.has(t.id)),savedTasks:summary.savedTasks?.filter(t=>ids.has(t.id)),bookmarks:summary.bookmarks.filter(id=>ids.has(id)),notifications:notices,notificationsUnread:db.prepare('SELECT COUNT(*) n FROM notifications WHERE owner_id=? AND is_read=0 AND (task_id IS NULL OR task_id IN(SELECT task_id FROM assignments WHERE owner_id=? UNION SELECT task_id FROM stage_task_offers WHERE owner_id=? AND assignment_id IS NULL))').get(user,user,user).n};
+  return {...summary,tasks:summary.tasks.filter(t=>ids.has(t.id)),savedTasks:summary.savedTasks?.filter(t=>ids.has(t.id)),bookmarks:summary.bookmarks.filter(id=>ids.has(id)),notifications:notices,notificationsUnread:db.prepare('SELECT COUNT(*) n FROM notifications WHERE owner_id=? AND is_read=0 AND (task_id IS NULL OR task_id IN(SELECT task_id FROM assignments WHERE owner_id=? UNION SELECT task_id FROM stage_task_offers WHERE owner_id=? AND assignment_id IS NULL AND retired=0))').get(user,user,user).n};
  }
  return {
   allowed,visible,
@@ -41,6 +44,7 @@ export function createStageDispatch(store){
   accept(user,id,expected){return store.asUser(user,()=>store.audited(user,'stage.accept',String(id),()=>{
    const row=db.prepare('SELECT * FROM stage_task_offers WHERE id=? AND owner_id=?').get(id,user);
    if(!row)throw new AppError('请先领取随机任务',404);
+   if(row.retired)throw new AppError('此任务已更新，请返回当前成长计划',409);
    if(row.assignment_id)return store.assignment(row.assignment_id);
    eligible(user,row.stage);
    if(active(user))throw new AppError('请先完成并通过审核当前任务',409);

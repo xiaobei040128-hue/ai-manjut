@@ -2389,7 +2389,7 @@ function Studio({
               )}
               {page === "notices" && <Notifications onCountChange={count=>setData(old=>old?{...old,notificationsUnread:count}:old)} onOpen={n=>{
                 if(n.category==='finance'){go('wallet');return;}
-                if(n.category==='stage'){location.assign('/?view=app&design=third');return;}
+                if(n.category==='stage'){location.assign(n.record_id?.startsWith('newcomer-cover:')?'/?view=app&design=newcomer':'/?view=app&design=third');return;}
                 if(n.assignment_id){const a=data.assignments.find(a=>a.id===n.assignment_id);if(a){viewAssignment(a);return;}}
                 if(n.task_id){setTaskId(n.task_id);go('detail');return;}
                 open('guide');

@@ -1,14 +1,15 @@
+import {createNewcomerCovers} from './newcomer-covers.mjs';
 import {randomBytes} from 'node:crypto';
 import {AppError} from './store.mjs';
 export function createStageJourney(store){
- const db=store.db;
+ const db=store.db,covers=createNewcomerCovers(store);
  db.exec(`CREATE TABLE IF NOT EXISTS community_progress(owner_id TEXT PRIMARY KEY,completed INTEGER NOT NULL DEFAULT 0,revealed INTEGER NOT NULL DEFAULT -1,answers TEXT NOT NULL DEFAULT '{}',code TEXT NOT NULL,updated_at TEXT NOT NULL);`);
  db.exec('CREATE TABLE IF NOT EXISTS onboarding_reveals(owner_id TEXT NOT NULL,step INTEGER NOT NULL,created_at TEXT NOT NULL,PRIMARY KEY(owner_id,step))');
  const has=(sql,id)=>!!db.prepare(sql).get(id);
  function newcomer(id){
   const registration=has("SELECT 1 FROM ledger WHERE owner_id=? AND kind='registration_reward'",id);
   const identity=has("SELECT 1 FROM identities WHERE user_id=? AND status='approved'",id);
-  const experience=has("SELECT 1 FROM assignments a JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.owner_id=? AND f.stage=1 AND a.status='completed'",id);
+  const experience=has("SELECT 1 FROM assignments a JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.owner_id=? AND f.stage=1 AND a.status='completed'",id)||has("SELECT 1 FROM newcomer_cover_orders WHERE owner_id=? AND state='completed'",id);
   const card=has("SELECT 1 FROM bank_cards WHERE user_id=? AND status='approved'",id);
   const withdrawal=has("SELECT 1 FROM fund_requests WHERE user_id=? AND kind='withdrawal' AND status='paid'",id);
   const graduate=has("SELECT 1 FROM ledger WHERE owner_id=? AND operation_key='newcomer-graduate:'||owner_id",id);
@@ -25,19 +26,23 @@ export function createStageJourney(store){
   const n=newcomer(id),states=[true,n.identity,n.experience,n.card,n.withdrawal,n.graduate];
   const running=db.prepare("SELECT 1 FROM assignments a JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.owner_id=? AND f.stage=1 AND a.status IN ('active','review','revision')").get(id);
   const found=running?2:states.findIndex(done=>!done),step=found<0?null:found;
-  return {newcomer:n,onboarding:{step,revealed:step!==null&&(!!running||!!db.prepare('SELECT 1 FROM onboarding_reveals WHERE owner_id=? AND step=?').get(id,step))},community:progress(id)};
+  return {newcomer:n,cover:covers.snapshot(id),onboarding:{step,revealed:step!==null&&(!!running||!!db.prepare('SELECT 1 FROM onboarding_reveals WHERE owner_id=? AND step=?').get(id,step))},community:progress(id)};
  }
  return {
   snapshot,
   take(id){return store.asUser(id,()=>store.audited(id,'newcomer.take',id,()=>{
    const state=snapshot(id),step=state.onboarding.step;if(step===null)throw new AppError('当前计划已完成',409);
    db.prepare('INSERT OR IGNORE INTO onboarding_reveals(owner_id,step,created_at) VALUES(?,?,?)').run(id,step,new Date().toISOString());
+   if(step===2&&!db.prepare("SELECT 1 FROM assignments a JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.owner_id=? AND f.stage=1 AND a.status IN ('active','review','revision')").get(id))covers.reveal(id);
    return snapshot(id);
   }));},
+  purchaseCover(id,input){covers.purchase(id,input);return snapshot(id);},
+  submitCover(id,input){const settled=covers.submit(id,input);return {...snapshot(id),settlement:{first:settled.first,commission:settled.cover.commission}};},
   sync(id){return store.asUser(id,()=>store.audited(id,'journey.sync',id,()=>{
    const n=newcomer(id),rewards=[];
    if(n.identity&&grant(id,100,'newcomer-identity:'+id,'实名认证奖励 · 1.00 USD'))rewards.push({id:'newcomer-identity:'+id,amount:100});
    if(n.identity&&n.experience&&n.card&&n.withdrawal&&grant(id,200,'newcomer-graduate:'+id,'首次提现完成 · 新手毕业奖励 2.00 USD'))rewards.push({id:'newcomer-graduate:'+id,amount:200});
+   const current=snapshot(id);if(current.onboarding.step===2&&current.onboarding.revealed&&!current.cover&&!db.prepare("SELECT 1 FROM assignments a JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.owner_id=? AND f.stage=1 AND a.status IN ('active','review','revision')").get(id))covers.reveal(id);
    return {...snapshot(id),rewards};
   }));},
   reveal(id){return store.asUser(id,()=>store.audited(id,'community.reveal',id,()=>{

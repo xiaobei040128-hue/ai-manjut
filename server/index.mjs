@@ -166,7 +166,9 @@ async function api(req, res, url, inScope=false) {
     if(p==='/api/stage-journey'&&method==='GET')return send(res,200,stageJourney.snapshot(user.id));
     if(method==='POST'){
       validateOrigin(req);const input=await body(req);
-      if(p==='/api/stage-journey/take')return send(res,200,store.asUser(user.id,()=>store.audited(user.id,'journey.receive',user.id,()=>{const state=stageJourney.take(user.id);return {...state,...(state.onboarding.step===2?{offer:stageDispatch.draw(user.id,1)}:{})};})));
+      if(p==='/api/stage-journey/take')return send(res,200,stageJourney.take(user.id));
+      if(p==='/api/stage-journey/cover/purchase')return send(res,200,stageJourney.purchaseCover(user.id,input));
+      if(p==='/api/stage-journey/cover/submit')return send(res,200,stageJourney.submitCover(user.id,input));
       if(p==='/api/stage-journey/sync')return send(res,200,stageJourney.sync(user.id));
       if(p==='/api/stage-journey/reveal')return send(res,200,stageJourney.reveal(user.id));
       if(p==='/api/stage-journey/submit')return send(res,200,stageJourney.submit(user.id,input));
