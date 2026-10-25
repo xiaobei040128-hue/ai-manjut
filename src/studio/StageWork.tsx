@@ -78,19 +78,19 @@ export default function StageWork({stage}:{stage:number}){
    {connectionError&&<div role="alert" className="stage-connection-error"><p>{connectionError}{data?'，当前显示上次读取的记录。':''}</p><button disabled={loading} onClick={()=>void load()}>重新连接</button></div>}
    {!data&&!connectionError&&<p role="status">正在读取金额与任务…</p>}
    {data&&<>
-    <section><h2>账户资金</h2><dl><div><dt>可用余额</dt><dd>{money(data.wallet.available)}</dd></div><div><dt>冻结金额</dt><dd>{money(data.wallet.held)}</dd></div><div><dt>已到账佣金</dt><dd>{money(data.wallet.earned)}</dd></div></dl><a href="/?view=app&page=wallet">充值、提现与资金流水 →</a></section>
+    <section className="stage-account-card"><h2>账户资金</h2><dl><div><dt>可用余额</dt><dd>{money(data.wallet.available)}</dd></div><div><dt>冻结金额</dt><dd>{money(data.wallet.held)}</dd></div><div><dt>已到账佣金</dt><dd>{money(data.wallet.earned)}</dd></div></dl><a href="/?view=app&page=wallet">充值、提现与资金流水 →</a></section>
     {!ready?<section><h2>任务暂未开放</h2><p>平台正在配置佣金规则，请稍后刷新。</p></section>:<>
-     <section><h2>结算规则</h2><p>佣金比例 {data.commissionPolicy.rate_bps!/100}%。领取时冻结本金，提交作品并审核通过后，返还本金与佣金。已领取任务按领取时约定的金额结算。</p></section>
+     <section className="stage-rules-card"><details><summary>结算规则 <b>统一佣金 {data.commissionPolicy.rate_bps!/100}%</b></summary><p>佣金比例 {data.commissionPolicy.rate_bps!/100}%。领取时冻结本金，提交作品并审核通过后，返还本金与佣金。已领取任务按领取时约定的金额结算。</p></details><small>领取冻结本金 · 审核后返还本金与佣金</small></section>
      {!eligible&&stage===2&&<p>完成第一阶段任务并通过审核后，可领取本阶段任务。</p>}
      {!eligible&&stage===3&&<EnrollmentCard/>}
      {stage===3&&<div className="stage-daily-count"><span>{data.dispatch.day} · 北京时间</span><b>今日已领取 {data.dispatch.claimed} / {data.dispatch.limit} 单</b>{dailyLimitReached&&<small>今日名额已用完，未完成任务仍可继续。</small>}</div>}
-     <section><h2>可领取任务</h2>{tasks.length===0&&<p>本阶段暂无上架任务。</p>}
+     <section className="stage-task-list"><h2>可领取任务</h2>{tasks.length===0&&<p>本阶段暂无上架任务。</p>}
       {tasks.map(task=>{
        const active=assignments.find(a=>a.task_id===task.id&&live(a)),terms=active?.task||task;
        const disabled=claiming||!active&&(dailyLimitReached||data.wallet.available<task.deposit||task.remaining<1||!!connectionError);
-       return <article key={task.id} className={terms.premium?'stage-premium-task':''}><img src={terms.cover} alt=""/><div>
+       return <article key={task.id} className={'stage-task-card'+(terms.premium?' stage-premium-task':'')}><img src={terms.cover} alt=""/><div>
         <h3>{!!terms.premium&&<small className="stage-premium-label">✦ 高阶创作邀请</small>}{terms.title}</h3>
-        <p>{active?'已冻结本金':'冻结本金'} {money(terms.deposit)} · 佣金 {money(terms.commission)}</p><small>{active?statusText[active.status]:'剩余 '+task.remaining+' 个名额'} · 提交 {terms.posts} 条作品</small>
+        <div className="stage-task-money"><span>{active?'已冻结本金':'冻结本金'}<b>{money(terms.deposit)}</b></span><span>审核佣金<b>{money(terms.commission)}</b></span></div><small>{active?statusText[active.status]:'剩余 '+task.remaining+' 个名额'} · 提交 {terms.posts} 条作品</small>
         {eligible&&<button disabled={disabled} onClick={()=>active?location.assign(assignmentUrl(active.id)):void claim(task)}>{active?'继续当前任务':claiming?'正在领取…':'冻结 '+money(task.deposit)+' 并领取'}</button>}
         {!active&&eligible&&data.wallet.available<task.deposit&&<small>可用余额不足，请先办理充值。</small>}
         {eligible&&<a href={'/?view=app&page=detail&task='+encodeURIComponent(task.id)}>查看任务要求 →</a>}
