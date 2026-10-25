@@ -28,10 +28,11 @@ export function createStageJourney(store){
   const running=db.prepare("SELECT 1 FROM assignments a JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.owner_id=? AND f.stage=1 AND a.status IN ('active','review','revision')").get(id);
   const found=running?2:states.findIndex(done=>!done),step=found<0?null:found;
   const pendingWithdrawal=db.prepare("SELECT id,status,amount,created_at FROM fund_requests WHERE user_id=? AND kind='withdrawal' AND status IN ('review','paying') ORDER BY created_at DESC LIMIT 1").get(id)||null;
-  return {pendingWithdrawal,newcomer:n,withdrawalInProgress:!!pendingWithdrawal,cover:covers.snapshot(id),onboarding:{step,revealed:step!==null&&(step===4&&!!pendingWithdrawal||!!running||!!db.prepare('SELECT 1 FROM onboarding_reveals WHERE owner_id=? AND step=?').get(id,step))},community:progress(id)};
+  return {walletAvailable:db.prepare('SELECT COALESCE(SUM(amount),0) n FROM ledger WHERE owner_id=?').get(id).n,pendingWithdrawal,newcomer:n,withdrawalInProgress:!!pendingWithdrawal,cover:covers.snapshot(id),onboarding:{step,revealed:step!==null&&(step===4&&!!pendingWithdrawal||!!running||!!db.prepare('SELECT 1 FROM onboarding_reveals WHERE owner_id=? AND step=?').get(id,step))},community:progress(id)};
  }
  return {
   snapshot,
+  cancelLicense(id,input){licenses.cancel(id,input);return snapshot(id);},
   purchaseLicense(id,input){licenses.purchase(id,input);return snapshot(id);},
   bindingCompletion(id){return store.asUser(id,()=>store.audited(id,'newcomer.binding.notice',id,()=>{const event=db.prepare('SELECT shown FROM newcomer_binding_events WHERE user_id=?').get(id);if(!event||event.shown)return {show:false};db.prepare('UPDATE newcomer_binding_events SET shown=1 WHERE user_id=?').run(id);return {show:true};}));},
   take(id){return store.asUser(id,()=>store.audited(id,'newcomer.take',id,()=>{
@@ -47,6 +48,7 @@ export function createStageJourney(store){
    if(n.identity&&grant(id,100,'newcomer-identity:'+id,'实名认证奖励 · 1.00 USD'))rewards.push({id:'newcomer-identity:'+id,amount:100});
    if(n.identity&&n.experience&&n.card&&n.withdrawal&&grant(id,200,'newcomer-graduate:'+id,'新手计划完成 · 毕业奖励 2.00 USD'))rewards.push({id:'newcomer-graduate:'+id,amount:200});
    const current=snapshot(id);if(current.onboarding.step===2&&current.onboarding.revealed&&!current.cover&&!db.prepare("SELECT 1 FROM assignments a JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.owner_id=? AND f.stage=1 AND a.status IN ('active','review','revision')").get(id))covers.reveal(id);
+   const community=current.community;if(community.completed>=3&&community.completed<5&&community.revealed===community.completed)licenses.reserve(id,community.completed);
    return {...snapshot(id),rewards};
   }));},
   reveal(id){return store.asUser(id,()=>store.audited(id,'community.reveal',id,()=>{
@@ -54,7 +56,7 @@ export function createStageJourney(store){
    let row=db.prepare('SELECT * FROM community_progress WHERE owner_id=?').get(id);
    if(!row){db.prepare('INSERT INTO community_progress(owner_id,code,updated_at) VALUES(?,?,?)').run(id,randomBytes(4).toString('hex').toUpperCase(),new Date().toISOString());row=db.prepare('SELECT * FROM community_progress WHERE owner_id=?').get(id);}
    if(row.completed<5)db.prepare('UPDATE community_progress SET revealed=completed,updated_at=? WHERE owner_id=?').run(new Date().toISOString(),id);
-   if(row.completed>=3&&row.completed<5)licenses.reveal(id,row.completed);
+   if(row.completed>=3&&row.completed<5){licenses.reveal(id,row.completed);licenses.reserve(id,row.completed);}
    return snapshot(id);
   }));},
   submit(id,input){return store.asUser(id,()=>store.audited(id,'community.submit',id,()=>{

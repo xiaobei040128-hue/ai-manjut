@@ -1,12 +1,13 @@
 import {readFileSync} from 'node:fs';
+import {createTaskBalance} from './task-balance.mjs';
 import {shanghaiDay} from './time.mjs';
 const stories=JSON.parse(readFileSync(new URL('../src/studio/storyCatalog.json',import.meta.url),'utf8'));
 import {randomInt,randomUUID} from 'node:crypto';
 import {AppError} from './store.mjs';
 
-// A draw is persistent and personal. It reserves the reveal, never the money.
+// Third-stage draws persist both the personal reveal and its balance reservation.
 export function createStageDispatch(store){
- const db=store.db;
+ const db=store.db,balance=createTaskBalance(store);
  db.exec(`CREATE TABLE IF NOT EXISTS stage_task_offers(
   id TEXT PRIMARY KEY,owner_id TEXT NOT NULL,stage INTEGER NOT NULL,task_id TEXT NOT NULL,
   assignment_id TEXT,created_at TEXT NOT NULL);`);
@@ -27,7 +28,7 @@ export function createStageDispatch(store){
   if(stage===3&&!db.prepare("SELECT 1 FROM stage_enrollments WHERE user_id=? AND status='approved'").get(user))throw new AppError('请先完成第三阶段报名审核',403);
   if(stage===3&&store.dispatchStatus().claimed>=20)throw new AppError('今日第三阶段20单已领取完毕，请明日再来',409);
  }
- function offer(row){if(!row)return null;const task=store.getTask(row.task_id);if(row.stage===3){let story=row.story?JSON.parse(row.story):storyFor(row.owner_id);if(story&&!row.story)db.prepare('UPDATE stage_task_offers SET story=? WHERE id=?').run(JSON.stringify(story),row.id);return {id:row.id,stage:3,task:{...task,...story, id:task.id,episodes:null,platform:'',language:'',catalogStoryId:story?.id}};}return {id:row.id,stage:row.stage,task};}
+ function offer(row){if(!row)return null;const task=store.getTask(row.task_id);if(row.stage===3){let story=row.story?JSON.parse(row.story):storyFor(row.owner_id);if(story&&!row.story)db.prepare('UPDATE stage_task_offers SET story=? WHERE id=?').run(JSON.stringify(story),row.id);return {id:row.id,stage:3,reservedAmount:balance.amount(row.owner_id,'stage',row.id),task:{...task,...story, id:task.id,episodes:null,platform:'',language:'',catalogStoryId:story?.id}};}return {id:row.id,stage:row.stage,task};}
  function visible(user,summary){
   const ids=new Set(db.prepare('SELECT task_id FROM assignments WHERE owner_id=? UNION SELECT task_id FROM stage_task_offers WHERE owner_id=? AND assignment_id IS NULL AND retired=0').all(user,user).map(r=>r.task_id));
   const notices=summary.notifications.filter(n=>!n.task_id||ids.has(n.task_id));
@@ -35,17 +36,29 @@ export function createStageDispatch(store){
  }
  return {
   allowed,visible,
+  discard(user,id){if(typeof id!=='string'||!id||id.length>80)throw new AppError('无效的任务标识');return store.asUser(user,()=>store.audited(user,'stage.discard',String(id),()=>{
+   const r=db.prepare('SELECT * FROM stage_task_offers WHERE id=? AND owner_id=? AND stage=3').get(id,user);
+   if(!r||r.assignment_id)throw new AppError('当前任务无法取消领取',409);
+   if(!r.retired){balance.release(user,'stage',r.id);db.prepare('UPDATE stage_task_offers SET retired=1 WHERE id=? AND owner_id=?').run(id,user);}
+   return {ok:true};
+  }));},
+  reserve(user,id){if(id!==undefined&&(typeof id!=='string'||!id||id.length>80))throw new AppError('无效的任务标识');return store.asUser(user,()=>store.audited(user,'stage.reserve',String(id),()=>{
+   const r=pending(user);if(!r&&!id)return null;if(!r||(id&&r.id!==id)||r.stage!==3)throw new AppError('请先领取当前作品',409);eligible(user,3);
+   const task=store.getTask(r.task_id);if(!task.active)throw new AppError('作品已暂停，请联系平台处理已领取任务',409);
+   balance.reserve(user,'stage',r.id,task.deposit,task.title);return offer(r);
+  }));},
   pending(user){return store.asUser(user,()=>offer(pending(user)));},
   draw(user,stage){return store.asUser(user,()=>store.audited(user,'stage.draw',String(stage),()=>{
    eligible(user,stage);
    if(active(user))throw new AppError('请先完成并通过审核当前任务，再领取下一项',409);
-   const old=pending(user);if(old){if(old.stage!==stage)throw new AppError('请先接受已领取的任务',409);return offer(old);}
+   const old=pending(user);if(old){if(old.stage!==stage)throw new AppError('请先接受已领取的任务',409);if(stage===3)balance.reserve(user,'stage',old.id,store.getTask(old.task_id).deposit,store.getTask(old.task_id).title);return offer(old);}
    if(store.commissionSettings().rate_bps===null)throw new AppError('平台尚未配置佣金比例',409);
    const tasks=store.summary().tasks.filter(t=>t.stage===stage&&t.remaining>0);
    if(!tasks.length)throw new AppError('本阶段暂无可派发任务，请稍后再来',409);
    const nextStory=stage===3?storyFor(user):null;
    const selected=(nextStory?tasks.find(t=>t.title===nextStory.title):null)||tasks[randomInt(tasks.length)],id=randomUUID();
    db.prepare('INSERT INTO stage_task_offers(id,owner_id,stage,task_id,created_at) VALUES(?,?,?,?,?)').run(id,user,stage,selected.id,new Date().toISOString());
+   if(stage===3)balance.reserve(user,'stage',id,selected.deposit,selected.title);
    return offer(pending(user));
   }));},
   accept(user,id,expected){return store.asUser(user,()=>store.audited(user,'stage.accept',String(id),()=>{
@@ -55,6 +68,7 @@ export function createStageDispatch(store){
    if(row.assignment_id)return store.assignment(row.assignment_id);
    eligible(user,row.stage);
    if(active(user))throw new AppError('请先完成并通过审核当前任务',409);
+   if(row.stage===3)balance.convert(user,'stage',row.id);
    const assignment=store.claim(row.task_id,expected);
    db.prepare('UPDATE stage_task_offers SET assignment_id=? WHERE id=? AND owner_id=?').run(assignment.id,id,user);
    return assignment;

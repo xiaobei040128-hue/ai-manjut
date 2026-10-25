@@ -20,6 +20,7 @@ export function customerDirectory(store, auth, scope, operator) {
     const extra = record.get(now, row.id);
     const { task_held, withdrawal_held, ...fields } = extra;
     const coverHeld=db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='newcomer_cover_orders'").get()?db.prepare("SELECT COALESCE(SUM(amount),0) n FROM newcomer_cover_orders WHERE owner_id=? AND state='purchased'").get(row.id).n:0;
+    const reservedHeld=db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='task_balance_reservations'").get()?db.prepare("SELECT COALESCE(SUM(amount),0) n FROM task_balance_reservations WHERE owner_id=? AND state='reserved'").get(row.id).n:0;
     const episodeHeld=db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='community_license_orders'").get()?db.prepare("SELECT COALESCE(SUM(amount),0) n FROM community_license_orders WHERE owner_id=? AND state='purchased'").get(row.id).n:0;
     return {
       ...row,
@@ -27,10 +28,10 @@ export function customerDirectory(store, auth, scope, operator) {
       identity_status: extra.identity_status || "not_submitted",
       wallet: {
         ...row.wallet,
-        held: task_held + withdrawal_held + coverHeld + episodeHeld,
-        taskHeld: task_held + coverHeld + episodeHeld,
+        held: task_held + withdrawal_held + coverHeld + episodeHeld + reservedHeld,
+        taskHeld: task_held + coverHeld + episodeHeld + reservedHeld,
         withdrawalHeld: withdrawal_held,
-        total: row.wallet.available + task_held + withdrawal_held + coverHeld + episodeHeld,
+        total: row.wallet.available + task_held + withdrawal_held + coverHeld + episodeHeld + reservedHeld,
       },
     };
   });

@@ -172,6 +172,7 @@ async function api(req, res, url, inScope=false) {
       if(p==='/api/stage-journey/cover/submit')return send(res,200,stageJourney.submitCover(user.id,input));
       if(p==='/api/stage-journey/sync')return send(res,200,stageJourney.sync(user.id));
       if(p==='/api/stage-journey/reveal')return send(res,200,stageJourney.reveal(user.id));
+      if(p==='/api/stage-journey/license/cancel')return send(res,200,stageJourney.cancelLicense(user.id,input));
       if(p==='/api/stage-journey/license/purchase')return send(res,200,stageJourney.purchaseLicense(user.id,input));
       if(p==='/api/stage-journey/submit')return send(res,200,stageJourney.submit(user.id,input));
     }
@@ -181,8 +182,10 @@ async function api(req, res, url, inScope=false) {
     const user=creatorAuth.require(req),settings=store.commissionSettings();
     return store.asUser(user.id,()=>{const summary=stageDispatch.visible(user.id,store.summary());return send(res,200,{...summary,offer:stageDispatch.pending(user.id),journey:stageJourney.snapshot(user.id),commissionPolicy:settings,dispatch:store.dispatchStatus(),paymentMode:'manual',stageTwoEligible:stageJourney.snapshot(user.id).newcomer.complete,stageThreeEligible:stageEnrollments.status(user.id).enrollment?.status==='approved'});});
   }
-  if(['/api/stage-finance/draw','/api/stage-finance/accept'].includes(p)&&method==='POST'){
+  if(['/api/stage-finance/draw','/api/stage-finance/accept','/api/stage-finance/reserve','/api/stage-finance/discard'].includes(p)&&method==='POST'){
     const user=creatorAuth.require(req);validateOrigin(req);const input=await body(req);
+    if(p.endsWith('/discard'))return send(res,200,stageDispatch.discard(user.id,input.offerId));
+    if(p.endsWith('/reserve'))return send(res,200,stageDispatch.reserve(user.id,input.offerId));
     if(p.endsWith('/draw')&&input.stage===2)throw new AppError('请在当前成长计划中继续探索',403);
     if(p.endsWith('/draw')&&input.stage===1&&stageJourney.snapshot(user.id).onboarding.step!==2)throw new AppError('请先完成当前任务',403);
     return send(res,200,p.endsWith('/draw')?stageDispatch.draw(user.id,input.stage):stageDispatch.accept(user.id,input.offerId,input.expected));

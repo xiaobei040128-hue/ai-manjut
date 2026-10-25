@@ -15,7 +15,7 @@ import NewcomerCover from './NewcomerCover';
 
 type Snapshot=Bootstrap&{
  journey:JourneySnapshot;
- offer:{id:string;stage:number;task:Task}|null;
+ offer:{id:string;stage:number;task:Task;reservedAmount:number|null}|null;
  commissionPolicy:{rate_bps:number|null};
  dispatch:{day:string;claimed:number;limit:number};
  stageTwoEligible:boolean;
@@ -34,7 +34,7 @@ export default function StageWork({stage}:{stage:number}){
 
  const load=useCallback(async()=>{
   const version=++readVersion.current;setLoading(true);
-  try{if(stage===1){const journey=await api<JourneySnapshot&{rewards:{amount:number}[]}>('/stage-journey/sync','POST',{});if(mounted.current&&version===readVersion.current&&journey.rewards?.length)setRevealEvent({kind:'reward',nonce:Date.now(),amount:money(journey.rewards.reduce((n,r)=>n+r.amount,0)),title:'成长奖励已到账',subtitle:'恭喜，离你的下一章更近了一步。'});}const snapshot=await api<Snapshot>('/stage-finance');if(mounted.current&&version===readVersion.current){setData(snapshot);setConnectionError('');}return snapshot;
+  try{if(stage===1){const journey=await api<JourneySnapshot&{rewards:{amount:number}[]}>('/stage-journey/sync','POST',{});if(mounted.current&&version===readVersion.current&&journey.rewards?.length)setRevealEvent({kind:'reward',nonce:Date.now(),amount:money(journey.rewards.reduce((n,r)=>n+r.amount,0)),title:'成长奖励已到账',subtitle:'恭喜，离你的下一章更近了一步。'});}if(stage===3)await api('/stage-finance/reserve','POST',{});const snapshot=await api<Snapshot>('/stage-finance');if(mounted.current&&version===readVersion.current){setData(snapshot);setConnectionError('');}return snapshot;
   }catch(e){if(mounted.current&&version===readVersion.current)setConnectionError((e as Error).message);return null;
   }finally{if(mounted.current&&version===readVersion.current)setLoading(false);}
  },[stage]);
@@ -62,7 +62,7 @@ export default function StageWork({stage}:{stage:number}){
  }
  async function draw(){
   if(claimLock.current)return;void unlockWelcomeAudio();claimLock.current=true;readVersion.current++;setClaiming(true);setError('');
-  try{const offer=await api<NonNullable<Snapshot['offer']>>('/stage-finance/draw','POST',{stage});if(mounted.current){setData(previous=>previous?{...previous,offer}:previous);setRevealEvent({kind:'task',nonce:Date.now(),title:'这一单，正式揭晓',subtitle:offer.task.title});stopStageAudio.current();stopStageAudio.current=playWelcomeChime(0);}}
+  try{const offer=await api<NonNullable<Snapshot['offer']>>('/stage-finance/draw','POST',{stage});if(mounted.current){await load();setRevealEvent({kind:'task',nonce:Date.now(),title:'这一单，正式揭晓',subtitle:offer.task.title});stopStageAudio.current();stopStageAudio.current=playWelcomeChime(0);}}
   catch(e){if(mounted.current)setError((e as Error).message);}
   finally{claimLock.current=false;if(mounted.current)setClaiming(false);}
  }
@@ -76,6 +76,12 @@ export default function StageWork({stage}:{stage:number}){
    else location.assign(assignmentUrl(a.id));
   }catch(e){await load();if(mounted.current)setError((e as Error).message);
   }finally{claimLock.current=false;if(mounted.current)setClaiming(false);}
+ }
+
+ async function discardOffer(){
+  if(claimLock.current||!data?.offer)return;claimLock.current=true;readVersion.current++;setClaiming(true);setError('');
+  try{await api('/stage-finance/discard','POST',{offerId:data.offer.id});await load();}
+  catch(e){if(mounted.current)setError((e as Error).message);}finally{claimLock.current=false;if(mounted.current)setClaiming(false);}
  }
 
  function closeAward(){
@@ -114,7 +120,7 @@ export default function StageWork({stage}:{stage:number}){
  const availableStage=data?(data.stageThreeEligible||data.journey.community.completed===5||data.assignments.some(a=>a.status==='completed'&&a.task.stage===2)?3:data.journey.newcomer.complete?2:1):1;
  useEffect(()=>{if(data&&stage>availableStage)location.replace('/?view=app&design='+['newcomer','advanced','third'][availableStage-1]);},[data,stage,availableStage]);
  if(stage>1&&(!data||stage>availableStage))return <div className="studio native-mode stage-work"><p role="status">正在加载你的计划…</p>{connectionError&&<p role="alert">{connectionError}</p>}</div>;
- if(stage===2)return <CommunityJourney available={connectionError?null:data?.wallet.available??null} onWalletChange={load}/>;
+ if(stage===2)return <CommunityJourney onWalletChange={load}/>;
  return <div className={'studio native-mode stage-work'+(stage===1?' newcomer-current-page':stage===3?' purchase-page':'')}>
   <JourneyEffects event={revealEvent} onClose={closeReveal}/>
   <TaskCelebration award={award} onClose={closeAward}/>
@@ -138,9 +144,10 @@ export default function StageWork({stage}:{stage:number}){
        <div className="stage-story-specs">{stage===3?<span>{task.genre}</span>:<><span>{task.episodes} 集</span><span>{task.platform}</span><span>{task.language}</span></>}</div>
        <h4>剧情概览</h4><p>{task.description}</p>
        {stage!==3&&<><h4>本次任务</h4><p>使用本次作品素材，在 {task.platform} 完成 {task.posts} 条作品发布，并提交发布链接与截图。</p></>}
-       </div><div className="stage-story-checkout"><div className="stage-purchase-summary"><div><span>{stage===3?'版权选购金额':'任务金额'}</span><b>{money(task.deposit)}</b></div><div><span>预计收入</span><b>{money(task.commission)}</b></div></div>
-       {stage===3&&<PurchaseBalance amount={task.deposit} available={connectionError?null:data.wallet.available} returnDesign="third"/>}<button hidden={stage===3&&data.wallet.available<task.deposit} disabled={claiming||!eligible||dailyLimitReached||data.wallet.available<task.deposit||!task.active||task.remaining<1||!!connectionError} onClick={()=>void claim(task)}>{claiming?'正在处理…':stage===3?'购买版权 · '+money(task.deposit):'接受任务 · '+money(task.deposit)}</button>
-       {stage!==3&&data.wallet.available<task.deposit&&<a href="/?view=app&page=wallet">余额不足，前往充值 →</a>}
+       </div><div className="stage-story-checkout"><div className="stage-purchase-summary"><div><span>{stage===3?'版权金额':'任务金额'}</span><b>{money(task.deposit)}</b></div><div><span>预计收益</span><b>{money(task.commission)}</b></div></div>
+       {stage===3&&<PurchaseBalance amount={task.deposit} available={connectionError?null:data.wallet.available} reservedAmount={offer?.reservedAmount??null} returnDesign="third"/>}<button hidden={stage===3&&data.wallet.available+(stage===3?(offer?.reservedAmount??0):0)<task.deposit} disabled={claiming||!eligible||dailyLimitReached||data.wallet.available+(stage===3?(offer?.reservedAmount??0):0)<task.deposit||!task.active||task.remaining<1||!!connectionError} onClick={()=>void claim(task)}>{claiming?'正在处理…':stage===3?'完成购买':'接受任务 · '+money(task.deposit)}</button>
+       {stage!==3&&data.wallet.available+(stage===3?(offer?.reservedAmount??0):0)<task.deposit&&<a href="/?view=app&page=wallet">余额不足，前往充值 →</a>}
+       {stage===3&&<button className="purchase-release" disabled={claiming} onClick={()=>void discardOffer()}>取消领取，退回余额</button>}
        <a href={'/?view=app&page=detail&task='+encodeURIComponent(task.id)}>查看素材与任务详情 →</a>
       </div></article>
       :<div className="stage-sealed-invitation"><div className="journey-invitation-art"><div className="journey-invitation-orbit"/><img src="/art/task-invitation-v1.png" alt="未揭晓的任务邀请"/></div><h3>好故事，即将与你相遇</h3>
