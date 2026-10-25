@@ -85,11 +85,33 @@ test('customer note success is preserved when directory refresh fails',async({pa
 });
 
 test('registration immediately credits one dollar and celebrates once, with no repeat on login',async({page})=>{
+ await page.addInitScript(()=>{
+  const stats={starts:[] as number[],stops:0},Original=window.AudioContext;
+  class ObservedAudio extends Original {
+   createOscillator(){const oscillator=super.createOscillator(),start=oscillator.start.bind(oscillator),stop=oscillator.stop.bind(oscillator);
+    oscillator.start=(when=0)=>{stats.starts.push(when-this.currentTime);start(when);};
+    oscillator.stop=(when=0)=>{stats.stops++;stop(when);};return oscillator;
+   }
+  }
+  window.AudioContext=ObservedAudio;Object.assign(window,{welcomeAudioStats:stats});
+ });
+
  await page.emulateMedia({reducedMotion:'no-preference'});
  const headers={'X-Workspace-Request':'1'};await page.request.post('/api/admin/login',{data:{username:'dispatch-browser',password:'DispatchBrowserQA123!'},headers});
  const invitation=await(await page.request.post('/api/admin/invitations',{data:{},headers})).json();await page.request.post('/api/auth/logout',{data:{},headers});
  await page.goto('/?view=app&auth=register');await page.getByLabel('邮箱',{exact:true}).fill('welcome-browser@example.invalid');await page.getByPlaceholder('至少 8 位字符').fill('WelcomeBrowserQA123!');await page.getByLabel('确认密码',{exact:true}).fill('WelcomeBrowserQA123!');await page.getByLabel('邀请码',{exact:true}).fill(invitation.code);await page.getByRole('button',{name:'注册并进入'}).click();
  const dialog=page.getByRole('dialog',{name:'Welcome aboard.'});await expect(dialog).toBeVisible();await expect(dialog).toHaveAttribute('aria-modal','true');await expect(page.locator('.registration-reward')).toHaveAttribute('lang','en');await expect(dialog.getByText('$1.00',{exact:true})).toBeVisible();await expect(dialog).toContainText('Added to your available balance');
+ await expect.poll(()=>page.evaluate(()=>(window as unknown as {welcomeAudioStats:{starts:number[]}}).welcomeAudioStats.starts.length)).toBe(3);
+ const offsets=await page.evaluate(()=>(window as unknown as {welcomeAudioStats:{starts:number[]}}).welcomeAudioStats.starts);
+ expect(offsets[0]).toBeGreaterThan(1.5);expect(offsets[0]).toBeLessThan(1.8);
+ await dialog.getByRole('button',{name:'Mute welcome sound',exact:true}).click();
+ await dialog.getByRole('button',{name:'Replay welcome',exact:true}).click();
+ await expect(dialog.getByRole('button',{name:'Start creating'})).toBeEnabled();
+ expect(await page.evaluate(()=>(window as unknown as {welcomeAudioStats:{starts:number[]}}).welcomeAudioStats.starts.length)).toBe(3);
+ await dialog.getByRole('button',{name:'Enable welcome sound and replay',exact:true}).click();
+ await expect.poll(()=>page.evaluate(()=>(window as unknown as {welcomeAudioStats:{starts:number[]}}).welcomeAudioStats.starts.length)).toBe(6);
+ await expect(dialog.getByRole('button',{name:'Start creating'})).toBeEnabled();
+
  const registered=await(await page.request.get('/api/bootstrap')).json();expect(registered.wallet.available).toBe(100);expect(registered.wallet.earned).toBe(0);expect(registered.ledger.filter((r:{kind:string})=>r.kind==='registration_reward')).toHaveLength(1);
  await expect(page.locator('.registration-character')).toBeVisible();await expect.poll(()=>page.locator('.registration-character').evaluate((image:HTMLImageElement)=>image.complete&&image.naturalWidth>0)).toBe(true);
  await page.screenshot({path:'../registration-reward-verified.png',animations:'disabled'});await page.setViewportSize({width:320,height:568});await dialog.getByRole('button',{name:'Start creating'}).scrollIntoViewIfNeeded();await expect(dialog.getByRole('button',{name:'Start creating'})).toBeInViewport();await page.screenshot({path:'../registration-reward-small-screen.png',animations:'disabled'});await page.setViewportSize({width:430,height:920});await dialog.getByRole('button',{name:'Explore the studio'}).click();await expect(dialog).toHaveCount(0);await page.reload();await expect(dialog).toHaveCount(0);

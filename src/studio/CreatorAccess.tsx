@@ -1,4 +1,5 @@
 import RegistrationReward from "./RegistrationReward";
+import {unlockWelcomeAudio} from "./welcome-audio";
 import {BrandMark} from "../Brand";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
@@ -88,6 +89,7 @@ export default function CreatorAccess({
       setError("两次输入的密码不一致");
       return;
     }
+    if (mode === "register") void unlockWelcomeAudio();
     mutation.current = true;
     const version = ++generation.current;
     keyboard.hide();
