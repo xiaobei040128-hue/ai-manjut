@@ -456,7 +456,7 @@ export default function FinancePanel({
         open={!!modal}
         onOpenChange={(v) => !busy && !v && setModal("")}
         title={modal ? modalTitles[modal] : "账户申请"}
-        description={modal==='card'?"添加本人的收款账户，保存后即可使用。":"请填写属于本人的资料。"}
+        description={modal==='deposit'?(returnHref?"已带入任务所需充值金额，到账后可返回任务继续购买。":"核对充值金额，填写实际转账凭证后提交核实。"):modal==='withdrawal'?"选择提款方式并核对金额，提交后可查看处理进度。":modal==='card'?"添加本人的收款账户，保存后即可使用。":"请填写属于本人的资料。"}
       >
         <div className={'s-finance-sheet'+(modal==='withdrawal'?' is-withdrawal':'')}>
           <button

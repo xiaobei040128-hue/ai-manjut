@@ -7,6 +7,7 @@ import './stage-work.css';
 import {NewcomerProgress,type JourneySnapshot} from './NewcomerProgress';
 import CommunityJourney from './CommunityJourney';
 import PurchaseBalance from './PurchaseBalance';
+import './purchase-page.css';
 import JourneyEffects,{type JourneyEvent} from './JourneyEffects';
 import {playWelcomeChime,unlockWelcomeAudio} from './welcome-audio';
 import './license-gold.css';
@@ -114,7 +115,7 @@ export default function StageWork({stage}:{stage:number}){
  useEffect(()=>{if(data&&stage>availableStage)location.replace('/?view=app&design='+['newcomer','advanced','third'][availableStage-1]);},[data,stage,availableStage]);
  if(stage>1&&(!data||stage>availableStage))return <div className="studio native-mode stage-work"><p role="status">正在加载你的计划…</p>{connectionError&&<p role="alert">{connectionError}</p>}</div>;
  if(stage===2)return <CommunityJourney available={connectionError?null:data?.wallet.available??null} onWalletChange={load}/>;
- return <div className={'studio native-mode stage-work'+(stage===1?' newcomer-current-page':'')}>
+ return <div className={'studio native-mode stage-work'+(stage===1?' newcomer-current-page':stage===3?' purchase-page':'')}>
   <JourneyEffects event={revealEvent} onClose={closeReveal}/>
   <TaskCelebration award={award} onClose={closeAward}/>
   <header><a href="/?view=app">‹ 返回首页</a><h1>{stage===1?'新手成长计划':'作品探索'}</h1><button disabled={loading} onClick={()=>void load()}>{loading?'读取中…':'刷新'}</button></header>
@@ -124,16 +125,16 @@ export default function StageWork({stage}:{stage:number}){
    {!data&&!connectionError&&<p role="status">正在加载…</p>}
    {stage===1&&<NewcomerProgress data={data?.journey||null} onTake={()=>void takeNewcomer()} busy={claiming} experienceCommission={assignments.filter(a=>a.status==='completed').reduce((n,a)=>n+a.task.commission,0)+(data?.journey.cover?.state==='completed'?(data.journey.cover.commission||0):0)}/>}
    {stage===1&&data?.journey.onboarding.step===2&&data.journey.onboarding.revealed&&!current&&<NewcomerCover data={data.journey} onUpdate={next=>{setData(previous=>previous?{...previous,journey:next}:previous);void load();}} onComplete={commission=>{setRevealEvent({kind:'reward',nonce:Date.now(),amount:money(commission),title:'封面任务已完成',subtitle:'版权码已核验，佣金已到账。'});stopStageAudio.current();stopStageAudio.current=playWelcomeChime(0);}}/>}
-   {stage===3&&<section className="journey-third-hero"><small>DISCOVER YOUR NEXT STORY</small><h2>探索下一部好作品</h2><p>发现好故事，开启你的下一份创作。</p></section>}
+   {stage===3&&<section className="purchase-page-intro"><div><small>第三阶段 · 作品探索</small><h2>发现下一部好作品</h2></div><a href="/?view=app&page=wallet">我的钱包 →</a></section>}
    {data&&<>
-    {stage===3&&<div className="stage-balance-line"><span>可用余额</span><b>{money(data.wallet.available)}</b><a href="/?view=app&page=wallet">钱包 →</a></div>}
+
     {!ready?<section><h2>任务暂未开放</h2><p>平台正在配置佣金规则，请稍后刷新。</p></section>:<>
      {!eligible&&stage===3&&<EnrollmentCard/>}
      {stage===3&&<div className="stage-daily-count"><span>{data.dispatch.day} · 北京时间</span><b>今日进度 {data.dispatch.claimed} / {data.dispatch.limit}</b>{dailyLimitReached&&<small>今日名额已用完，未完成任务仍可继续。</small>}</div>}
      {(stage!==1||!!current&&data.journey.onboarding.step===2&&data.journey.onboarding.revealed)&&<section id="experience-task" className="stage-task-list"><h2>{current?'进行中的作品':offer?'本次作品':'开启你的下一段故事'}</h2>
       {current?<article className="stage-task-card"><img src={current.task.cover} alt=""/><div><h3>{current.task.title}</h3><p>{statusText[current.status]}</p><button onClick={()=>location.assign(assignmentUrl(current.id))}>继续当前任务</button></div></article>
       :task?<article className="stage-task-card stage-story-card"><div className="stage-story-poster"><img src={task.cover} alt={task.title+'封面'}/><span>{task.genre} · {task.language}</span></div><div className="stage-story-copy">
-       <small className="stage-story-eyebrow">{stage===3?'COPYRIGHT COLLECTION':'YOUR NEXT STORY'}</small><h3>{task.title}</h3>
+       <small className="stage-story-eyebrow">{stage===3?'本次领取 · 作品版权':'YOUR NEXT STORY'}</small><h3>{task.title}</h3>
        <div className="stage-story-specs">{stage===3?<span>{task.genre}</span>:<><span>{task.episodes} 集</span><span>{task.platform}</span><span>{task.language}</span></>}</div>
        <h4>剧情概览</h4><p>{task.description}</p>
        {stage!==3&&<><h4>本次任务</h4><p>使用本次作品素材，在 {task.platform} 完成 {task.posts} 条作品发布，并提交发布链接与截图。</p></>}
