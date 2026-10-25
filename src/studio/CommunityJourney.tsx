@@ -13,6 +13,11 @@ export default function CommunityJourney(){
  const alive=useRef(true),lock=useRef(false),stopSound=useRef<()=>void>(()=>{});
  const close=useCallback(()=>setEvent(null),[]);
  useEffect(()=>{alive.current=true;let live=true;void api<JourneySnapshot>('/stage-journey/sync','POST',{}).then(v=>{if(live)setData(v);}).catch(e=>{if(live)setError(e.message);});return()=>{live=false;alive.current=false;stopSound.current();};},[]);
+ useEffect(()=>{
+  let live=true;const refresh=()=>{if(document.visibilityState==='visible'&&!lock.current)void api<JourneySnapshot>('/stage-journey').then(next=>{if(live)setData(next);}).catch(()=>{});};
+  window.addEventListener('focus',refresh);document.addEventListener('visibilitychange',refresh);
+  return()=>{live=false;window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',refresh);};
+ },[]);
  const c=data?.community,done=c?.completed===5,step=c?.completed??0,revealed=c?.revealed===step;
  async function act(kind:'reveal'|'submit'|'license/purchase',payload:Record<string,unknown>={}){
   if(lock.current)return;lock.current=true;setBusy(true);setError('');void unlockWelcomeAudio();

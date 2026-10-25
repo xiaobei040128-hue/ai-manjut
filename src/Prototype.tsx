@@ -382,7 +382,7 @@ function AccountContent({
   logout: () => Promise<void>;
 }) {
   const design = new URLSearchParams(location.search).get("design");
-  if (design && ['newcomer','advanced','third'].includes(design)) return <DesignPreview><StageWork stage={design==='newcomer'?1:design==='advanced'?2:3}/></DesignPreview>;
+  if (design && ['newcomer','advanced','third'].includes(design)) return <DesignPreview><StageWork key={design} stage={design==='newcomer'?1:design==='advanced'?2:3}/></DesignPreview>;
   return (
     <Studio
       key={user.id}
