@@ -1,0 +1,413 @@
+.studio .f-refresh {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: #a181b2;
+  padding: 7px 0;
+  min-height: 30px;
+}
+.studio .f-refresh svg {
+  height: 12px;
+  width: 12px;
+}
+.f-receipt {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 16px 13px;
+  background: #f0f7f2;
+  border: 1px solid #dfede3;
+  border-radius: 12px;
+  color: #659775;
+  margin: 18px 0;
+}
+.f-receipt > div {
+  flex: 1;
+  min-width: 0;
+}
+.studio .f-receipt > svg {
+  height: 18px;
+  width: 18px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.f-receipt b {
+  font-size: 12px;
+  font-weight: 550;
+}
+.studio .f-receipt p {
+  font-size: 11px;
+  color: #88a38f;
+  line-height: 1.8;
+  margin: 5px 0;
+}
+.f-receipt small {
+  display: block;
+  font-size: 9px;
+  color: #94ad9c;
+  overflow-wrap: anywhere;
+  line-height: 1.8;
+}
+.studio .f-receipt > button {
+  font-size: 18px;
+  color: #8daa95;
+  line-height: 1;
+}
+.f-record-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 24px 0 13px;
+}
+.studio .f-record-heading h3 {
+  margin: 0;
+  font-size: 14px;
+  color: #856391;
+}
+.f-record-heading > span {
+  font-size: 9px;
+  color: #b09abb;
+}
+.f-filters {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 16px;
+}
+.studio .f-filters button {
+  font-size: 10px;
+  color: #ac8ebc;
+  padding: 7px 10px;
+  border: 1px solid #e9dcf1;
+  border-radius: 20px;
+  background: #fff;
+  min-height: 30px;
+}
+.studio .f-filters button[aria-pressed="true"] {
+  background: #f1e6f8;
+  color: #9e76b4;
+  border-color: #e0c9ef;
+}
+.f-request {
+  border: 1px solid #eadff2;
+  border-radius: 11px;
+  margin: 10px 0;
+  background: #fff;
+  overflow: hidden;
+}
+.f-request > .f-request-heading {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 14px 11px;
+  list-style: none;
+  cursor: pointer;
+}
+.f-request > .f-request-heading::-webkit-details-marker {
+  display: none;
+}
+.f-request-title {
+  flex: 1;
+  min-width: 0;
+}
+.f-request-title b {
+  font-size: 11px;
+  display: block;
+  color: #866b94;
+  font-weight: 500;
+  line-height: 1.7;
+}
+.f-request-title em {
+  font-size: 12px;
+  font-weight: 550;
+  font-style: normal;
+  color: #825f95;
+  white-space: nowrap;
+}
+.f-request-title small {
+  display: block;
+  font-size: 9px;
+  color: #b59dc3;
+  line-height: 1.7;
+  margin-top: 5px;
+}
+.f-request-icon {
+  height: 31px;
+  width: 31px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #e8daf2;
+  background: #f6effc;
+  border-radius: 9px;
+  color: #b298c3;
+  flex-shrink: 0;
+}
+.studio .f-request-icon svg {
+  height: 15px;
+  width: 15px;
+}
+.f-request-icon.paid,
+.f-request-icon.completed {
+  color: #8faf9b;
+  background: #f0f6f2;
+  border-color: #e4eee8;
+}
+.studio .f-request > .f-request-heading > .s-finance-status {
+  font-size: 8px;
+  white-space: nowrap;
+}
+.studio .f-request > .f-request-heading > svg {
+  height: 11px;
+  width: 11px;
+  color: #bca6cb;
+  transition: transform 0.2s;
+}
+.f-request[open] > summary > svg {
+  transform: rotate(180deg);
+}
+.f-request-detail {
+  border-top: 1px solid #f0e8f5;
+  padding: 16px 13px;
+  background: #fcf9fe;
+}
+.f-request-track {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 17px;
+}
+.f-request-track > span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  font-size: 9px;
+  color: #c3afcd;
+  white-space: nowrap;
+}
+.studio .f-request-track svg {
+  height: 17px;
+  width: 17px;
+}
+.f-request-track > span.done {
+  color: #a689b8;
+}
+.f-request-track > span.active {
+  color: #9a6cb4;
+}
+.f-request-track > i {
+  flex: 1;
+  height: 1px;
+  background: #e6d5ef;
+  align-self: flex-start;
+  margin-top: 8px;
+}
+.f-request-detail dl {
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  gap: 9px;
+  font-size: 10px;
+  line-height: 1.8;
+}
+.f-request-detail dt {
+  color: #b39bc0;
+}
+.f-request-detail dd {
+  margin: 0;
+  color: #9d7fab;
+  overflow-wrap: anywhere;
+}
+.studio .f-request-detail > p {
+  font-size: 10px;
+  color: #ae96bc;
+  line-height: 1.9;
+  margin: 16px 0 0;
+}
+.f-empty {
+  text-align: center;
+  border: 1px dashed #e8dcf1;
+  border-radius: 11px;
+  background: #fcf9fe;
+  padding: 24px 15px;
+}
+.studio .f-empty > svg {
+  height: 24px;
+  width: 24px;
+  color: #ccb5d9;
+  margin-bottom: 12px;
+}
+.f-empty > b {
+  font-size: 11px;
+  font-weight: 500;
+  color: #aa8fba;
+  display: block;
+}
+.studio .f-empty > p {
+  font-size: 10px;
+  color: #bba5c8;
+  line-height: 1.9;
+  margin-top: 8px;
+}
+.f-spinning {
+  animation: f-spin 0.8s linear infinite;
+}
+@keyframes f-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .f-spinning {
+    animation: none;
+  }
+  .f-request > .f-request-heading > svg {
+    transition: none;
+  }
+}
+
+.s-id-completeness {
+  display: flex;
+  gap: 8px;
+  margin: 18px 0;
+}
+.s-id-completeness > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: #ae89be;
+  background: #f7f0fc;
+  border: 1px solid #ebdcf4;
+  border-radius: 20px;
+  padding: 7px 11px;
+}
+.s-id-completeness svg {
+  height: 12px;
+  width: 12px;
+}
+.s-id-photo-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.s-id-photo-heading > b {
+  font-size: 12px;
+  color: #9270a2;
+}
+.s-id-photo-heading > button {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  background: none;
+  border: 0;
+  font: inherit;
+  font-size: 10px;
+  color: #b795c5;
+  cursor: pointer;
+}
+.s-id-photo-heading > button > svg {
+  height: 11px;
+  width: 11px;
+}
+.payout-method-picker{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:5px 0 23px}.payout-method-picker>button{display:flex;flex-direction:column;align-items:center;gap:8px;padding:17px 5px;border:1px solid #e6dfee;background:#faf8fd;border-radius:15px;color:#665475;cursor:pointer}.payout-method-picker>button[aria-pressed=true]{border-color:#9a72bd;background:#f0e7f9;box-shadow:0 0 0 1px #a47dc340}.payout-method-picker b{font-size:13px}.payout-method-picker small{font-size:9px;color:#a08cad}.payout-symbol{display:grid;place-items:center;width:35px;height:35px;border-radius:11px;font-size:23px;font-weight:bold}.payout-symbol.binance{background:#f7edc9;color:#b48d22}.payout-symbol.okx{background:#222;color:white}.payout-symbol.usdt{background:#daf2e9;color:#379b7b}.payout-method-note{font-size:12px!important;line-height:1.8;color:#a08aaa!important}
+.payout-symbol img{display:block;width:30px;height:30px;object-fit:contain}.payout-symbol.okx{background:#000}.payout-symbol.binance,.payout-symbol.usdt{background:transparent}
+
+.payout-method-picker .payout-symbol{width:42px;height:42px;padding:0;border-radius:0;background:transparent;overflow:visible;flex-shrink:0}.payout-method-picker .payout-symbol img{display:block;width:40px;height:40px;max-width:none;object-fit:contain;border:0;border-radius:0;box-shadow:none;filter:none;transform:none}
+
+.payout-method-picker button .payout-symbol{background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;filter:none!important;overflow:visible!important;transform:none!important}.payout-method-picker button .payout-symbol:before,.payout-method-picker button .payout-symbol:after{content:none!important;display:none!important}.payout-method-picker button .payout-symbol>svg{display:block!important;width:40px!important;height:40px!important;min-width:40px;padding:0!important;margin:0!important;background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;filter:none!important;transform:none!important;overflow:visible}
+
+.payout-method-picker button .payout-symbol.okx{width:66px!important;height:42px!important;background:#000!important;border-radius:6px!important}.payout-method-picker button .payout-symbol.okx>img{width:54px!important;height:auto!important;max-height:30px;object-fit:contain!important;border-radius:0!important;image-rendering:auto}
+
+.payout-method-picker button .payout-symbol.okx{width:76px!important;height:42px!important;background:transparent!important;border-radius:0!important;padding:0!important}.payout-method-picker button .payout-symbol.okx>img{width:68px!important;height:auto!important;max-height:32px!important;object-fit:contain!important;filter:brightness(0)!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+
+.payout-method-picker button .payout-symbol.okx{width:48px!important;height:48px!important;padding:0!important;background:#000!important;border:1px solid #9c96a4!important;border-radius:50%!important;overflow:hidden!important;box-sizing:border-box}.payout-method-picker button .payout-symbol.okx>img{display:block!important;width:46px!important;height:46px!important;max-height:none!important;max-width:none!important;object-fit:contain!important;filter:none!important;border:0!important;border-radius:50%!important;margin:0!important;padding:0!important;transform:none!important}
+.withdrawal-available{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;margin-bottom:16px;border-radius:12px;background:#f4eefb;color:#9273ab;font-size:12px}.withdrawal-available b{font-size:19px;color:#745097}
+.bottom-sheet:has(.s-finance-sheet) .sheet-header{padding-right:64px!important}.bottom-sheet:has(.s-finance-sheet) .sheet-header h2{font-size:20px!important;line-height:1.4!important}.bottom-sheet:has(.s-finance-sheet) .sheet-header p{font-size:12px!important;color:#9b8ba7!important;margin-top:6px!important}.bottom-sheet:has(.s-finance-sheet) .s-finance-close{position:absolute;right:22px;top:36px;z-index:5;display:grid;place-items:center;width:32px;height:32px;margin:0;padding:8px;background:#f5f0f9;border-radius:50%;color:#9374a7}.s-finance-close svg{width:15px;height:15px}.bottom-sheet:has(.s-finance-sheet.is-withdrawal) .sheet-content{padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))!important}.s-finance-sheet.is-withdrawal{padding:0 4px 0}.s-finance-sheet.is-withdrawal form{padding:0}.s-finance-sheet.is-withdrawal .withdrawal-available{background:#f6f1fa;padding:13px 15px;margin:4px 0 20px;border:1px solid #ebe0f3}.s-finance-sheet.is-withdrawal .withdrawal-available b{font-size:22px}.s-finance-sheet.is-withdrawal label{font-size:12px;margin:16px 0;color:#80668f}.s-finance-sheet.is-withdrawal :is(input,select){min-height:48px;padding:12px 14px;background:#fcfaff;font-size:14px;border-radius:12px}.s-finance-sheet.is-withdrawal form>p:not([role=alert]){font-size:11px;line-height:1.7;margin:16px 2px;color:#a491b0}.s-finance-sheet.is-withdrawal .s-auth-submit{margin-top:18px;min-height:48px;padding:13px;border-radius:13px;font-size:14px;box-shadow:none}.s-finance-sheet.is-withdrawal .s-auth-submit:disabled{background:#c8b5de;color:#faf7ff;opacity:.75;cursor:not-allowed}
+
+.f-request > .f-request-heading{cursor:default}.studio .s-ledger-list>div.s-ledger-row{cursor:default}
+
+.deposit-channel-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.deposit-channel-grid button{display:flex;align-items:center;gap:12px;min-height:72px;padding:14px;border:1px solid #e8e5ed;border-radius:12px;background:#fff;color:#26232c;text-align:left}.deposit-channel-grid button>b{flex:1;font-size:14px}.deposit-mark{width:36px;height:36px;display:grid;place-items:center;font-size:11px;font-weight:700;background:#f4f3f6;border-radius:9px;flex-shrink:0}.deposit-mark img{width:26px;height:26px;object-fit:contain}.deposit-details{padding:18px;background:#f7f7fa;border:1px solid #ebe9ef;border-radius:12px;margin-bottom:20px}.deposit-details header{display:flex;align-items:center;justify-content:space-between}.deposit-details h3{margin:0}.deposit-details code{display:block;white-space:pre-wrap;overflow-wrap:anywhere;color:#25222b;font-size:14px;margin:12px 0}.deposit-instructions{white-space:pre-wrap}.deposit-details button{border:1px solid #ddd6e8;border-radius:8px;padding:10px 14px;background:white;color:#64477a}.deposit-channels{padding:8px 0 24px}
+
+.deposit-mark svg{width:27px;height:27px}.deposit-mark{background:transparent}.deposit-mark.visa img,.deposit-mark.mastercard img{width:36px;height:28px}
+
+.deposit-type-list{display:flex;flex-direction:column;gap:14px}.deposit-type-list>button{display:flex;align-items:center;gap:18px;text-align:left;min-height:94px;padding:18px;border:1px solid #e8e5ed;border-radius:13px;background:#fff;color:#29252e;cursor:pointer}.deposit-type-list>button:hover{border-color:#c3b1d2;background:#fcfafe}.deposit-type-list>button>span:nth-child(2){flex:1;min-width:0}.deposit-type-list b{display:block;font-size:16px;font-weight:600}.deposit-type-list small{display:block;font-size:12px;color:#8b8193;margin-top:8px;line-height:1.6}.deposit-type-list i{font-style:normal;font-size:24px;color:#b1a5ba}.deposit-type-logos{display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;width:72px;height:45px}.deposit-type-logos img{width:28px;height:28px;object-fit:contain}.deposit-type-logos.crypto img+img{margin-left:-8px}.deposit-type-logos.crypto img{border:3px solid white;border-radius:50%;background:white;box-sizing:content-box}.deposit-type-logos.cards{gap:5px}.deposit-type-logos.cards img{width:32px;height:26px}.deposit-type-logos.bank svg{width:31px;height:31px;color:#6d5c7a}@media(max-width:360px){.deposit-type-list>button{padding:16px 12px;gap:12px}.deposit-type-logos{width:61px}.deposit-type-list b{font-size:15px}}
+
+/* Deposit flow: one header, consistent back navigation, concise states. */
+.bottom-sheet:has(.s-finance-sheet.is-deposit){min-height:0!important}.bottom-sheet:has(.s-finance-sheet.is-deposit) .sheet-content{padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))!important}.s-finance-sheet.is-deposit{padding:0!important}.bottom-sheet:has(.s-finance-sheet.is-deposit) .sheet-header{padding:4px 78px 20px 66px!important;min-height:38px}.bottom-sheet:has(.s-finance-sheet.is-deposit) .sheet-header h2{font-size:20px!important;font-weight:650!important;letter-spacing:-.3px}.bottom-sheet:has(.s-finance-sheet.is-deposit) .sheet-header p{color:#8a8293!important;line-height:1.6!important}.s-finance-sheet.is-deposit .s-finance-close[hidden]{display:none!important}.deposit-flow-back{position:absolute;top:32px;z-index:6;border:0;background:none;color:#5f536b;cursor:pointer;display:grid;place-items:center;min-width:40px;min-height:40px;padding:8px}.deposit-flow-back{left:16px}.deposit-flow-back svg{width:23px;height:23px}.deposit-flow-back:hover{background:#f6f3f9;border-radius:9px}.deposit-flow-back:focus-visible{outline:2px solid #9472ab;outline-offset:2px}.s-finance-sheet.is-deposit .deposit-channels{padding:0}.s-finance-sheet.is-deposit .deposit-type-list{gap:12px}.s-finance-sheet.is-deposit .deposit-type-list>button,.deposit-type-disabled{display:flex;align-items:center;gap:16px;text-align:left;min-height:84px;padding:15px;border:1px solid #e8e5ed;border-radius:12px;background:white;color:#29252e}.deposit-type-disabled{background:#f8f8fa;border-color:#edebf0;cursor:not-allowed}.deposit-type-disabled>span:nth-child(2){flex:1;min-width:0}.deposit-type-disabled b{display:block;font-size:16px;font-weight:600;color:#756d7d}.deposit-type-disabled small{display:block;font-size:11px;color:#99919f;margin-top:7px;line-height:1.6}.deposit-type-disabled .cards{opacity:.65}.deposit-state{padding:18px 12px 22px;text-align:left}.deposit-state-icon{display:grid;place-items:center;width:56px;height:56px;background:#f6f3f9;border:1px solid #eee8f2;border-radius:15px;margin-bottom:20px;color:#7a638a}.deposit-state-icon svg,.deposit-state-icon img{width:30px;height:30px;object-fit:contain}.deposit-state>p{font-size:14px;line-height:1.8;color:#7b7184;margin:0 0 22px;max-width:340px}.deposit-state .support-contact-link{width:100%;min-height:48px;box-sizing:border-box;border:0;background:#79538f;color:white;border-radius:10px;font-weight:600;font-size:14px}.deposit-state .support-contact-link:hover{background:#6b4780}.s-finance-sheet.is-deposit .deposit-details{margin-top:0;padding:16px;background:#fcfbfd;border-radius:12px}.s-finance-sheet.is-deposit .deposit-method-tabs{margin-top:0}.s-finance-sheet.is-deposit form label{font-size:13px}.s-finance-sheet.is-deposit form>p{font-size:12px;line-height:1.7;color:#92869d}.s-finance-sheet.is-deposit .s-auth-submit{font-size:14px;min-height:48px;border-radius:10px;box-shadow:none}@media(max-width:360px){.bottom-sheet:has(.s-finance-sheet.is-deposit) .sheet-header{padding-left:58px!important}.deposit-flow-back{left:12px}.deposit-type-disabled{padding:15px 12px;gap:12px}.deposit-type-disabled b{font-size:15px}.deposit-type-disabled small{font-size:11px}.deposit-state{padding:12px 4px 16px}}
+
+.s-finance-sheet .withdrawal-bank-minimum{font-size:12px;line-height:1.7;color:#856c94;margin:-4px 0 16px}
+
+.withdrawal-minimum-error{margin:12px 0;padding:12px 14px;border:1px solid #f0d5dc;border-radius:10px;background:#fff7f8;color:#a64c62}.withdrawal-minimum-error b{font-size:12px;font-weight:600}.withdrawal-minimum-error p{font-size:11px;line-height:1.7;margin:6px 0 0;color:#ac6375}
+
+/* Fit short choices to their content; reserve room for longer finance forms. */
+.bottom-sheet:has(.s-finance-sheet){height:auto;max-height:min(85%,calc(100% - var(--finance-keyboard-offset,0px) - 24px))!important;min-height:0!important}
+.bottom-sheet:has(.s-finance-sheet.is-identity){max-height:min(92%,calc(100% - var(--finance-keyboard-offset,0px) - 24px))!important}
+body:has(.native-mode) .bottom-sheet:has(.s-finance-sheet){height:auto;bottom:max(env(safe-area-inset-bottom,0px),calc(100dvh - var(--finance-visible-height,100dvh) - var(--finance-visible-top,0px)))!important;max-height:calc(var(--finance-visible-height,100dvh) * .85)!important}
+body:has(.native-mode) .bottom-sheet:has(.s-finance-sheet.is-identity){max-height:calc(var(--finance-visible-height,100dvh) * .92)!important}
+body:has(.native-mode) .bottom-sheet:has(.s-finance-sheet .deposit-type-list){min-height:min(calc(var(--finance-visible-height,100dvh) * .58),520px)!important}
+.bottom-sheet:has(.s-finance-sheet) .sheet-content{flex:1 1 auto!important;min-height:0;overflow-y:auto;overscroll-behavior:contain;scroll-padding:16px 0 28px}
+.bottom-sheet:has(.s-finance-sheet) .sheet-header,.bottom-sheet:has(.s-finance-sheet) .sheet-handle-zone{flex:0 0 auto}
+.bottom-sheet:has(.payout-back) .sheet-header{padding-left:72px!important}
+.payout-fields .payout-back{position:absolute;top:32px;left:16px;z-index:6;display:grid;place-items:center;margin:0;width:40px;height:40px;padding:8px}.payout-fields .payout-back svg{width:23px;height:23px}
+@media(max-width:360px){.bottom-sheet:has(.payout-back) .sheet-header{padding-left:66px!important}.payout-fields .payout-back{left:10px}}
+
+/* Keep large lists and administrator-provided labels inside narrow finance sheets. */
+.s-finance-sheet,.wallet-saved-methods,.wallet-saved-list,.deposit-details,.deposit-copy-field{min-width:0;max-width:100%}
+.deposit-method-tabs button{max-width:100%;white-space:normal;overflow-wrap:anywhere;line-height:1.6}
+.s-finance-sheet :is(select,input){min-width:0;max-width:100%;box-sizing:border-box}
+.s-finance-sheet.is-withdrawal select{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:30px}
+.deposit-copy-field code,.deposit-instructions,.deposit-transfer-note,.f-request-title small{overflow-wrap:anywhere;word-break:break-word}
+.deposit-copy-field button{flex-shrink:0}
+.f-request-heading>.s-finance-status{flex-shrink:0;align-self:flex-start;margin-top:2px}
+
+.deposit-method-tabs button{box-sizing:border-box}
+
+.deposit-channel-grid :is(button,b){min-width:0;overflow-wrap:anywhere;word-break:break-word}.deposit-channel-grid button{box-sizing:border-box}
+.bottom-sheet:has(.s-finance-sheet) :is(.sheet-title,.sheet-description),.deposit-details p{overflow-wrap:anywhere;word-break:break-word}
+.deposit-method-select{display:block;font-size:12px;color:#806b8d;margin:0 0 18px}.deposit-method-select select{display:block;width:100%;min-height:46px;margin-top:8px;padding:10px 30px 10px 12px;border:1px solid #e5dbea;border-radius:10px;background:#fcfaff;color:#5b4668;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis}
+/* Bound account selection to the sheet instead of an OS-sized native menu. */
+.withdrawal-destination-field{display:grid;gap:10px;color:#79628a;font-size:14px}
+.payout-destination{min-width:0}
+.payout-destination-trigger{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border:1px solid #e4daef;border-radius:14px;background:#fcfaff;color:#51415f;text-align:left;font:inherit;box-sizing:border-box}
+.payout-destination-trigger>span:first-child{min-width:0;display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center}
+.payout-destination-trigger b{font-weight:500;overflow-wrap:anywhere}
+.payout-destination-trigger small{font-size:13px;color:#8c7b98}
+.payout-destination-options{margin-top:8px;max-height:240px;overflow-y:auto;overscroll-behavior:contain;border:1px solid #e4daef;border-radius:14px;padding:4px;background:white}
+.s-finance-sheet .payout-destination-option{display:flex;align-items:center;gap:10px;padding:12px 8px;margin:0;border-bottom:1px solid #f2edf6;cursor:pointer;min-width:0}
+.payout-destination-option:last-child{border-bottom:0}
+.s-finance-sheet .payout-destination-option input{width:16px;height:16px;flex:0 0 16px;margin:0;accent-color:#795399}
+.payout-destination-option>svg,.payout-destination-option>img{width:26px;height:26px;flex:0 0 26px;object-fit:contain}
+.payout-destination-option>span{display:grid;gap:5px;min-width:0}
+.payout-destination-option b,.payout-selected-bank{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;line-height:1.5}
+.payout-destination-option small{font-size:12px;color:#8e7b9e}
+.payout-selected-bank{margin-top:8px;color:#8e7b9e;font-size:12px}
+
+.withdrawal-task-notice{padding:16px;border:1px solid #e7ddf0;border-radius:14px;background:#faf7fd;color:#594568;line-height:1.6}
+.withdrawal-task-notice b{font-size:15px}.withdrawal-task-notice p{margin:6px 0 12px;font-size:13px}
+.withdrawal-task-notice button{border:1px solid #d8c8e6;border-radius:10px;background:white;color:#72508b;padding:9px 14px;font:inherit;font-size:13px;cursor:pointer}
+/* Shared deposit form rhythm; labels, values and actions use consistent sizes. */
+.s-finance-sheet.is-deposit .deposit-details{padding:16px;background:#faf9fc;border-color:#e9e3ee;margin:0 0 18px}
+.s-finance-sheet.is-deposit .deposit-method-select{display:grid;gap:8px;margin:0 0 16px;font-size:12px;line-height:1.5;color:#786582}
+.s-finance-sheet.is-deposit .deposit-method-select select{margin:0;min-height:46px;padding:11px 30px 11px 12px;font-size:13px;background:#fff}
+.s-finance-sheet.is-deposit .deposit-copy-field{display:grid;gap:8px;margin:16px 0 0}
+.s-finance-sheet.is-deposit .deposit-copy-field>span{font-size:12px;line-height:1.4;color:#786582}
+.s-finance-sheet.is-deposit .deposit-copy-field>div{display:flex;align-items:center;gap:10px;padding:7px 8px 7px 12px;border:1px solid #e7e0ed;border-radius:10px;background:#fff;min-width:0}
+.s-finance-sheet.is-deposit .deposit-copy-field code{margin:0;padding:0;flex:1;min-width:0;font-size:13px;line-height:1.5;color:#44364f;direction:ltr;unicode-bidi:isolate;overflow-wrap:anywhere}
+.s-finance-sheet.is-deposit .deposit-copy-field button{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;max-width:46%;min-height:32px;margin:0;padding:7px 10px;border:0;border-radius:7px;background:#f0eaf6;color:#72548b;font:inherit;font-size:12px;font-weight:600;line-height:1.4}
+.s-finance-sheet.is-deposit .deposit-transfer-note{margin:12px 0 0;border:0;padding:0;color:#817389;font-size:11px;line-height:1.65}
+.s-finance-sheet.is-deposit .deposit-instructions{margin:8px 0 0;color:#817389;font-size:11px;line-height:1.65}
+.s-finance-sheet.is-deposit form>label{margin:16px 0;font-size:12px;line-height:1.5;color:#786582}
+.s-finance-sheet.is-deposit form>label>input{margin-top:8px;min-height:46px;padding:12px 14px;font-size:14px;border-radius:11px;line-height:1.4}
+.s-finance-sheet.is-deposit form>.s-auth-submit{margin-top:18px;min-height:48px;font-size:14px;line-height:1.4}
+html[dir=rtl] .bottom-sheet:has(.s-finance-sheet.is-deposit) .sheet-header{padding-right:66px!important;padding-left:32px!important}
+html[dir=rtl] .s-finance-sheet .deposit-flow-back{left:auto;right:16px}
+html[dir=rtl] .s-finance-sheet .deposit-flow-back svg{transform:rotate(180deg)}
+html[dir=rtl] .deposit-channel-grid button,html[dir=rtl] .deposit-type-list>button,html[dir=rtl] .deposit-type-disabled,html[dir=rtl] .deposit-state{text-align:right}
+html[dir=rtl] .s-finance-close{right:auto!important;left:22px}
+html[dir=rtl] .bottom-sheet:has(.s-finance-sheet:not(.is-deposit)) .sheet-header{padding-left:64px!important;padding-right:22px!important}
+
+html[dir=rtl] .bottom-sheet:has(.s-finance-sheet.is-card .payout-back) .sheet-header{padding-right:72px!important;padding-left:64px!important}
+html[dir=rtl] .payout-fields .payout-back{left:auto;right:16px}
+html[dir=rtl] .payout-fields .payout-back svg{transform:rotate(180deg)}

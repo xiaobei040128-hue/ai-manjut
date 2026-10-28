@@ -1,0 +1,43 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtemp,mkdir} from 'node:fs/promises';
+import {resolve,join} from 'node:path';
+import {customerDirectory} from '../server/customer-directory.mjs';
+import {createAdminAuth} from '../server/auth.mjs';
+import {createStore} from '../server/store.mjs';
+import {createCreatorAuth} from '../server/creator-auth.mjs';
+import {createFinance} from '../server/finance.mjs';
+import {createStageDispatch} from '../server/stage-dispatch.mjs';
+import {createStageEnrollments} from '../server/stage-enrollments.mjs';
+const quote=t=>({amount:t.deposit,commission:t.commission,rateBps:t.commission_rate_bps});
+test('third-stage balance holds persist, reject double spending, convert once, and refund cancellation',async()=>{
+ await mkdir(resolve('work'),{recursive:true});const dir=await mkdtemp(resolve('work/task-reserve-')),file=join(dir,'workspace.sqlite');let s=createStore(file);
+ try{
+  const auth=createCreatorAuth(s,4993),invite=auth.createInvite('qa',{},'super'),req={headers:{},socket:{remoteAddress:'reserve-qa'}};
+  const a=(await auth.register(req,{email:'reserve-a@example.invalid',password:'ReserveTest123!',inviteCode:invite.code})).user;
+  const b=(await auth.register(req,{email:'reserve-b@example.invalid',password:'ReserveTest123!',inviteCode:invite.code})).user;
+  createAdminAuth(s,4993);let finance=createFinance(s,dir);createStageEnrollments(s,{});s.setCommissionRate('5');
+  s.db.prepare("INSERT INTO stage_enrollments(id,user_id,status,created_at) VALUES(?,?,'approved',?)").run('reserve-approved',a.id,new Date().toISOString());
+  const task=s.createTask({title:'Reservation story',description:'Reservation test',platform:'TikTok',language:'英文',genre:'悬疑',deposit:'10',posts:1,episodes:1,slots:100,stage:3,cover:'/art/hero-v2.webp'});
+  finance.adjust('qa',a.id,{direction:'credit',amount:'3.10',note:'Test initial funds',operationKey:'reserve-initial-funds-01'});
+  let dispatch=createStageDispatch(s);const wallet=()=>s.asUser(a.id,()=>s.summary()).wallet;
+  const offer=dispatch.draw(a.id,3),amount=offer.task.deposit;assert.ok(amount>=20000&&amount<=50000);assert.ok(offer.task.commission_rate_bps>=300&&offer.task.commission_rate_bps<=400);assert.equal(offer.task.commission,Math.round(amount*offer.task.commission_rate_bps/10000));assert.equal(offer.reservedAmount,410);assert.equal(wallet().available,0);assert.equal(wallet().held,410);
+  const directory=customerDirectory(s,auth,{filterUsers:(_op,users)=>users},{}).find(u=>u.id===a.id);assert.equal(directory.wallet.held,410);assert.equal(directory.wallet.taskHeld,410);assert.equal(directory.wallet.total,410);
+  const holds=()=>s.db.prepare("SELECT COUNT(*) n FROM ledger WHERE owner_id=? AND kind='hold'").get(a.id).n;
+  assert.equal(dispatch.draw(a.id,3).id,offer.id);dispatch.reserve(a.id,offer.id);assert.equal(holds(),1);
+  assert.throws(()=>dispatch.reserve(b.id,offer.id),e=>e.status===409);assert.equal(s.asUser(b.id,()=>s.summary()).wallet.available,100);
+  assert.throws(()=>finance.adjust('qa',a.id,{direction:'debit',amount:'1',note:'Cannot spend reserved funds',operationKey:'reserve-double-spend-01'}),e=>e.status===409);
+  assert.throws(()=>dispatch.accept(a.id,offer.id,quote(offer.task)),e=>e.status===409);assert.equal(wallet().held,410);assert.equal(wallet().available,0);assert.equal(dispatch.pending(a.id).reservedAmount,410);
+  s.close();s=createStore(file);finance=createFinance(s,dir);dispatch=createStageDispatch(s);
+  assert.equal(dispatch.pending(a.id).reservedAmount,410);assert.deepEqual(quote(dispatch.pending(a.id).task),quote(offer.task));assert.equal(wallet().available,0);assert.equal(wallet().held,410);
+  finance.adjust('qa',a.id,{direction:'credit',amount:((amount-410)/100).toFixed(2),note:'Test top-up funds',operationKey:'reserve-topup-funds-01'});
+  assert.equal(dispatch.reserve(a.id,offer.id).reservedAmount,amount);dispatch.reserve(a.id,offer.id);assert.equal(holds(),2);assert.equal(wallet().available,0);assert.equal(wallet().held,amount);
+  assert.throws(()=>dispatch.accept(a.id,offer.id,{...quote(offer.task),commission:999}),e=>e.status===409);assert.equal(dispatch.pending(a.id).reservedAmount,amount);assert.equal(wallet().held,amount);
+  const assignment=dispatch.accept(a.id,offer.id,quote(offer.task));assert.equal(wallet().available,0);assert.equal(wallet().held,amount);assert.equal(dispatch.accept(a.id,offer.id,quote(offer.task)).id,assignment.id);
+  assert.throws(()=>dispatch.discard(a.id,offer.id),e=>e.status===409);
+  s.asUser(a.id,()=>s.cancel(assignment.id));assert.equal(wallet().available,amount);assert.equal(wallet().held,0);
+  const next=dispatch.draw(a.id,3);assert.equal(next.reservedAmount,Math.min(amount,next.task.deposit));assert.equal(wallet().available,Math.max(0,amount-next.task.deposit));
+  dispatch.discard(a.id,next.id);dispatch.discard(a.id,next.id);assert.equal(wallet().available,amount);assert.equal(wallet().held,0);assert.equal(dispatch.pending(a.id),null);
+  assert.equal(s.db.prepare("SELECT COUNT(*) n FROM ledger WHERE operation_key LIKE 'task-reserve-release:%'").get().n,1);
+ }finally{s.close();}
+});

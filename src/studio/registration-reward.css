@@ -1,0 +1,27 @@
+.registration-reward{position:fixed;inset:0;z-index:12000;display:grid;place-items:center;box-sizing:border-box;padding:24px;background:#ebe8eee8;backdrop-filter:blur(10px);color:#302936;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;animation:welcome-fade .25s ease}
+.registration-reward *{box-sizing:border-box}
+.registration-award{position:relative;width:min(100%,400px);max-height:calc(100dvh - 48px);overflow:auto;background:#fff;border:1px solid #ffffff;border-radius:22px;box-shadow:0 20px 65px #35243d1c;scrollbar-width:thin;scrollbar-color:#cbbdd3 #fff;animation:welcome-arrive .45s cubic-bezier(.2,.7,.3,1)}
+.registration-hero{position:relative;aspect-ratio:2.5/1;overflow:hidden;background:#ece6ef;border-bottom:1px solid #ece6ef}
+.registration-character{display:block;width:100%;height:100%;object-fit:contain}
+.registration-close{position:absolute;top:12px;right:12px;display:grid;place-items:center;width:40px;height:40px;padding:4px;border:1px solid #ffffffa8;border-radius:50%;background:#fffffff0;color:#64586b;cursor:pointer;transition:background .15s}
+.registration-close:hover{background:#fff}.registration-close svg{width:16px;height:16px}
+.registration-copy{padding:25px 26px 18px;text-align:left}
+.registration-eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:12px;line-height:1.5;font-weight:500;color:#586e5e}
+.registration-eyebrow svg{width:16px;height:16px;padding:2px;border-radius:50%;background:#eaf2ec;color:#58735e}
+.registration-copy h2{font-family:inherit;font-size:29px;font-weight:600;line-height:1.25;letter-spacing:-.8px;color:#302936;margin:10px 0 8px}
+.registration-copy>p{font-size:13px;line-height:1.65;color:#706876;margin:0}
+.registration-amount{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 15px;align-items:center;border:1px solid #e8e1ed;border-radius:12px;background:#faf8fc;padding:17px 16px;margin:23px 0 22px;animation:welcome-receipt .45s .8s both}
+.registration-gift-label{grid-column:1;grid-row:1;font-size:12px;font-weight:500;line-height:1.5;color:#51445a}
+.registration-amount strong{grid-column:2;grid-row:1/3;font-size:30px;font-weight:600;line-height:1.2;letter-spacing:-1px;font-variant-numeric:tabular-nums;color:#5c436d;margin:0;white-space:nowrap}
+.registration-credit{grid-column:1;grid-row:2;display:flex;align-items:center;gap:5px;font-size:11px;line-height:1.6;color:#74677f;min-height:18px}
+.registration-credit svg{width:12px;height:12px;color:#607f68;flex:none}
+.registration-start{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:48px;padding:12px 16px;border:1px solid #6b4c80;border-radius:10px;background:#6b4c80;color:#fff;line-height:1.5;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;box-shadow:0 3px 7px #5236630d;transition:background .15s,transform .15s,opacity .15s}
+.registration-start:hover{background:#5c3e70}.registration-start:active{transform:translateY(1px)}.registration-start:disabled{opacity:.55;cursor:default}.registration-start svg{width:18px;height:18px;flex:none}
+.registration-tools{display:flex;justify-content:center;margin-top:8px}.registration-tools button{min-height:44px;padding:8px 14px;border:0;background:transparent;color:#705b7e;font-family:inherit;font-size:12px;line-height:1.5;cursor:pointer}.registration-tools button:hover{color:#47334f;text-decoration:underline;text-underline-offset:3px}
+.registration-award button:focus-visible{outline:3px solid #b39bc5;outline-offset:3px}
+@keyframes welcome-fade{from{opacity:0}to{opacity:1}}@keyframes welcome-arrive{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}@keyframes welcome-receipt{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@media(max-width:360px){.registration-reward{padding:16px}.registration-award{max-height:calc(100dvh - 32px);border-radius:18px}.registration-copy{padding:22px 20px 14px}.registration-copy h2{font-size:27px}.registration-amount{padding:15px 12px;gap:4px 10px}.registration-credit{font-size:10px}.registration-amount strong{font-size:28px}}
+@media(max-height:600px){.registration-reward{padding:12px}.registration-award{max-height:calc(100dvh - 24px)}.registration-copy{padding-top:20px;padding-bottom:12px}.registration-amount{margin:18px 0}}
+@media(prefers-reduced-motion:reduce){.registration-reward,.registration-award,.registration-amount{animation:none}.registration-award button{transition:none}}
+
+.registration-reward[dir=rtl] .registration-copy{text-align:right}.registration-reward[dir=rtl] .registration-close{right:auto;left:16px}.registration-reward[dir=rtl] .registration-start svg{transform:rotate(180deg)}

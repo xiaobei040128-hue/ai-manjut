@@ -1,0 +1,28 @@
+.language-selector{border:1px solid #e9e2ef;border-radius:16px;background:#fff;color:#43364f;margin:18px 0;min-width:0}
+.language-selector label{display:flex;align-items:center;gap:12px;padding:16px 18px;margin:0;position:relative;min-width:0}
+.language-selector svg{width:21px;height:21px;flex:0 0 21px;color:#80618f}
+.language-selector label>span:not(.language-chevron){font-size:14px;font-weight:600}
+.language-selector select{appearance:none;border:0;background:transparent;color:inherit;font:inherit;font-size:14px;min-width:0;flex:1;text-align:end;padding:0 24px 0 8px;cursor:pointer;outline-offset:5px}
+.language-chevron{position:absolute;inset-inline-end:18px;pointer-events:none;color:#8a7897}
+.language-selector.is-compact{margin:0 0 18px;align-self:end;max-width:290px;width:100%;margin-inline-start:auto}
+.language-selector.is-compact label{padding:10px 14px}.language-selector.is-compact select{font-size:13px}
+html[lang]:not([lang^=zh]) .studio{font-family:Arial,'Segoe UI',Tahoma,sans-serif;letter-spacing:normal}
+html[lang=ka] .studio{font-family:'Segoe UI',Sylfaen,Arial,sans-serif}
+html[dir=rtl] .studio,html[dir=rtl] .s-finance-sheet{direction:rtl}
+html[dir=rtl] .studio input[type=email],html[dir=rtl] .studio input[type=password],html[dir=rtl] .deposit-copy-field code,html[dir=rtl] .payout-destination-option small{direction:ltr;unicode-bidi:isolate;text-align:start}
+html[dir=rtl] .language-selector select{padding:0 8px 0 24px}
+html[dir=rtl] .studio .deposit-flow-back svg,html[dir=rtl] .studio .payout-flow-back svg{transform:rotate(180deg)}
+html[dir=rtl] .studio h1,html[dir=rtl] .studio h2,html[dir=rtl] .studio h3{letter-spacing:normal}
+html:not([lang^=zh]) .s-bottom-nav button{font-size:11px;min-width:0;line-height:1.25;text-align:center;white-space:normal;overflow-wrap:anywhere}
+html:not([lang^=zh]) .studio button,html:not([lang^=zh]) .s-finance-sheet button{overflow-wrap:break-word}
+html:not([lang^=zh]) .studio .s-auth-story h1{font-size:clamp(28px,6vw,42px);line-height:1.2}
+
+html[lang]:not([lang^=zh]) .studio.experience-v3.page-home .s-hero{height:auto;min-height:286px}
+html[lang]:not([lang^=zh]) .studio.experience-v3.page-home .s-hero-copy{padding:26px 24px;display:flex;flex-direction:column;align-items:flex-start}
+html[lang]:not([lang^=zh]) .studio.experience-v3.page-home .s-hero h1{max-width:330px;width:78%;font-size:clamp(25px,5.2vw,32px);line-height:1.18;letter-spacing:-.4px;margin:15px 0 0;text-wrap:balance;overflow-wrap:break-word}
+html[lang]:not([lang^=zh]) .studio.experience-v3.page-home .s-hero-copy>p{max-width:82%;margin:16px 0 0;line-height:1.6;font-size:12px}
+html[lang]:not([lang^=zh]) .studio.experience-v3.page-home .s-hero .s-button{margin-top:22px;min-height:44px;flex:none;width:auto;max-width:100%;padding:12px 18px;line-height:1.35;text-align:center}
+html[dir=rtl] .studio.experience-v3.page-home .s-hero-shade{background:linear-gradient(270deg,#21152fea,#21152f9c 43%,#21152f00 78%)}
+html[dir=rtl] .studio.experience-v3.page-home .s-hero h1{letter-spacing:normal}
+.language-selector>small{display:block;margin:0 18px 12px;font-size:12px;line-height:1.5}
+@media(max-width:360px){html[lang]:not([lang^=zh]) .studio.experience-v3.page-home .s-hero-copy{padding:22px 18px}html[lang]:not([lang^=zh]) .studio.experience-v3.page-home .s-hero h1{width:95%;font-size:25px}html[lang]:not([lang^=zh]) .studio.experience-v3.page-home .s-hero-copy>p{max-width:94%;font-size:11px}}

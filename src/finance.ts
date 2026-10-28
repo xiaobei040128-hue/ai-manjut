@@ -1,0 +1,11 @@
+export interface FinanceIdentity{has_photos:boolean;id:string;user_id:string;name:string;document_type:string;number_mask:string;status:string;note:string;created_at:string}
+export interface FinanceCard{provider?:string;network?:string;id:string;user_id:string;bank:string;holder:string;number_mask:string;status:string;note:string;created_at:string}
+export interface DepositRoute{id:string;asset:string;network:string;address:string;memo:string}
+export interface DepositChannel{uid?:string;asset?:string;routes?:DepositRoute[];id:string;name:string;symbol:string;enabled:boolean;network:string;recipient:string;account:string;instructions:string;unavailableMessage:string}
+export interface DepositChannelSettings{baseRevision?:number;supportUrl?:string;revision:number;channels:DepositChannel[]}
+export interface FundRequest{deposit_method?:string;deposit_method_label?:string;deposit_channel?:string;deposit_channel_name?:string;id:string;user_id:string;kind:string;amount:number;card_id:string|null;bank?:string;number_mask?:string;reference:string;status:string;note:string;created_at:string;reviewed_at:string;paid_at:string}
+export interface WalletOverviewData{todayCommission:number;totalCommission:number;processing:number;timeZone:string}
+export interface FinanceSnapshot{hasUnsettledThirdTask?:boolean;overview:WalletOverviewData;identity:FinanceIdentity|null;cards:FinanceCard[];requests:FundRequest[];account:{available:number;frozen:boolean;freeze_reason:string}}
+export const financeStatus=(status:string,kind='')=>({review:'审核中',approved:'已通过',rejected:'未通过',paying:'出款中',paid:'已出款',completed:kind==='deposit'?'已到账':'已完成'}[status]||status);
+
+export function payoutMethodName(card:Pick<FinanceCard,'bank'|'network'|'provider'>){const names:Record<string,string>={binance:'Binance',okx:'OKX',bitcoin:'BTC',ethereum:'ETH',usdt:'USDT',usdc:'USDC'};const base=names[card.provider||'']?names[card.provider||'']+(['binance','okx'].includes(card.provider||'')?' · UID':''):card.bank;const parts=base.split(/\s*[·|]\s*/);return card.network&&!parts.some(p=>p.toLowerCase()===card.network!.toLowerCase())?base+' · '+card.network:base;}

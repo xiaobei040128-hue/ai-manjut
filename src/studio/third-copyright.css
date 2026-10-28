@@ -1,0 +1,13 @@
+/* Isolate this page from generic checkout link and mobile-scroll styles. */
+.studio.stage-work.purchase-page.third-copyright-page{height:100%;min-height:0;overflow:hidden;display:flex;flex-direction:column}
+.studio.stage-work.purchase-page.third-copyright-page>header{position:relative;inset:auto;flex:0 0 auto;z-index:2;min-height:56px;height:auto;box-sizing:border-box;background:#fff;transform:none}
+.third-copyright-page>.third-copyright-scroll{position:relative;flex:1 1 0;min-height:0;width:100%;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable;-webkit-overflow-scrolling:touch}
+.studio.stage-work.purchase-page.third-copyright-page .third-copyright-scroll>main{position:static;transform:none;padding-top:18px!important;padding-bottom:32px!important}
+.studio.stage-work.purchase-page.third-copyright-page .stage-story-checkout>a.copyright-primary-link{display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:100%;min-height:48px;margin:16px 0 0;padding:12px 16px;background:#795494;color:#fff!important;border:1px solid #795494;border-radius:10px;font-size:14px;font-weight:600;line-height:1.5;text-decoration:none;text-align:center}
+.third-copyright-page .copyright-primary-link:focus-visible{outline:3px solid #b19bc2;outline-offset:3px}
+.studio.stage-work.purchase-page.third-copyright-page .stage-story-checkout>h3{margin:18px 0 8px}
+.studio.stage-work.purchase-page.third-copyright-page .stage-story-checkout>p{font-size:13px;line-height:1.8;margin:12px 0;color:#6e5c79}
+.third-copyright-page .newcomer-copyright-code{box-sizing:border-box;width:100%;min-width:0;font-size:13px}
+
+.third-copyright-page>.third-copyright-scroll{overflow-anchor:none}
+.third-copyright-page .stage-story-checkout{overflow-anchor:none}

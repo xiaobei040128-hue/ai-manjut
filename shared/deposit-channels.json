@@ -1,0 +1,101 @@
+[
+  {
+    "id": "binance",
+    "name": "币安",
+    "symbol": "BNB",
+    "enabled": true,
+    "network": "",
+    "recipient": "",
+    "account": "",
+    "instructions": "",
+    "unavailableMessage": "当前区域暂未开通"
+  },
+  {
+    "id": "okx",
+    "name": "OKX",
+    "symbol": "OKX",
+    "enabled": true,
+    "network": "",
+    "recipient": "",
+    "account": "",
+    "instructions": "",
+    "unavailableMessage": "当前区域暂未开通"
+  },
+  {
+    "id": "bitcoin",
+    "name": "比特币",
+    "symbol": "BTC",
+    "enabled": true,
+    "network": "",
+    "recipient": "",
+    "account": "",
+    "instructions": "",
+    "unavailableMessage": "当前区域暂未开通"
+  },
+  {
+    "id": "ethereum",
+    "name": "ETH",
+    "symbol": "ETH",
+    "enabled": true,
+    "network": "",
+    "recipient": "",
+    "account": "",
+    "instructions": "",
+    "unavailableMessage": "当前区域暂未开通"
+  },
+  {
+    "id": "usdt",
+    "name": "USDT",
+    "symbol": "USDT",
+    "enabled": true,
+    "network": "",
+    "recipient": "",
+    "account": "",
+    "instructions": "",
+    "unavailableMessage": "当前区域暂未开通"
+  },
+  {
+    "id": "usdc",
+    "name": "USDC",
+    "symbol": "USDC",
+    "enabled": true,
+    "network": "",
+    "recipient": "",
+    "account": "",
+    "instructions": "",
+    "unavailableMessage": "当前区域暂未开通"
+  },
+  {
+    "id": "visa",
+    "name": "Visa",
+    "symbol": "VISA",
+    "enabled": false,
+    "network": "",
+    "recipient": "",
+    "account": "",
+    "instructions": "",
+    "unavailableMessage": "当前区域暂未开通"
+  },
+  {
+    "id": "mastercard",
+    "name": "万事达",
+    "symbol": "MC",
+    "enabled": false,
+    "network": "",
+    "recipient": "",
+    "account": "",
+    "instructions": "",
+    "unavailableMessage": "当前区域暂未开通"
+  },
+  {
+    "id": "bank_wire",
+    "name": "银行电汇",
+    "symbol": "BANK",
+    "enabled": true,
+    "network": "",
+    "recipient": "",
+    "account": "",
+    "instructions": "",
+    "unavailableMessage": "当前区域暂未开通"
+  }
+]

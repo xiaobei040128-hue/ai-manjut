@@ -1,0 +1,7 @@
+.payout-fields .payout-back{min-height:40px;color:#80658f;font-size:13px;margin-bottom:12px;padding:0 8px}.payout-fields .payout-crypto-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.payout-crypto-grid button{display:flex;align-items:center;gap:12px;text-align:left;min-height:82px;padding:15px;border:1px solid #e7dfec!important;border-radius:14px;background:#fff!important}.payout-crypto-grid img,.payout-selected img{width:30px;height:30px;object-fit:contain}.payout-crypto-grid span{display:flex;flex-direction:column;gap:6px}.payout-crypto-grid b{font-size:14px;color:#43334d}.payout-crypto-grid small{font-size:10px;color:#96859e}.payout-selected{display:flex;align-items:center;gap:12px;margin:0 0 20px;color:#513d5d}.payout-fields>label{display:block;margin-bottom:18px}
+
+.payout-fields .payout-back{display:inline-flex;align-items:center;border:0;background:transparent;border-radius:8px;box-shadow:none;line-height:1.4}.payout-fields .payout-back:hover{background:#f7f3fa}.payout-fields .payout-back:focus-visible{outline:2px solid #ac91bd;outline-offset:2px}
+
+.payout-choice-icon{width:30px;height:30px;display:grid;place-items:center;flex-shrink:0;color:#8b739b}.payout-choice-icon svg{width:25px;height:25px}
+
+.payout-crypto-grid button{min-width:0;box-sizing:border-box}.payout-crypto-grid button>img,.payout-crypto-grid button>svg{width:30px;height:30px;flex:0 0 30px}.payout-crypto-grid button>span{min-width:0}.payout-crypto-grid :is(b,small){overflow-wrap:anywhere;line-height:1.4}

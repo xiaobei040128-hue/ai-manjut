@@ -1,0 +1,5 @@
+import presets from '../shared/deposit-network-presets.json';
+import type {DepositRoute} from './finance';
+export const networksForChannel=(channel:string)=>presets.filter(p=>p.channels.includes(channel));
+export function matchingNetwork(channel:string,route:DepositRoute){const network=route.network.toLowerCase();return networksForChannel(channel).find(p=>p.asset.toUpperCase()===route.asset.toUpperCase()&&(p.network.toLowerCase()===network||p.network.includes('TRC20')&&network.includes('trc20')||p.network.includes('ERC20')&&(network.includes('erc20')||network==='ethereum')||p.network==='Bitcoin'&&network==='bitcoin mainnet'));}
+export function newNetworkRoute(channel:string,used:DepositRoute[]){const options=networksForChannel(channel),next=options.find(p=>p.asset==='USDT'&&!used.some(r=>matchingNetwork(channel,r)?.id===p.id))||options.find(p=>!used.some(r=>matchingNetwork(channel,r)?.id===p.id))||options[0];return {id:crypto.randomUUID(),asset:next.asset,network:next.network,address:'',memo:''};}

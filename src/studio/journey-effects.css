@@ -1,0 +1,420 @@
+.j-celebration {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  overflow: hidden;
+  background: #1e102d70;
+  backdrop-filter: blur(7px);
+  animation: j-veil 0.3s ease both;
+  isolation: isolate;
+}
+.j-celebration * {
+  box-sizing: border-box;
+}
+.j-celebration .j-atmosphere {
+  position: absolute;
+  inset: -40%;
+  background: conic-gradient(
+    from 20deg,
+    transparent,
+    #ceb0ff1a,
+    transparent,
+    #ceb0ff16,
+    transparent
+  );
+  animation: j-rays 16s linear infinite;
+  pointer-events: none;
+}
+.j-celebration-card {
+  position: relative;
+  text-align: center;
+  width: 100%;
+  max-width: 350px;
+  border: 1px solid #e0c4fa77;
+  border-radius: 28px;
+  background: radial-gradient(
+    ellipse at 50% 0,
+    #684c8d 0,
+    #392749 65%,
+    #2d2138
+  );
+  box-shadow:
+    0 30px 90px #0c071e66,
+    inset 0 1px 0 #ffffff40;
+  color: #fff;
+  padding: 30px 24px 26px;
+  animation: j-card 0.65s cubic-bezier(0.2, 0.85, 0.2, 1.1) both;
+}
+.j-celebration .j-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #ffffff20;
+  background: #ffffff0c;
+  border-radius: 50%;
+  color: #d7c8e4;
+}
+.j-celebration .j-close svg {
+  width: 14px;
+  height: 14px;
+}
+.j-demo {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #d0badf;
+  border: 1px solid #dbc1ee33;
+  border-radius: 20px;
+  padding: 5px 10px;
+  display: inline-block;
+}
+.j-emblem {
+  height: 146px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  perspective: 700px;
+}
+.j-ring {
+  position: absolute;
+  width: 124px;
+  height: 124px;
+  border: 1px solid #e9ceff30;
+  border-radius: 50%;
+  box-shadow:
+    0 0 30px #c09ef51c,
+    inset 0 0 30px #c09ef516;
+  animation: j-ring 1s ease both;
+}
+.j-ring:after {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border: 1px dashed #dac1ec28;
+  border-radius: 50%;
+}
+.j-medal {
+  width: 77px;
+  height: 85px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(130deg, #ecdbff, #b48bd8 45%, #704797);
+  border: 1px solid #f0e2ff;
+  border-radius: 22px;
+  box-shadow:
+    0 8px 0 #694781,
+    0 15px 30px #1a0d2a70,
+    inset 0 2px 3px #fff9;
+  transform: rotateY(-16deg) rotate(-9deg);
+  animation: j-medal 0.85s cubic-bezier(0.2, 0.8, 0.2, 1.1) both;
+  color: #68418b;
+}
+.j-celebration .j-medal svg {
+  width: 38px;
+  height: 38px;
+  filter: drop-shadow(0 1px 0 #fff7);
+}
+.j-emblem > i {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #e1c6ff;
+  transform: rotate(45deg);
+  left: 19%;
+  top: 31%;
+  box-shadow: 0 0 16px #cba3fa;
+}
+.j-emblem > i:last-child {
+  left: auto;
+  right: 17%;
+  top: 66%;
+  height: 5px;
+  width: 5px;
+}
+.j-celebration-card > small {
+  font-size: 8px;
+  letter-spacing: 3px;
+  color: #cfb4e0;
+  display: block;
+}
+.j-celebration .j-celebration-card h2 {
+  font-size: 23px;
+  line-height: 1.45;
+  margin: 13px 0;
+  font-weight: 650;
+  color: #fff;
+}
+.j-celebration-card > strong {
+  font-size: 44px;
+  letter-spacing: -1.5px;
+  display: block;
+  line-height: 1.2;
+  margin: 18px 0 12px;
+  color: #ffdf9d;
+  text-shadow: 0 3px 20px #ffc36c33;
+}
+.j-celebration-card > strong > span {
+  font-size: 9px;
+  letter-spacing: 1px;
+  display: block;
+  color: #ddc7a9;
+  margin-top: 8px;
+}
+.j-celebration .j-celebration-card p {
+  font-size: 11px;
+  line-height: 1.9;
+  color: #cebfd9;
+  margin: 10px 0 24px;
+}
+.j-celebration .j-continue {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  min-height: 47px;
+  width: 100%;
+  border: 1px solid #e6d0ff5c;
+  border-radius: 12px;
+  background: linear-gradient(110deg, #a27ac8, #785496);
+  color: white;
+  font-size: 12px;
+  box-shadow:
+    inset 0 1px 0 #fff3,
+    0 4px 0 #382345;
+}
+.j-celebration .j-continue:active {
+  transform: translateY(2px);
+}
+.is-reward .j-celebration-card {
+  background: radial-gradient(
+    ellipse at 50% -20%,
+    #846450,
+    #4c334a 50%,
+    #302139
+  );
+  border-color: #f3d69c66;
+}
+.is-reward .j-medal {
+  background: linear-gradient(130deg, #fff0c7, #edca82 48%, #b07d3c);
+  border-color: #fff0c6;
+  color: #886027;
+  box-shadow:
+    0 8px 0 #97672d,
+    0 15px 30px #1a0d2a70,
+    inset 0 2px 3px #fff9;
+}
+.is-reward .j-ring {
+  border-color: #ebd19840;
+}
+.is-reward .j-continue {
+  background: linear-gradient(110deg, #e4c18b, #b98e59);
+  color: #3e2b24;
+  border-color: #f1dcb3;
+  box-shadow:
+    inset 0 1px 0 #fff5,
+    0 4px 0 #6d4b37;
+}
+.j-burst {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 2;
+}
+.j-burst > i {
+  position: absolute;
+  left: 50%;
+  top: 39%;
+  width: 5px;
+  height: 9px;
+  background: #dbb7ff;
+  border-radius: 1px;
+  opacity: 0;
+  animation: j-confetti 2.3s calc(var(--i) * 0.025s) ease-out both;
+  --angle: calc(var(--i) * 18deg);
+  --distance: 150px;
+}
+.is-reward .j-burst > i {
+  background: #f2d08b;
+}
+.j-burst > i:nth-child(3n) {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #fff2d4;
+}
+.j-burst > i:nth-child(2n) {
+  background: #c89ee1;
+}
+@keyframes j-card {
+  from {
+    opacity: 0;
+    transform: perspective(900px) rotateX(14deg) translateY(35px) scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(900px) rotateX(0) translateY(0) scale(1);
+  }
+}
+@keyframes j-medal {
+  from {
+    opacity: 0;
+    transform: rotateY(-100deg) rotate(-30deg) scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: rotateY(-16deg) rotate(-9deg) scale(1);
+  }
+}
+@keyframes j-veil {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes j-ring {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes j-rays {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes j-confetti {
+  0% {
+    opacity: 0;
+    transform: rotate(var(--angle)) translateY(0);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--angle)) translateY(calc(-1 * var(--distance)))
+      rotate(180deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .j-celebration,
+  .j-celebration * {
+    animation: none !important;
+    transition: none !important;
+  }
+  .j-burst {
+    display: none;
+  }
+}
+
+.j-emblem {
+  height: 173px;
+}
+.j-emblem > .j-artwork {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 181px;
+  height: 173px;
+  object-fit: contain;
+  opacity: 0;
+  filter: drop-shadow(0 12px 18px #170b2a55);
+  transform: rotate(-6deg);
+  animation: j-art-enter 0.8s cubic-bezier(0.2, 0.85, 0.2, 1.1) both;
+  pointer-events: none;
+}
+.j-emblem.art-ready > .j-artwork {
+  opacity: 1;
+}
+.j-emblem.art-ready .j-medal {
+  visibility: hidden;
+}
+.j-emblem.art-ready .j-ring {
+  width: 146px;
+  height: 146px;
+}
+.is-task .j-emblem > .j-artwork {
+  width: 195px;
+  height: 173px;
+}
+.j-celebration-card {
+  max-height: 100%;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.j-celebration-card::-webkit-scrollbar {
+  display: none;
+}
+@keyframes j-art-enter {
+  from {
+    transform: perspective(650px) rotateY(-40deg) rotate(-12deg)
+      translateY(12px) scale(0.8);
+  }
+  to {
+    transform: perspective(650px) rotateY(0) rotate(-6deg) translateY(0)
+      scale(1);
+  }
+}
+@media (max-height: 600px) {
+  .j-emblem {
+    height: 135px;
+  }
+  .j-emblem > .j-artwork,
+  .is-task .j-emblem > .j-artwork {
+    height: 135px;
+    width: 150px;
+  }
+  .j-celebration-card {
+    padding-top: 22px;
+    padding-bottom: 22px;
+  }
+  .j-celebration .j-celebration-card h2 {
+    font-size: 21px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .j-emblem > .j-artwork {
+    animation: none;
+  }
+}
+
+.j-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 59;
+  background: transparent;
+}
+.j-celebration {
+  font-family: Arial, "Microsoft YaHei", "PingFang SC", sans-serif;
+  outline: none;
+}
+.j-celebration .j-continue:focus-visible,
+.j-celebration .j-close:focus-visible {
+  outline: 2px solid #ecd5ff;
+  outline-offset: 4px;
+}
+.j-celebration .j-continue {
+  font-family: inherit;
+}
+.j-celebration .j-emblem,.j-celebration .j-burst,.j-celebration .premium-cinematic{pointer-events:none}.j-celebration .j-close{z-index:10;cursor:pointer}.j-celebration .j-continue{position:relative;z-index:2}
+
+/* Keep the artwork in its reserved slot while the dialog fades in. */
+.j-celebration-card{animation:j-card-stable .22s ease-out both;overflow-anchor:none}
+.j-emblem{flex-shrink:0;contain:layout}
+.j-emblem>.j-artwork{transform:rotate(-6deg);animation:j-art-stable .22s ease-out both}
+.j-medal{position:absolute;animation:j-art-stable .22s ease-out both}
+@keyframes j-card-stable{from{opacity:0}to{opacity:1}}
+@keyframes j-art-stable{from{opacity:0}to{opacity:1}}

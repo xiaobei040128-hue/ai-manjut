@@ -1,0 +1,14 @@
+.git
+node_modules
+dist
+work
+runtime-data
+runtime-geoip
+test-results
+playwright-report
+.env
+.env.*
+!.env.example
+*.key
+*.sqlite*
+*.log

@@ -1,0 +1,45 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createStore} from '../server/store.mjs';
+import {createCreatorAuth} from '../server/creator-auth.mjs';
+import {createThirdCopyright} from '../server/third-copyright.mjs';
+import {createStageDispatch} from '../server/stage-dispatch.mjs';
+import {createStageEnrollments} from '../server/stage-enrollments.mjs';
+import {createPremiumDispatch} from '../server/premium-dispatch.mjs';
+test('copyright purchase issues a stable owner-bound code and completes once without screenshots',async()=>{
+ const s=createStore(':memory:');try{
+  const auth=createCreatorAuth(s,4998),invite=auth.createInvite('qa',{},'super');
+  const register=async email=>(await auth.register({headers:{},socket:{remoteAddress:'qa'}},{email,password:'CopyrightQA123!',inviteCode:invite.code})).user;
+  const a=await register('copyright-a@example.invalid'),b=await register('copyright-b@example.invalid');
+  createStageEnrollments(s,{});s.setCommissionRate('5');
+  s.db.prepare("INSERT INTO stage_enrollments(id,user_id,status,created_at) VALUES(?,?,'approved',?)").run('approved',a.id,new Date().toISOString());
+  s.createTask({title:'Murder at 30,000 Feet',description:'Copyright fixture',stage:3,platform:'TikTok',language:'英文',genre:'剧情',deposit:'0.50',posts:1,episodes:1,slots:100,cover:'/art/hero-v2.webp'});
+  s.db.prepare("INSERT INTO ledger(kind,amount,balance_after,note,operation_key,created_at,owner_id) VALUES('deposit',100000,100100,'Isolated copyright test funding','copyright-qa-funding',?,?)").run(new Date().toISOString(),a.id);
+  const dispatch=createStageDispatch(s),license=createThirdCopyright(s);
+  const premium=createPremiumDispatch(s,{users:()=>null,assertUser:()=>{}}),op={username:'qa',role:'super'};
+  const day=premium.list(op).day;
+  premium.save(op,a.id,{day,revision:0,sequences:[1,2],terms:{2:{amount:'650.35',rate:'8.25'}}});
+  const offer=dispatch.draw(a.id,3),t=offer.task;
+  assert.throws(()=>premium.save(op,a.id,{day,revision:1,sequences:[2]}),e=>e.status===409);
+  assert.ok(t.deposit>=20000&&t.deposit<=50000);assert.ok(t.commission_rate_bps>=300&&t.commission_rate_bps<=400);assert.deepEqual(dispatch.pending(a.id).task,t);s.setCommissionRate('10');assert.deepEqual(dispatch.pending(a.id).task,t);
+  const assignment=dispatch.accept(a.id,offer.id,{amount:t.deposit,commission:t.commission,rateBps:t.commission_rate_bps});
+  assert.equal(assignment.task.premium,1);assert.equal(assignment.task.dispatch_sequence,1);
+  const claimNotice=s.asUser(a.id,()=>s.notifications()).notifications.find(n=>n.assignment_id===assignment.id);
+  assert.match(claimNotice.body,/复制并提交版权码/);assert.doesNotMatch(claimNotice.body,/完成发布/);
+  const first=license.snapshot(a.id,assignment.id);assert.match(first.code,/^CR-[A-F0-9]{24}$/);
+  assert.equal(license.snapshot(a.id,assignment.id).code,first.code);
+  s.db.prepare("UPDATE notifications SET body=? WHERE id=?").run('历史版权 · 请在 48 小时内完成发布',claimNotice.id);
+  createThirdCopyright(s);
+  assert.match(s.asUser(a.id,()=>s.notifications()).notifications.find(n=>n.id===claimNotice.id).body,/复制并提交版权码/);
+  assert.throws(()=>license.snapshot(b.id,assignment.id),e=>e.status===404);
+  assert.throws(()=>license.complete(a.id,{assignmentId:assignment.id,code:'invalid'}),e=>e.status===409);
+  const wallet=()=>s.asUser(a.id,()=>s.summary().wallet),before=wallet();
+  const result=license.complete(a.id,{assignmentId:assignment.id,code:first.code});assert.equal(result.assignment.status,'completed');assert.equal(result.first,true);
+  assert.equal(result.assignment.task.premium,1);
+  assert.equal(result.assignment.uploads.length,0);assert.equal(result.assignment.submissions.length,0);
+  assert.equal(wallet().available,before.available+assignment.task.deposit+assignment.task.commission);
+  assert.equal(license.complete(a.id,{assignmentId:assignment.id,code:first.code}).first,false);
+  assert.equal(s.db.prepare("SELECT COUNT(*) n FROM ledger WHERE operation_key=?").get('reward:'+assignment.id).n,1);
+  const next=dispatch.draw(a.id,3);const q=next.task;assert.equal(q.deposit,65035);assert.equal(q.commission_rate_bps,825);assert.equal(q.commission,Math.round(65035*825/10000));assert.equal(q.premium,1);assert.throws(()=>premium.save(op,a.id,{day,revision:1,sequences:[1,2],terms:{2:{amount:'700',rate:'9'}}}),e=>e.status===409);const cancelled=dispatch.accept(a.id,next.id,{amount:q.deposit,commission:q.commission,rateBps:q.commission_rate_bps});const old=license.snapshot(a.id,cancelled.id);s.asUser(a.id,()=>s.cancel(cancelled.id));assert.throws(()=>license.complete(a.id,{assignmentId:cancelled.id,code:old.code}),e=>e.status===409);
+ }finally{s.close();}
+});

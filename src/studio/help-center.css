@@ -1,0 +1,318 @@
+.h-intro {
+  position: relative;
+  padding: 25px 20px;
+  background: linear-gradient(130deg, #eee1f7, #faf5fe);
+  border: 1px solid #e5d7ed;
+  border-radius: 18px;
+  overflow: hidden;
+}
+.h-intro > span {
+  font-size: 8px;
+  letter-spacing: 2.5px;
+  color: #ab8abc;
+}
+.studio .h-intro h2 {
+  font-size: 20px;
+  line-height: 1.6;
+  color: #765383;
+  margin: 14px 0 8px;
+  font-weight: 600;
+}
+.studio .h-intro p {
+  font-size: 11px;
+  color: #9b7eaa;
+  line-height: 1.9;
+  max-width: 85%;
+}
+.studio .h-intro > svg {
+  position: absolute;
+  right: 11px;
+  top: 30px;
+  width: 65px;
+  height: 65px;
+  color: #d8bce8;
+  transform: rotate(-12deg);
+  opacity: 0.55;
+}
+.h-search {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid #e4d5ed;
+  border-radius: 11px;
+  background: #fff;
+  margin: 21px 0 15px;
+  padding: 0 13px;
+  min-height: 45px;
+}
+.studio .h-search > svg {
+  height: 16px;
+  width: 16px;
+  color: #b89aca;
+}
+.h-search input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  height: 44px;
+  background: none;
+  border: 0;
+  outline: 0;
+  font: inherit;
+  font-size: 12px;
+  color: #83608f;
+}
+.h-search input::placeholder {
+  color: #b29bc0;
+}
+.studio .h-search > button {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 30px;
+  padding: 5px;
+  color: #b094c0;
+}
+.studio .h-search > button svg {
+  height: 12px;
+  width: 12px;
+}
+.h-categories {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.studio .h-categories > button {
+  min-height: 33px;
+  padding: 8px 12px;
+  border: 1px solid #e7d8ef;
+  border-radius: 20px;
+  background: #fff;
+  color: #ac8cbd;
+  font-size: 10px;
+}
+.studio .h-categories > button[aria-pressed="true"] {
+  background: #eee0f7;
+  color: #956bad;
+  border-color: #d7bde8;
+}
+.h-results-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 26px 0 16px;
+}
+.studio .h-results-heading h3,
+.studio .h-shortcuts > h3 {
+  font-size: 14px;
+  font-weight: 550;
+  color: #856193;
+}
+.h-results-heading > span {
+  font-size: 10px;
+  color: #b398c3;
+}
+.h-faq {
+  border: 1px solid #e7d9f0;
+  border-radius: 14px;
+  background: #fff;
+  overflow: hidden;
+}
+.h-faq > details + details {
+  border-top: 1px solid #f1e7f6;
+}
+.h-faq summary {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #8c6b9c;
+  line-height: 1.8;
+  list-style: none;
+  padding: 19px 15px;
+  cursor: pointer;
+}
+.h-faq summary::-webkit-details-marker {
+  display: none;
+}
+.studio .h-faq summary > svg {
+  height: 13px;
+  width: 13px;
+  color: #b99bca;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.h-faq details[open] summary > svg {
+  transform: rotate(180deg);
+}
+.studio .h-faq details > p {
+  font-size: 12px;
+  line-height: 2;
+  color: #9f83b0;
+  padding: 0 15px 20px;
+}
+.h-no-results {
+  text-align: center;
+  padding: 30px 18px;
+}
+.studio .h-no-results > svg {
+  height: 30px;
+  width: 30px;
+  color: #c5a7d5;
+  margin-bottom: 15px;
+}
+.studio .h-no-results h3 {
+  font-size: 14px;
+  color: #9b76af;
+}
+.studio .h-no-results p {
+  font-size: 11px;
+  color: #b199bf;
+  margin: 10px 0 17px;
+}
+.studio .h-no-results > button {
+  border: 1px solid #e7d5f1;
+  border-radius: 8px;
+  background: #faf3ff;
+  padding: 10px 14px;
+  color: #ac83c0;
+  font-size: 11px;
+}
+.h-shortcuts {
+  margin-top: 27px;
+}
+.h-shortcuts > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 11px;
+  margin-top: 15px;
+}
+.studio .h-shortcuts button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 16px 12px;
+  border: 1px solid #e9dbf0;
+  background: #fff;
+  border-radius: 11px;
+  font-size: 11px;
+  color: #a17cb5;
+}
+.studio .h-shortcuts svg {
+  height: 17px;
+  width: 17px;
+  color: #bb9acc;
+}
+.h-diagnostic {
+  margin-top: 25px;
+  border: 1px solid #e5d5ee;
+  background: #fff;
+  border-radius: 14px;
+  padding: 0 17px 20px;
+}
+.h-diagnostic .h-results-heading {
+  margin: 18px 0 11px;
+}
+.studio .h-diagnostic .h-results-heading > button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  padding: 8px 9px;
+  border: 1px solid #e5d3ee;
+  border-radius: 8px;
+  color: #ae87c0;
+  background: #fbf5ff;
+}
+.studio .h-diagnostic .h-results-heading svg {
+  height: 12px;
+  width: 12px;
+}
+.studio .h-diagnostic > p {
+  font-size: 11px;
+  color: #ab8fba;
+  line-height: 1.9;
+}
+.h-diagnostic dl {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  gap: 11px;
+  font-size: 11px;
+  line-height: 1.8;
+  border-top: 1px solid #eee2f6;
+  padding-top: 18px;
+  margin: 18px 0;
+}
+.h-diagnostic dt {
+  color: #b294c2;
+}
+.h-diagnostic dd {
+  color: #9775a8;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.h-diagnostic dd.ok {
+  color: #7fa48e;
+}
+.h-diagnostic dd.warning {
+  color: #c3a07a;
+}
+.studio .h-diagnostic > button.h-export {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  color: #ac85c0;
+  padding: 10px 0;
+}
+.studio .h-export svg {
+  height: 13px;
+  width: 13px;
+}
+.h-footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 6px;
+  font-size: 9px;
+  color: #b7a1c4;
+  line-height: 1.9;
+  margin: 25px 0 12px;
+}
+.studio .h-footer > svg {
+  height: 12px;
+  width: 12px;
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+.h-spinning {
+  animation: h-spin 1s linear infinite;
+}
+@keyframes h-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .h-spinning {
+    animation: none;
+  }
+  .h-faq summary > svg {
+    transition: none;
+  }
+}
+@media (max-width: 360px) {
+  .h-shortcuts > div {
+    grid-template-columns: 1fr;
+  }
+  .h-categories {
+    gap: 5px;
+  }
+  .studio .h-categories > button {
+    padding: 7px 10px;
+  }
+}
+
+.h-diagnostic>summary{cursor:pointer;font-size:13px;font-weight:600;color:#776882;list-style-position:inside}.h-diagnostic[open]>summary{margin-bottom:18px}

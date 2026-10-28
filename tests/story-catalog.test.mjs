@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync,existsSync} from 'node:fs';
+import {restoreReadingDay} from '../src/studio/readingQueue.ts';
+const catalog=JSON.parse(readFileSync(new URL('../src/studio/storyCatalog.json',import.meta.url),'utf8'));
+const ids=catalog.map(s=>s.id);
+test('all twenty-four stories have distinct matched assets and descriptions',()=>{assert.equal(ids.length,24);assert.equal(new Set(ids).size,24);for(const story of catalog){assert.ok(story.title&&story.description&&story.genre);assert.ok(existsSync(new URL('../public'+story.cover,import.meta.url)));}});
+test('daily reading queue is a permutation of the catalog and survives restore',()=>{const first=restoreReadingDay(null,ids,()=>0);assert.equal(first.count,ids.length);assert.equal(new Set(first.order).size,ids.length);assert.deepEqual([...first.order].sort(),[...ids].sort());assert.notDeepEqual(first.order,ids);assert.deepEqual(restoreReadingDay({...first,done:7,revealed:true},ids),{...first,done:7,revealed:true});});
+test('legacy progress is preserved without carrying old monetary records',()=>{const next=restoreReadingDay({count:13,done:2,revealed:false},ids,()=>0);assert.equal(next.done,2);assert.equal(next.count,ids.length);assert.equal(next.order.length,ids.length);assert.equal(next.revealed,false);});
+test('invalid queue or progress cannot skip reading or create duplicate stories',()=>{for(const value of [{count:20,done:99,revealed:true,order:'12345678901234567890'},{count:20,done:-1,revealed:true,order:Array(20).fill(ids[0])},null]){const next=restoreReadingDay(value,ids);assert.equal(next.done,0);assert.equal(new Set(next.order).size,ids.length);}const end=restoreReadingDay({count:ids.length,done:ids.length,revealed:true,order:ids},ids);assert.equal(end.revealed,false);});

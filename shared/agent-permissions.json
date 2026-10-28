@@ -1,0 +1,84 @@
+[
+  {
+    "id": "invitations",
+    "name": "邀请码管理",
+    "group": "客户管理"
+  },
+  {
+    "id": "customerEdit",
+    "name": "客户资料与备注",
+    "group": "客户管理"
+  },
+  {
+    "id": "customerSecurity",
+    "name": "客户密码与登录会话",
+    "group": "客户管理"
+  },
+  {
+    "id": "accountFreeze",
+    "name": "冻结与解冻账户",
+    "group": "客户管理"
+  },
+  {
+    "id": "balanceAdjust",
+    "name": "客户上下分",
+    "group": "资金管理"
+  },
+  {
+    "id": "depositReview",
+    "name": "充值审核",
+    "group": "资金管理"
+  },
+  {
+    "id": "withdrawalReview",
+    "name": "提现审核与出款登记",
+    "group": "资金管理"
+  },
+  {
+    "id": "payoutReview",
+    "name": "收款方式审核",
+    "group": "资金管理"
+  },
+  {
+    "id": "identityReview",
+    "name": "实名认证审核",
+    "group": "认证管理"
+  },
+  {
+    "id": "sensitiveReveal",
+    "name": "查看完整实名、收款信息及照片",
+    "group": "认证管理"
+  },
+  {
+    "id": "taskConfigure",
+    "name": "任务与计划配置",
+    "group": "任务管理"
+  },
+  {
+    "id": "enrollmentReview",
+    "name": "阶段报名审核",
+    "group": "任务管理"
+  },
+  {
+    "id": "rewardGrant",
+    "name": "活动奖励发放",
+    "group": "任务管理"
+  },
+  {
+    "id": "ledgerExport",
+    "name": "导出客户账本",
+    "group": "资金管理"
+  },
+  {
+    "id": "depositConfigure",
+    "name": "配置本人客户充值渠道",
+    "group": "渠道与客服",
+    "defaultEnabled": false
+  },
+  {
+    "id": "supportConfigure",
+    "name": "配置本人客户客服链接",
+    "group": "渠道与客服",
+    "defaultEnabled": false
+  }
+]

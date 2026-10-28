@@ -1,0 +1,170 @@
+[
+  {
+    "id": "stranded-with-a-stranger",
+    "title": "Stranded With a Stranger",
+    "genre": "荒岛悬疑",
+    "description": "她在私人飞机失事后醒来，荒岛上只剩一个身份不明的男人。两人找到废弃地下设施后才发现，这场坠机可能根本不是意外...",
+    "cover": "/stories/stranded-with-a-stranger.webp"
+  },
+  {
+    "id": "the-last-bus-out",
+    "title": "The Last Bus Out",
+    "genre": "末日冒险",
+    "description": "丧尸爆发当晚，一辆末班巴士载着十二个陌生人冲出城市。但司机突然收到一条消息：车上有人已经被感染...",
+    "cover": "/stories/the-last-bus-out.webp"
+  },
+  {
+    "id": "beggar-queen",
+    "title": "Beggar Queen",
+    "genre": "古装逆袭",
+    "description": "所有人都以为她只是皇城外的女乞丐，直到宫宴当天，她拿出一枚失踪十八年的皇室玉佩...",
+    "cover": "/stories/beggar-queen.webp"
+  },
+  {
+    "id": "seven-husbands-one-throne",
+    "title": "Seven Husbands, One Throne",
+    "genre": "宫廷悬疑",
+    "description": "她醒来后成了即将登基的女帝，而朝堂给她准备了七位政治联姻对象。问题是，其中至少一个人今晚就想杀她...",
+    "cover": "/stories/seven-husbands-one-throne.webp"
+  },
+  {
+    "id": "the-maid-who-owned-everything",
+    "title": "The Maid Who Owned Everything",
+    "genre": "豪门逆袭",
+    "description": "豪门里最不起眼的女佣突然收到律师通知：她继承了整个集团51%的股份，而每天羞辱她的人第二天都成了她的下属...",
+    "cover": "/stories/the-maid-who-owned-everything.webp"
+  },
+  {
+    "id": "deadly-honeymoon",
+    "title": "Deadly Honeymoon",
+    "genre": "惊悚悬疑",
+    "description": "新婚夫妻抵达海岛酒店后，发现酒店没有其他客人。午夜十二点，房间电视自动亮起，并开始播放他们未来24小时内的死亡画面...",
+    "cover": "/stories/deadly-honeymoon.webp"
+  },
+  {
+    "id": "the-generals-fake-bride",
+    "title": "The General’s Fake Bride",
+    "genre": "古装爱情",
+    "description": "为救妹妹，她冒名顶替嫁给传闻中残暴的边疆将军。洞房夜，她却发现这个男人早就知道她是假新娘...",
+    "cover": "/stories/the-generals-fake-bride.webp"
+  },
+  {
+    "id": "neon-fugitive",
+    "title": "Neon Fugitive",
+    "genre": "赛博科幻",
+    "description": "在未来城市，一个普通送货女孩意外下载了足以推翻整个城市系统的AI意识。从那一刻起，警方、黑客和财团同时开始追杀她...",
+    "cover": "/stories/neon-fugitive.webp"
+  },
+  {
+    "id": "the-boy-beneath-the-bridge",
+    "title": "The Boy Beneath the Bridge",
+    "genre": "都市逆袭",
+    "description": "一个流浪少年每天抱着狗睡在桥下，没人知道他失踪前曾是全国最大财团唯一的继承人。直到一辆黑色车队停在他面前...",
+    "cover": "/stories/the-boy-beneath-the-bridge.webp"
+  },
+  {
+    "id": "everyone-is-lying",
+    "title": "Everyone Is Lying",
+    "genre": "群像悬疑",
+    "description": "十个人在豪宅醒来，每个人都声称自己不认识其他人。但墙上的照片证明，他们十年前曾共同参与过一场被掩盖的死亡事件...",
+    "cover": "/stories/everyone-is-lying.webp"
+  },
+  {
+    "id": "the-bride-from-cell-17",
+    "title": "The Bride From Cell 17",
+    "genre": "豪门复仇",
+    "description": "她在婚礼前夜被诬陷入狱，三年后重获自由，却发现未婚夫已经娶了她最信任的人。没人知道，她手里还握着一份能让整个豪门崩塌的证据...",
+    "cover": "/stories/the-bride-from-cell-17.webp"
+  },
+  {
+    "id": "i-woke-up-as-the-villainess",
+    "title": "I Woke Up as the Villainess",
+    "genre": "穿越奇幻",
+    "description": "她一睁眼，竟成了小说里注定被处死的恶毒女配。为了活下去，她必须在男主爱上女主之前，先改写自己的结局...",
+    "cover": "/stories/i-woke-up-as-the-villainess.webp"
+  },
+  {
+    "id": "the-fishermans-daughter",
+    "title": "The Fisherman’s Daughter",
+    "genre": "身世逆袭",
+    "description": "海边小镇的普通女孩一直以为父亲只是个穷渔夫，直到一艘豪华游艇靠岸，船上的老人当众叫她“唯一继承人”...",
+    "cover": "/stories/the-fishermans-daughter.webp"
+  },
+  {
+    "id": "my-husband-is-a-ghost",
+    "title": "My Husband Is a Ghost",
+    "genre": "奇幻爱情",
+    "description": "婚后三个月，她发现丈夫从不在白天出现。直到某晚，她在一张二十年前的死亡名单上，看见了他的名字...",
+    "cover": "/stories/my-husband-is-a-ghost.webp"
+  },
+  {
+    "id": "the-princess-who-ran-away",
+    "title": "The Princess Who Ran Away",
+    "genre": "宫廷爱情",
+    "description": "她在加冕前夜逃出皇宫，只想过一次普通人的生活。可第二天，全国悬赏她的人竟不是皇室，而是她未来的丈夫...",
+    "cover": "/stories/the-princess-who-ran-away.webp"
+  },
+  {
+    "id": "the-billionaires-secret-daughter",
+    "title": "The Billionaire’s Secret Daughter",
+    "genre": "豪门身世",
+    "description": "她在便利店打工多年，从没见过父亲。直到一次直播事故，让全国首富看见了她脖子上的那枚旧吊坠...",
+    "cover": "/stories/the-billionaires-secret-daughter.webp"
+  },
+  {
+    "id": "love-in-the-frozen-city",
+    "title": "Love in the Frozen City",
+    "genre": "灾难爱情",
+    "description": "一场极寒灾难让整座城市断电封锁。她被困在大楼顶层，而唯一能救她的人，正是三年前被她亲手送进监狱的男人...",
+    "cover": "/stories/love-in-the-frozen-city.webp"
+  },
+  {
+    "id": "the-actress-who-vanished",
+    "title": "The Actress Who Vanished",
+    "genre": "身份悬疑",
+    "description": "当红女演员在颁奖礼当晚突然失踪。三年后，一个和她长得一模一样的普通女孩出现在片场，却坚称自己从没演过戏...",
+    "cover": "/stories/the-actress-who-vanished.webp"
+  },
+  {
+    "id": "the-kings-blind-seer",
+    "title": "The King’s Blind Seer",
+    "genre": "王国奇幻",
+    "description": "所有人都以为她只是个失明的占卜师，只有国王知道，她每次说出的预言都会成真。可这一次，她预言的是他的死...",
+    "cover": "/stories/the-kings-blind-seer.webp"
+  },
+  {
+    "id": "the-house-that-remembers",
+    "title": "The House That Remembers",
+    "genre": "灵异悬疑",
+    "description": "一家人搬进一栋低价买来的旧宅，第一晚开始，房子里的灯会自己亮起，墙上的照片也每天多出一个从未见过的人...",
+    "cover": "/stories/the-house-that-remembers.webp"
+  },
+  {
+    "id": "murder-at-30000-feet",
+    "title": "Murder at 30,000 Feet",
+    "genre": "航空悬疑",
+    "description": "跨洋航班起飞两小时后，一名乘客死在锁死的头等舱洗手间。飞机无法降落，而凶手一定还在三百名乘客之中...",
+    "cover": "/stories/murder-at-30000-feet.png"
+  },
+  {
+    "id": "the-last-circus-in-town",
+    "title": "The Last Circus in Town",
+    "genre": "奇幻悬疑",
+    "description": "一个落魄女孩加入只在雨夜出现的流动马戏团。她很快发现，台上的“魔术”都是真的，而每位观众离场时都会失去一段记忆...",
+    "cover": "/stories/the-last-circus-in-town.webp"
+  },
+  {
+    "id": "the-queen-of-the-desert-casino",
+    "title": "The Queen of the Desert Casino",
+    "genre": "赌场悬疑",
+    "description": "她只是沙漠赌场里最低级的发牌员，却在一夜之间赢走老板全部资产。第二天，五个家族同时派人来找她，因为她赢到的并不只是钱...",
+    "cover": "/stories/the-queen-of-the-desert-casino.webp"
+  },
+  {
+    "id": "the-city-under-the-sea",
+    "title": "The City Under the Sea",
+    "genre": "深海科幻",
+    "description": "深海维修员在海底电缆旁发现一扇不属于任何国家的金属门。门后是一座灯火通明的城市，而里面的人已经等待她二十年...",
+    "cover": "/stories/the-city-under-the-sea.webp"
+  }
+]

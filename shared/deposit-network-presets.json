@@ -1,0 +1,90 @@
+[
+  {
+    "id": "btc-bitcoin",
+    "asset": "BTC",
+    "network": "Bitcoin",
+    "label": "Bitcoin 主网",
+    "channels": [
+      "bitcoin",
+      "binance",
+      "okx"
+    ]
+  },
+  {
+    "id": "eth-ethereum",
+    "asset": "ETH",
+    "network": "Ethereum",
+    "label": "Ethereum 主网",
+    "channels": [
+      "ethereum",
+      "binance",
+      "okx"
+    ]
+  },
+  {
+    "id": "usdt-tron",
+    "asset": "USDT",
+    "network": "TRON · TRC20",
+    "label": "TRON（TRC20）",
+    "channels": [
+      "usdt",
+      "binance",
+      "okx"
+    ]
+  },
+  {
+    "id": "usdt-ethereum",
+    "asset": "USDT",
+    "network": "Ethereum · ERC20",
+    "label": "Ethereum（ERC20）",
+    "channels": [
+      "usdt",
+      "binance",
+      "okx"
+    ]
+  },
+  {
+    "id": "usdc-ethereum",
+    "asset": "USDC",
+    "network": "Ethereum · ERC20",
+    "label": "Ethereum（ERC20）",
+    "channels": [
+      "usdc",
+      "binance",
+      "okx"
+    ]
+  },
+  {
+    "id": "usdc-solana",
+    "asset": "USDC",
+    "network": "Solana",
+    "label": "Solana",
+    "channels": [
+      "usdc",
+      "binance",
+      "okx"
+    ]
+  },
+  {
+    "id": "usdc-base",
+    "asset": "USDC",
+    "network": "Base",
+    "label": "Base",
+    "channels": [
+      "usdc",
+      "binance",
+      "okx"
+    ]
+  },
+  {
+    "id": "usdc-arbitrum",
+    "asset": "USDC",
+    "network": "Arbitrum One",
+    "label": "Arbitrum One",
+    "channels": [
+      "usdc",
+      "binance",
+      "okx"
+    ]
+  }
+]

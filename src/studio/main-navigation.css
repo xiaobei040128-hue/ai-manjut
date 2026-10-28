@@ -1,0 +1,8 @@
+/* Main tabs share one scrolling surface; detail headers retain their back navigation. */
+.studio.experience-v3.main-navigation-page > .s-scroll{inset:47px 0 0!important}
+.studio.experience-v3.main-navigation-page.native-mode > .s-scroll{inset:0!important}
+.device-screen[data-device="iphone"] .studio.experience-v3.main-navigation-page:not(.native-mode) > .s-scroll{top:54px!important}
+.device-screen[data-device="pixel-10"] .studio.experience-v3.main-navigation-page:not(.native-mode) > .s-scroll{top:64px!important}
+.studio.experience-v3.main-navigation-page .s-header{position:relative;inset:auto!important;z-index:1}
+.studio.experience-v3.main-navigation-page.native-mode .s-header{height:calc(77px + env(safe-area-inset-top,0px));padding-top:calc(7px + env(safe-area-inset-top,0px))}
+.studio.experience-v3.main-navigation-page .s-connection-banner{position:relative;inset:auto;z-index:1}

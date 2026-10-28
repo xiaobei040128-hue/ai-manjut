@@ -1,0 +1,3 @@
+import type {DepositChannel} from './finance';
+export const hasDepositDetails=(c:DepositChannel)=>!!c.uid||!!c.routes?.some(r=>r.asset&&r.network&&r.address)||!!c.account;
+export const depositMethods=(c:DepositChannel)=>[...(['binance','okx'].includes(c.id)&&c.uid?[{id:'uid',label:'UID 内部转账',asset:'',network:'',address:c.uid,memo:''}]:[]),...(c.routes||[]).filter(r=>r.asset&&r.network&&r.address).map(r=>({...r,label:['binance','okx'].includes(c.id)?r.asset+' · '+r.network:r.network})),...(!c.uid&&!c.routes?.some(r=>r.address)&&c.account?[{id:'legacy',label:c.network||'转账信息',asset:'',network:c.network,address:c.account,memo:''}]:[])];

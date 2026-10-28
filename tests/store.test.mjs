@@ -1,0 +1,31 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createStore } from './fixtures/store.mjs';
+import {createCreatorAuth} from '../server/creator-auth.mjs';
+function fixture(){return createStore(':memory:');}
+function evidence(s,a){return Array.from({length:a.task.posts},(_,i)=>s.addUpload(a.id,{name:`shot-${i}.png`,mime:'image/png',size:123,path:`/uploads/test-${i}.png`}));}
+function submit(s,a){const uploads=evidence(s,a);return s.submit(a.id,{links:uploads.map((_,i)=>`https://www.tiktok.com/@creator/video/${i+1}`),uploadIds:uploads.map(u=>u.id),note:'首轮发布'});}
+
+test('catalog works remain claimable beyond legacy capacity and new works need no slot field',async()=>{
+ const s=fixture();try{
+  const auth=createCreatorAuth(s,4988),invite=auth.createInvite('capacity-test',{}),input={title:'无限作品测试',description:'容量回归作品',platform:'TikTok',language:'中文',genre:'剧情',deposit:'0',commission:'0',posts:1,episodes:1,cover:'/art/poster0.png'};
+  const task=s.createTask(input);assert.equal(task.slots,0);s.db.prepare('UPDATE tasks SET slots=1 WHERE id=?').run(task.id);
+  for(let i=0;i<3;i++){const user=(await auth.register({headers:{},socket:{remoteAddress:'capacity-'+i}},{email:`capacity-${i}@example.invalid`,password:'Capacity123!',inviteCode:invite.code})).user;const assignment=s.asUser(user.id,()=>s.claim(task.id));assert.equal(assignment.task.id,task.id);}
+  assert.equal(s.db.prepare('SELECT COUNT(*) n FROM assignments WHERE task_id=?').get(task.id).n,3);
+  s.updateTask(task.id,{...input,title:'修改后的无限作品'});assert.equal(s.getTask(task.id).title,'修改后的无限作品');
+ }finally{s.close();}
+});
+test('claim is idempotent and debits integer cents once',()=>{const s=fixture();try{const a=s.claim('secret-wife'),again=s.claim('secret-wife');assert.equal(a.id,again.id);assert.equal(s.summary().wallet.available,170000);assert.equal(s.summary().wallet.held,30000);assert.equal(s.summary().ledger.length,2);}finally{s.close();}});
+test('insufficient funds roll back assignment and ledger',()=>{const s=fixture();try{s.claim('last-survivor');s.claim('revenge-queen');assert.throws(()=>s.claim('wolf-contract'),/余额不足/);assert.equal(s.summary().assignments.length,2);assert.equal(s.summary().wallet.available,20000);}finally{s.close();}});
+test('submit requires all links and screenshot ownership',()=>{const s=fixture();try{const a=s.claim('secret-wife'),b=s.claim('campus-diary');assert.throws(()=>s.submit(a.id,{links:['bad']}),/3 条/);const u=evidence(s,b);assert.throws(()=>s.submit(a.id,{links:['https://a.com/1','https://a.com/2','https://a.com/3'],uploadIds:u.map(x=>x.id)}),/不匹配/);assert.equal(s.assignment(a.id).status,'active');}finally{s.close();}});
+test('approval returns held balance and rewards exactly once',()=>{const s=fixture();try{const a=s.claim('secret-wife');submit(s,a);const first=s.review(a.id,{decision:'approve'});assert.equal(first.status,'completed');s.review(a.id,{decision:'approve'});assert.equal(s.summary().wallet.available,204500);assert.equal(s.summary().wallet.held,0);assert.equal(s.summary().wallet.earned,4500);assert.equal(s.summary().ledger.filter(x=>x.kind==='reward').length,1);assert.throws(()=>s.cancel(a.id),/不允许/);}finally{s.close();}});
+test('requested changes preserve history and support resubmission',()=>{const s=fixture();try{const a=s.claim('secret-wife');submit(s,a);assert.throws(()=>s.review(a.id,{decision:'changes',reason:''}),/修改意见/);s.review(a.id,{decision:'changes',reason:'补充清晰的发布截图'});assert.equal(s.assignment(a.id).status,'revision');s.saveDraft(a.id,{note:'已按要求修改'});const old=s.assignment(a.id);s.submit(a.id,{links:['https://a.com/4','https://a.com/5','https://a.com/6'],uploadIds:old.uploads.map(u=>u.id)});assert.equal(s.assignment(a.id).submissions.length,2);assert.equal(s.assignment(a.id).submissions[0].version,2);s.review(a.id,{decision:'approve'});assert.equal(s.summary().wallet.available,204500);}finally{s.close();}});
+test('cancel refunds only once and allows a new assignment',()=>{const s=fixture();try{const a=s.claim('secret-wife');s.cancel(a.id);s.cancel(a.id);assert.equal(s.summary().wallet.available,200000);const next=s.claim('secret-wife');assert.notEqual(a.id,next.id);assert.equal(s.summary().wallet.available,170000);}finally{s.close();}});
+test('submitted screenshots and review drafts are immutable',()=>{const s=fixture();try{const a=s.claim('secret-wife');const queued=submit(s,a);assert.throws(()=>s.saveDraft(a.id,{note:'change'}),/不允许/);assert.throws(()=>s.removeUpload(queued.uploads[0].id),/不允许/);s.review(a.id,{decision:'changes',reason:'重新拍摄'});assert.throws(()=>s.removeUpload(queued.uploads[0].id),/不可删除/);}finally{s.close();}});
+test('bookmarks, profile and publishing update real records',()=>{const s=fixture();try{s.bookmark('secret-wife');assert.equal(s.summary().bookmarks.length,1);s.bookmark('secret-wife');assert.equal(s.summary().bookmarks.length,0);s.profile({name:'测试创作者',bio:'记录真实数据',channel:'@creator'});assert.equal(s.summary().profile.name,'测试创作者');const t=s.createTask({title:'新的剧集',platform:'TikTok',language:'中文',description:'新的任务简介',genre:'都市',deposit:100,commission:20,posts:2,episodes:30,slots:10,cover:'/art/poster0.png'});assert.equal(t.deposit,10000);s.setTaskActive(t.id,false);assert.throws(()=>s.claim(t.id),/已暂停/);}finally{s.close();}});
+
+test('bulk summary preserves individual evidence, versions and paused task records',()=>{const s=fixture();try{
+ const a=s.claim('secret-wife');submit(s,a);s.review(a.id,{decision:'changes',reason:'补充说明'});const old=s.assignment(a.id);s.submit(a.id,{links:['https://example.com/1','https://example.com/2','https://example.com/3'],uploadIds:old.uploads.map(u=>u.id),note:'第二版'});s.setTaskActive('secret-wife',false);
+ const json=v=>JSON.parse(JSON.stringify(v));assert.deepEqual(json(s.summary().assignments.find(x=>x.id===a.id)),json(s.assignment(a.id)));assert.ok(!s.summary().tasks.some(t=>t.id==='secret-wife'));
+ const notice=s.summary().notifications.find(n=>n.task_id==='secret-wife');assert.ok(notice);s.readNotifications(notice.id);assert.equal(s.summary().notifications.find(n=>n.id===notice.id).is_read,1);assert.ok(s.summary().notifications.some(n=>n.is_read===0));
+}finally{s.close();}});

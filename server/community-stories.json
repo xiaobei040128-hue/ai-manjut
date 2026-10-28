@@ -1,0 +1,16 @@
+[
+  {
+    "title": "Midnight Train to Nowhere",
+    "description": "一列只在午夜出现的豪华列车载着二十名乘客穿越荒漠。天亮后，车厢里少了三个人，而所有人都坚称他们从未存在过...",
+    "cover": "/community/midnight-train-to-nowhere.png",
+    "genre": "悬疑惊悚",
+    "language": "英文"
+  },
+  {
+    "title": "The Girl from Floor 99",
+    "description": "她每天在写字楼做夜班清洁，却发现电梯偶尔会亮起不存在的“99层”。某晚她按下按钮后，看到了一间完全复制她童年房间的公寓...",
+    "cover": "/community/the-girl-from-floor-99.png",
+    "genre": "都市悬疑",
+    "language": "英文"
+  }
+]

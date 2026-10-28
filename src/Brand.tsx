@@ -1,0 +1,7 @@
+import './brand.css';
+import {useId,type SVGProps} from 'react';
+export const BRAND_NAME='AI CREATOR';
+export const BRAND_TAGLINE='Comic & Short Drama Platform';
+export function BrandMark({className='',...props}:SVGProps<SVGSVGElement>){const cleanup=useId();return <svg viewBox="0 0 1254 1254" fill="none" aria-hidden="true" className={'brand-mark '+className} {...props}><defs><filter id={cleanup} x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB"><feComponentTransfer><feFuncA type="linear" slope="1.005" intercept="-0.005"/></feComponentTransfer></filter></defs><image href="/icons/ai-creator-approved.png" x="0" y="0" width="1254" height="1254" filter={'url(#'+cleanup+')'}/></svg>}
+export function BrandLockup(){return <span className="brand-lockup notranslate" translate="no" lang="en"><strong>{BRAND_NAME}</strong><small>{BRAND_TAGLINE}</small></span>}
+export function NotificationIcon(props:SVGProps<SVGSVGElement>){return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}><path d="M6.5 9a5.5 5.5 0 0 1 11 0v3.5l1.5 3v1H5v-1l1.5-3V9Z" fill="currentColor" fillOpacity=".16"/><path d="M6.5 9a5.5 5.5 0 0 1 11 0v3.5l1.5 3v1H5v-1l1.5-3V9Z" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round"/><path d="M9 8a3 3 0 0 1 3-3" stroke="white" strokeWidth="1.4" strokeLinecap="round"/><path d="M10 19a2.15 2.15 0 0 0 4 0" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round"/><path d="M12 2v1.5" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round"/></svg>}

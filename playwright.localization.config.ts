@@ -1,0 +1,1 @@
+import {defineConfig} from '@playwright/test';import base from './playwright.config';export default defineConfig({...base,testMatch:'localization.spec.ts',timeout:30000,workers:1,use:{...base.use,viewport:{width:390,height:844},locale:'ru-RU'}});
