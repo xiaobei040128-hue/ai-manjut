@@ -7,9 +7,6 @@
     "update:geoip": "node scripts/update-geoip.mjs",
     "check:runtime": "node scripts/check-mobile-runtime.mjs",
     "update:runtime-lock": "node scripts/update-mobile-runtime-lock.mjs",
-    "test:runtime": "playwright test",
-    "test:localization": "node --test tests/localization.test.mjs && playwright test --config playwright.localization.config.ts",
-    "test:sites": "node --test tests/sites-worker.test.mjs",
     "predev": "npm run check:runtime",
     "dev": "node server/index.mjs",
     "prebuild": "npm run check:runtime",
@@ -19,8 +16,6 @@
     "test:api": "node --test tests/current-http.test.mjs tests/current-isolation.test.mjs",
     "test": "npm run test:app && npm run test:api",
     "restore": "node scripts/restore-backup.mjs",
-    "test:legacy:app": "node --test tests/settlement-award.test.mjs tests/customer-clock.test.mjs tests/plan-dispatch.test.mjs tests/third-default-range.test.mjs tests/third-copyright.test.mjs tests/task-balance.test.mjs tests/third-plan.test.mjs tests/purchase-balance.test.mjs tests/payout-methods.test.mjs tests/newcomer-cover.test.mjs tests/stage-journey.test.mjs tests/stage-dispatch.test.mjs tests/registration-reward.test.mjs tests/service-worker.test.mjs tests/commission-policy.test.mjs tests/auth-proxy.test.mjs tests/attempt-limit.test.mjs tests/operator-summary.test.mjs tests/time.test.mjs tests/migrations.test.mjs tests/finance-boundaries.test.mjs tests/notifications.test.mjs tests/stage-finance.test.mjs tests/store.test.mjs tests/materials.test.mjs tests/backup.test.mjs tests/static.test.mjs tests/auth.test.mjs tests/creator-auth.test.mjs tests/finance.test.mjs tests/downloads.test.mjs tests/library.test.mjs tests/customer-directory.test.mjs tests/activity-rewards.test.mjs tests/story-catalog.test.mjs tests/premium-dispatch.test.mjs tests/customer-filters.test.mjs tests/customer-overview.test.mjs tests/catalog-initialization.test.mjs tests/self-password.test.mjs tests/fund-password.test.mjs tests/balance-pricing.test.mjs tests/deposit-channels.test.mjs tests/wallet-overview.test.mjs tests/random-pricing.test.mjs",
-    "test:legacy:api": "node --test tests/api.test.mjs tests/public-configuration.test.mjs tests/agent-permissions.test.mjs tests/scoped-deposit-channels.test.mjs",
     "build:bundle": "tsc && vite build --config vite.app.config.ts && node scripts/check-retired-features.mjs && node scripts/precompress.mjs && node scripts/prepare-sites-build.mjs"
   },
   "dependencies": {

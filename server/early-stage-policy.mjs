@@ -1,3 +1,5 @@
+// Historical stage compatibility only. The active task flow is stage 3 (50 tasks per round).
+// These stored amounts and schemas preserve historical records; they do not define current task pricing.
 import {AppError} from './store.mjs';
 export const earlyTaskDefinitions=[{id:'cover',stage:1,label:'新手版权封面',amount:188,rateBps:null},{id:'knowledge',stage:2,label:'知识问答奖励',amount:58,reward:true},{id:'review',stage:2,label:'感受任务奖励',amount:66,reward:true},{id:'genre',stage:2,label:'题材任务奖励',amount:77,reward:true},{id:'license4',stage:2,label:'第4项单集版权',amount:6789,rateBps:null},{id:'license5',stage:2,label:'第5项单集版权',amount:4333,rateBps:null}];
 export function createEarlyStagePolicy(store){const db=store.db;db.exec("CREATE TABLE IF NOT EXISTS early_stage_policy(scope TEXT PRIMARY KEY,revision INTEGER NOT NULL,configuration TEXT NOT NULL,updated_at TEXT NOT NULL)");

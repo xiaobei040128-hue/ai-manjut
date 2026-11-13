@@ -218,20 +218,6 @@ async function api(req, res, url, inScope=false) {
     if(p==='/api/stage-journey/history'&&method==='GET')return send(res,200,[]);
     if(method==='POST')throw new AppError('旧阶段已停用，请进入当前任务',410);
     if(p==='/api/stage-journey'&&method==='GET')return send(res,200,stageJourney.snapshot(user.id));
-    if(method==='POST'){
-      validateOrigin(req);const input=await body(req);
-      if(p==='/api/stage-journey/identity-reward')return send(res,200,stageJourney.identityReward(user.id,input));
-      if(p==='/api/stage-journey/binding-completion')return send(res,200,stageJourney.bindingCompletion(user.id));
-      if(p==='/api/stage-journey/take')return send(res,200,stageJourney.take(user.id));
-      if(p==='/api/stage-journey/cover/purchase')return send(res,200,stageJourney.purchaseCover(user.id,input));
-      if(p==='/api/stage-journey/cover/submit')return send(res,200,stageJourney.submitCover(user.id,input));
-      if(p==='/api/stage-journey/sync')return send(res,200,stageJourney.sync(user.id));
-      if(p==='/api/stage-journey/reveal')return send(res,200,stageJourney.reveal(user.id));
-      if(p==='/api/stage-journey/license/cancel')throw new AppError('已领取的任务无法取消，请继续完成当前任务',409);
-      if(p==='/api/stage-journey/license/purchase')return send(res,200,stageJourney.purchaseLicense(user.id,input));
-      if(p==='/api/stage-journey/submit')return send(res,200,stageJourney.submit(user.id,input));
-      if(p==='/api/stage-journey/skip-withdrawal')return send(res,200,stageJourney.skipWithdrawal(user.id,input));
-    }
     throw new AppError('接口不存在',404);
   }
   if(p==='/api/customer-records'&&method==='GET'){const user=requireCreator(req);return send(res,200,customerRecords.page(user.id,Object.fromEntries(url.searchParams)));}
@@ -253,7 +239,6 @@ async function api(req, res, url, inScope=false) {
     if(p.endsWith('/discard'))throw new AppError('已领取的任务无法取消，请继续完成当前任务',409);
     if(p.endsWith('/reserve')){const offer=stageDispatch.reserve(user.id,input.offerId);return send(res,200,input.includeSnapshot===true?{offer,snapshot:input.taskView===true?taskViewSnapshot(user.id,{roundOnly:input.roundOnly===true}):stageFinanceSnapshot(user.id)}:offer);}
     if(p.endsWith('/draw')&&input.stage!==3)throw new AppError('请在当前成长计划中继续探索',403);
-    if(p.endsWith('/draw')&&input.stage===1&&stageJourney.snapshot(user.id).onboarding.step!==2)throw new AppError('请先完成当前任务',403);
     const result=p.endsWith('/draw')?stageDispatch.draw(user.id,input.stage):stageDispatch.accept(user.id,input.offerId,input.expected);
     if(p.endsWith('/accept')&&input.taskView===true)return send(res,200,{assignment:result,license:thirdCopyright.snapshot(user.id,result.id),snapshot:taskViewSnapshot(user.id,{roundOnly:input.roundOnly===true})});
     if(p.endsWith('/draw')&&input.includeSnapshot===true&&input.taskView===true){const snapshot=taskViewSnapshot(user.id,{preview:input.coverPreview===true,knownCover:input.coverKnown||'',roundOnly:input.roundOnly===true});return send(res,200,{offer:snapshot.offer,snapshot});}
@@ -309,7 +294,7 @@ async function api(req, res, url, inScope=false) {
   if(p.startsWith("/api/admin/")) {
     const actor=adminAuth.requireAdmin(req);
     if(p==='/api/admin/deposit-channels'){if(operator.role==='agent'&&url.searchParams.size)throw new AppError('仅能配置本人归属客户',403);if(method==='GET')return send(res,200,scopedDepositChannels.read(operator));if(method==='POST'){validateOrigin(req);return send(res,200,scopedDepositChannels.save(operator,await body(req)));}}
-    if(p==='/api/admin/early-stage-policy'){const target=url.searchParams.get('customer');if(target)operatorScope.assertUser(operator,target);const scope=target?'customer:'+target:operator.role==='super'?'global':'agent:'+operator.id;const rules=createEarlyStagePolicy(store);if(method==='GET')return send(res,200,rules.readFor(scope,target));if(method==='POST'){validateOrigin(req);return send(res,200,rules.save(actor,scope,await body(req)));}}
+    if(p==='/api/admin/early-stage-policy'){if(method!=='GET')throw new AppError('旧阶段配置已停用',410);const target=url.searchParams.get('customer');if(target)operatorScope.assertUser(operator,target);const scope=target?'customer:'+target:operator.role==='super'?'global':'agent:'+operator.id;const rules=createEarlyStagePolicy(store);if(method==='GET')return send(res,200,rules.readFor(scope,target));}
     if(p==='/api/admin/referral-policy'){adminAuth.requireSuper(req);if(method==='GET')return send(res,200,referralPolicy(store.db));if(method==='POST'){validateOrigin(req);return send(res,200,saveReferralPolicy(store,actor,await body(req)));}throw new AppError('接口不存在',404);}
     if(p==='/api/admin/dispatch-defaults'){
       adminAuth.requireSuper(req);

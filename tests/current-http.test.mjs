@@ -34,6 +34,9 @@ test('current production HTTP protects data and serves compressed shell and immu
   const read=path=>fetch(origin+'/api'+path,{headers:{Cookie:cookie}}).then(r=>r.json());
   const support=await fetch(origin+'/api/support');assert.equal(support.status,200);assert.deepEqual(Object.keys(await support.json()),['supportUrl']);
   assert.equal((await post('/finance/identity',{})).status,410);
+  for(const path of ['identity-reward','binding-completion','take','cover/purchase','cover/submit','sync','reveal','license/purchase','submit','skip-withdrawal'])assert.equal((await post('/stage-journey/'+path,{})).status,410,path);
+  assert.equal((await fetch(origin+'/api/admin/early-stage-policy',{method:'POST',headers:{Cookie:adminCookie,Origin:origin,'Content-Type':'application/json','X-Workspace-Request':'1'},body:'{}'})).status,410);
+
   const channels=await read('/finance/deposit-channels');assert.deepEqual(channels.channels.map(c=>c.id),['bank_wire']);
   const adjustInput={score:91,expectedScore:100,reason:'Manual QA',operationKey:'http-manual-score-check'};
   const adminPost=(token,id,input,requestOrigin=origin)=>fetch(origin+'/api/admin/accounts/'+id+'/reputation',{method:'POST',headers:{Cookie:token,Origin:requestOrigin,'Content-Type':'application/json','X-Workspace-Request':'1'},body:JSON.stringify(input)});
