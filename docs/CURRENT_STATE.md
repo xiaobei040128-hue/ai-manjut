@@ -2,7 +2,7 @@
 
 核对日期：2026-11-13（Asia/Shanghai）。
 
-当前正式平台：https://aicreatorai.com/ 。服务器 /www/wwwroot/ai-manjut，端口4173。线上及公开 release-meta.json 一致：buildId b530dacbfceb，builtAt 2026-11-09T08:00:34.960Z。
+当前正式平台：https://aicreatorai.com/ 。服务器 /www/wwwroot/ai-manjut，端口4173。线上及公开 release-meta.json 一致：buildId 477de8c4c0ba，builtAt 2026-11-13T05:46:55.276Z。
 
 本次源码直接提取自运行服务器，不以旧本地副本覆盖生产。关于我们和平台规则的十种语言页面包含2026-11-10线上更新。RELEASE-MANIFEST.json仅记录生产构建，未重新发布。
 
@@ -11,3 +11,5 @@
 已退休落地页：datevera.date，LinkStack独立容器和datevera-routing服务已停用并从活动项目移除，公开入口410；备份位于服务器 /www/backup/datevera-retired-20261113。Cloudflare DNS记录及注册商域名状态尚未清理，需账户访问。
 
 旧docs/archive和聊天只用于追溯；当前生产源码及用户最新指示优先。
+
+2026-11-13 更新：主页链接预览标题、简介及 Open Graph/Twitter 元数据统一英语；中文语言标记和选项显示使用 zh-CN，旧 zh-SG 浏览器选择自动兼容迁移。

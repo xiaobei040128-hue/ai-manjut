@@ -9,7 +9,7 @@ const punctuation=(s:string)=>s.replace(/，/g,getLanguage()==='ar'?'، ':', ').
 export function translateText<T>(value:T,context?:string):T{
  if(typeof value!=='string'||!value.trim())return value;
  if(standardNames[value.trim()])return standardNames[value.trim()] as T;
- if(getLanguage()==='zh-SG'||protectedText.has(value.trim()))return value;
+ if(getLanguage()==='zh-CN'||protectedText.has(value.trim()))return value;
  const catalog=readCatalog(getLanguage()),trimmed=value.trim(),normalized=trimmed.replace(/\s+/g,' '),messageKey=context?normalized+'::'+context:normalized,direct=catalog[messageKey]||english[messageKey];
  if(direct)return (value.slice(0,value.indexOf(trimmed))+direct+value.slice(value.indexOf(trimmed)+trimmed.length)) as T;
  if(!/[\u3400-\u9fff]/.test(value))return punctuation(value) as T;

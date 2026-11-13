@@ -4,8 +4,8 @@ const info=JSON.parse(readFileSync(new URL('shared/site-information.json',root),
 const privacy=JSON.parse(readFileSync(new URL('shared/privacy-information.json',root),'utf8'));
 const esc=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 const codes=['en','fr','de','es','pt','ka','ru','ar','id','zh'];
-const names=['English','Français','Deutsch','Español','Português','ქართული','Русский','العربية','Bahasa Indonesia','zh-SG'];
-const tag=k=>k==='zh'?'zh-SG':k;
+const names=['English','Français','Deutsch','Español','Português','ქართული','Русский','العربية','Bahasa Indonesia','zh-CN'];
+const tag=k=>k==='zh'?'zh-CN':k;
 const url=k=>'https://aicreatorai.com/privacy-'+k+'.html';
 for(const k of codes){
  const d=privacy[k],c=info.company,suffix=k==='ka'?'':'-'+k;

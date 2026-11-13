@@ -1,10 +1,11 @@
 import {loadCatalog} from './catalogs';
 import {useSyncExternalStore} from 'react';
-export const languages=[{code:'en',name:'English',locale:'en-US'},{code:'fr',name:'Français',locale:'fr-FR'},{code:'de',name:'Deutsch',locale:'de-DE'},{code:'es',name:'Español',locale:'es-ES'},{code:'pt',name:'Português',locale:'pt-PT'},{code:'ka',name:'ქართული',locale:'ka-GE'},{code:'ru',name:'Русский',locale:'ru-RU'},{code:'ar',name:'العربية',locale:'ar-EG'},{code:'id',name:'Bahasa Indonesia',locale:'id-ID'},{code:'zh-SG',name:'zh-SG',locale:'zh-SG'}] as const;
+export const languages=[{code:'en',name:'English',locale:'en-US'},{code:'fr',name:'Français',locale:'fr-FR'},{code:'de',name:'Deutsch',locale:'de-DE'},{code:'es',name:'Español',locale:'es-ES'},{code:'pt',name:'Português',locale:'pt-PT'},{code:'ka',name:'ქართული',locale:'ka-GE'},{code:'ru',name:'Русский',locale:'ru-RU'},{code:'ar',name:'العربية',locale:'ar-EG'},{code:'id',name:'Bahasa Indonesia',locale:'id-ID'},{code:'zh-CN',name:'zh-CN',locale:'zh-CN'}] as const;
 export type Language=typeof languages[number]['code'];
 const key='ai-creator-language-v1';
+const normalize=(value:unknown)=>value==='zh-SG'?'zh-CN':value;
 const valid=(value:unknown):value is Language=>languages.some(l=>l.code===value);
-let language:Language='en';try{const stored=localStorage.getItem(key);if(valid(stored))language=stored;}catch{/* Language selection remains usable without storage. */}
+let language:Language='en';try{const stored=normalize(localStorage.getItem(key));if(valid(stored))language=stored;}catch{/* Language selection remains usable without storage. */}
 const listeners=new Set<()=>void>();
 let revision=0,request=0;
 const snapshot=()=>language+':'+revision;
@@ -18,4 +19,4 @@ function subscribe(fn:()=>void){listeners.add(fn);return()=>{listeners.delete(fn
 export function useLanguage(){useSyncExternalStore(subscribe,snapshot,()=> 'en:0');return language;}
 void loadCatalog(language).then(changed).catch(()=>{});
 
-if(typeof window!=='undefined')window.addEventListener('storage',event=>{if(event.key===key&&valid(event.newValue))void setLanguage(event.newValue).catch(()=>{});});
+if(typeof window!=='undefined')window.addEventListener('storage',event=>{const next=normalize(event.newValue);if(event.key===key&&valid(next))void setLanguage(next).catch(()=>{});});

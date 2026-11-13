@@ -1203,7 +1203,7 @@ function Studio({
                     <div className="s-hero-shade" />
                     <div className="s-hero-copy">
                       <span className="s-hero-eyebrow">{tx("STORIES WORTH SHARING")}</span>
-                      <h1>{activeLanguage==='zh-SG'?<>让好故事<br />成为你的<span>新可能</span></>:tx("让好故事成为新可能")}</h1>
+                      <h1>{activeLanguage==='zh-CN'?<>让好故事<br />成为你的<span>新可能</span></>:tx("让好故事成为新可能")}</h1>
                       <p>{tx("精选漫剧 · 创作素材")}<br />{tx("用你的创作，连接更多观众")}</p>
                       <Button kind="light" onClick={() => navigateApp("/?design=third")}>{tx("继续当前任务")}<ArrowRightIcon />
                       </Button>

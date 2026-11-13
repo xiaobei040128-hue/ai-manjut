@@ -10,9 +10,9 @@ export function supportUrl(raw:string, identity:SupportIdentity|undefined, langu
     userId:identity.id,
     userName:identity.id.slice(0,8).toUpperCase(),
     email:identity.email,
-    language:language==='zh-SG'?'zh':language,
+    language:(language==='zh-CN'||language==='zh-SG')?'zh':language,
   }));
   // Georgian is not currently supported by the provider's interface.
-  url.searchParams.set('config',JSON.stringify({language:language==='zh-SG'?'zh':language==='ka'?'en':language}));
+  url.searchParams.set('config',JSON.stringify({language:(language==='zh-CN'||language==='zh-SG')?'zh':language==='ka'?'en':language}));
   return url.toString();
 }
