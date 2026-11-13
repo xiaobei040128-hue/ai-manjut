@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin
+Disallow: /?page=
+Disallow: /?view=
+Sitemap: https://aicreatorai.com/sitemap.xml

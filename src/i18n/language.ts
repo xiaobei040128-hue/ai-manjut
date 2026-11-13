@@ -1,6 +1,6 @@
 import {loadCatalog} from './catalogs';
 import {useSyncExternalStore} from 'react';
-export const languages=[{code:'en',name:'English',locale:'en-US'},{code:'fr',name:'Français',locale:'fr-FR'},{code:'de',name:'Deutsch',locale:'de-DE'},{code:'es',name:'Español',locale:'es-ES'},{code:'pt',name:'Português',locale:'pt-PT'},{code:'ka',name:'ქართული',locale:'ka-GE'},{code:'ru',name:'Русский',locale:'ru-RU'},{code:'ar',name:'العربية',locale:'ar-EG'},{code:'id',name:'Bahasa Indonesia',locale:'id-ID'},{code:'zh-SG',name:'Singapore',locale:'zh-SG'}] as const;
+export const languages=[{code:'en',name:'English',locale:'en-US'},{code:'fr',name:'Français',locale:'fr-FR'},{code:'de',name:'Deutsch',locale:'de-DE'},{code:'es',name:'Español',locale:'es-ES'},{code:'pt',name:'Português',locale:'pt-PT'},{code:'ka',name:'ქართული',locale:'ka-GE'},{code:'ru',name:'Русский',locale:'ru-RU'},{code:'ar',name:'العربية',locale:'ar-EG'},{code:'id',name:'Bahasa Indonesia',locale:'id-ID'},{code:'zh-SG',name:'zh-SG',locale:'zh-SG'}] as const;
 export type Language=typeof languages[number]['code'];
 const key='ai-creator-language-v1';
 const valid=(value:unknown):value is Language=>languages.some(l=>l.code===value);

@@ -1,17 +1,14 @@
 import {translateText as tx,localizeNode as lx} from "../i18n/translate";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
   CheckCircledIcon,
   ChevronDownIcon,
   Cross2Icon,
-  DownloadIcon,
   FileTextIcon,
   LockClosedIcon,
   MagnifyingGlassIcon,
-  ReloadIcon,
 } from "@radix-ui/react-icons";
 import { KeyboardInput } from "../mobile";
-import { api } from "../api";
 import "./help-center.css";
 const questions = [
   {group:"账号",question:"资金密码如何设置或修改？",answer:"在“我的 → 账号与安全 → 资金密码”操作。首次设置需验证登录密码，之后修改需验证原资金密码。资金密码用于确认提现，忘记时可联系支持协助处理。"},
@@ -19,13 +16,7 @@ const questions = [
     group: "账号",
     question: "注册需要哪些资料？",
     answer:
-      "准备邮箱、8–128位密码和有效邀请码即可注册。注册成功可获得1 USD欢迎奖励，每个账号仅发放一次。",
-  },
-  {
-    group: "认证",
-    question: "实名申请提交后，在哪里看审核状态？",
-    answer:
-      "打开钱包的“实名认证”查看状态。提交姓名、证件类型、号码和所需照片后，请留意审核结果；未通过时可按提示重新提交。",
+      "设置用户名，并使用邮箱或手机号、密码和有效邀请码创建账号。",
   },
   {
     group: "认证",
@@ -43,7 +34,7 @@ const questions = [
     group: "资金",
     question: "钱包余额如何变化？",
     answer:
-      "充值到账、活动奖励、任务占用、返还和佣金都会记入钱包。任务揭晓时会预留可用余额，确认购买后生成版权码；提交本单版权码完成任务后，购买金额返还，佣金另行入账。",
+      "充值到账、活动奖励、任务占用、返还和佣金都会记入钱包。任务领取后可查看购买金额，余额不足时会显示待补金额；完成任务后可在钱包查看结算记录。",
   },
   {
     group: "任务",
@@ -67,26 +58,15 @@ const questions = [
     answer:
       "请按页面提示核对登录信息。若账号受限，可联系支持协助处理；受限期间无法登录或办理资金申请，历史记录仍保留。",
   },
+  {group:"资金",question:"如何申请提现？",answer:"如果当前还有未处理的任务，请先完成任务后再申请提现。设置资金密码并添加本人银行卡后，可在钱包提交申请。"},
 ] as const;
-type Diagnostic = {
-  checkedAt: string;
-  online: boolean;
-  service: boolean;
-  storage: boolean;
-  origin: string;
-  browser: string;
-  error?: string;
-};
 export default function HelpCenter({
   onGo,
 }: {
   onGo: (page: "wallet" | "tasks") => void;
 }) {
   const [query, setQuery] = useState(""),
-    [group, setGroup] = useState("全部"),
-    [diagnostic, setDiagnostic] = useState<Diagnostic | null>(null),
-    [busy, setBusy] = useState(false);
-  const request = useRef(false);
+    [group, setGroup] = useState("全部");
   const needle = query.trim().toLowerCase();
   const alias =
     (
@@ -101,60 +81,6 @@ export default function HelpCenter({
       (!needle ||
         (q.question + q.answer + q.group + tx(q.question)+tx(q.answer)+tx(q.group)).toLowerCase().includes(alias)),
   );
-  async function check() {
-    if (request.current) return;
-    request.current = true;
-    setBusy(true);
-    let storage = false,
-      service = false,
-      error = "";
-    try {
-      const key = "drama-diagnostic-" + crypto.randomUUID();
-      localStorage.setItem(key, "ok");
-      storage = localStorage.getItem(key) === "ok";
-      localStorage.removeItem(key);
-    } catch {
-      /* Report unavailable storage without changing saved drafts. */
-    }
-    try {
-      service = (await api<{ ok: boolean }>("/health")).ok;
-    } catch (e) {
-      error = (e as Error).message;
-    }
-    setDiagnostic({
-      checkedAt: new Date().toISOString(),
-      online: navigator.onLine,
-      service,
-      storage,
-      origin: location.origin,
-      browser: navigator.userAgent,
-      ...(error ? { error } : {}),
-    });
-    request.current = false;
-    setBusy(false);
-  }
-  function exportDiagnostic() {
-    if (!diagnostic) return;
-    const lines = [
-      "AI CREATOR · 连接诊断",
-      `检查时间：${new Date(diagnostic.checkedAt).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" })}`,
-      `访问入口：${diagnostic.origin}`,
-      `网络状态：${diagnostic.online ? "在线" : "离线"}`,
-      `平台服务：${diagnostic.service ? "可连接" : "连接失败"}`,
-      `浏览器存储：${diagnostic.storage ? "可用" : "不可用"}`,
-      `浏览器：${diagnostic.browser}`,
-      diagnostic.error || "",
-      "本文件不包含密码、证件、账户余额、邮箱或邀请码。",
-    ].join("\n");
-    const url = URL.createObjectURL(
-      new Blob([lines], { type: "text/plain;charset=utf-8" }),
-    );
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "连接诊断.txt";
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }
   return (
     <div className="h-center">
       <section className="h-intro">
@@ -229,45 +155,6 @@ export default function HelpCenter({
           </button>
         </div>
       </section>
-      <details className="h-diagnostic"><summary>{tx("连接问题排查")}</summary>
-        <div className="h-results-heading">
-          <h3>{tx("连接检查")}</h3>
-          <button disabled={busy} onClick={check}>
-            <ReloadIcon className={busy ? "h-spinning" : ""} />
-            {lx(busy ? "检查中" : "检查连接")}
-          </button>
-        </div>
-        <p>{tx("页面无法更新时，可以检查网络连接。")}</p>
-        {lx(diagnostic && (
-          <>
-            <dl>
-              <dt>{tx("当前入口")}</dt>
-              <dd>{lx(diagnostic.origin)}</dd>
-              <dt>{tx("平台服务")}</dt>
-              <dd className={diagnostic.service ? "ok" : "warning"}>
-                {lx(diagnostic.service ? "连接正常" : "暂时无法连接")}
-              </dd>
-              <dt>{tx("本地存储")}</dt>
-              <dd className={diagnostic.storage ? "ok" : "warning"}>
-                {lx(diagnostic.storage ? "此浏览器可用" : "当前无法使用本地存储")}
-              </dd>
-              <dt>{tx("检查时间")}</dt>
-              <dd>
-                {lx(new Date(diagnostic.checkedAt).toLocaleTimeString("zh-CN", {
-                  timeZone: "Asia/Shanghai",
-                }))}
-              </dd>
-            </dl>
-            {lx(diagnostic.error && (
-              <p role="status" className="h-diagnostic-error">
-                {lx(diagnostic.error)}
-              </p>
-            ))}
-            <button className="h-export" onClick={exportDiagnostic}>
-              <DownloadIcon />{tx("导出本次连接诊断")}</button>
-          </>
-        ))}
-      </details>
       <footer className="h-footer">
         <CheckCircledIcon />{tx("申请进度与资金记录以账户页面显示为准。")}</footer>
     </div>

@@ -19,7 +19,7 @@ export async function serveStatic(req,res,url,base,types){
  const extension=extname(file);let encoding=null,disk=file;
  for(const preferred of acceptedEncoding(req.headers['accept-encoding'])){const candidate=await stat(file+(preferred==='br'?'.br':'.gz')).catch(()=>null);if(candidate?.isFile()){encoding=preferred;disk=file+(preferred==='br'?'.br':'.gz');info=candidate;break;}}
  const tag=`W/"${info.size.toString(16)}-${Math.trunc(info.mtimeMs).toString(16)}-${encoding||'raw'}"`;
- const immutable=/[\\/]assets[\\/].+-[a-zA-Z0-9_-]{8,}\.[a-z0-9]+$/.test(file);
+ const immutable=/[\\/]assets[\\/].+-[a-zA-Z0-9_-]{8,}\.[a-z0-9]+$/.test(file)||/^\/audio\/task-(?:standard|premium|complete)-v[1-9][0-9]*\.wav$/.test(pathname);
  const headers={'Content-Type':types[extension]||'application/octet-stream','X-Content-Type-Options':'nosniff','Cache-Control':immutable?'public, max-age=31536000, immutable':'no-cache','Vary':'Accept-Encoding','ETag':tag};
  if(encoding)headers['Content-Encoding']=encoding;
  if(String(req.headers['if-none-match']||'').split(',').map(x=>x.trim()).some(x=>x===tag||x==='*')){res.writeHead(304,headers);return res.end();}

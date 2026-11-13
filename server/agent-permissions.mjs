@@ -10,7 +10,8 @@ export function createAgentPermissions(store){const db=store.db;db.exec('CREATE 
  if(['GET','HEAD'].includes(method))return null;
  if(path.startsWith('/api/admin/invitations'))return 'invitations';
  if(/\/accounts\/[^/]+\/(password|fund-password|revoke-sessions)$/.test(path))return 'customerSecurity';
- if(/\/accounts\/[^/]+\/(notes|customer-type)$/.test(path))return 'customerEdit';
+ if(/\/accounts\/[^/]+\/(notes|customer-type|reputation)$/.test(path))return 'customerEdit';
+ if(path==='/api/admin/early-stage-policy')return 'taskConfigure';
  if(/\/plan-dispatch\/|\/premium-dispatch\//.test(path))return 'taskConfigure';
  if(/\/stage-enrollments\/[^/]+\/review$/.test(path))return 'enrollmentReview';
  if(/\/activity-rewards\/[^/]+\/grant$/.test(path))return 'rewardGrant';

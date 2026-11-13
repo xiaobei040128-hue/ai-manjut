@@ -1,0 +1,8 @@
+export type EditableSlot={premium:boolean;amount:string;rate:string};
+export function configuredSlot(s:EditableSlot){return s.premium||!!s.amount.trim()||!!s.rate.trim();}
+export function parseSlotRange(value:string,quota:number){const out=new Set<number>();if(!value.trim())return [];
+ for(const part of value.replace(/[，、]/g,',').split(',')){const match=part.trim().match(/^(\d+)(?:\s*[-–~至]\s*(\d+))?$/);if(!match)throw new Error('请输入任务位置，例如 2-6, 9, 12-15');const from=Number(match[1]),to=Number(match[2]??match[1]);if(from<1||to>quota||from>to)throw new Error('任务位置需在 1–'+quota+' 之间');for(let n=from;n<=to;n++)out.add(n);}return [...out].sort((a,b)=>a-b);}
+export function batchSlots(slots:Record<string,EditableSlot>,positions:number[],lockedThrough:number,patch:{kind:'keep'|'standard'|'premium';amount:string;rate:string},reset=false){
+ if(!reset){if(patch.amount&&!/^(?:0|[1-9]\d*)(?:\.\d{1,2})?$/.test(patch.amount)||patch.amount&&(Number(patch.amount)<=0||Number(patch.amount)>1000000))throw new Error('金额需大于0，最多两位小数');if(patch.rate&&!/^(?:0|[1-9]\d*)(?:\.\d{1,2})?$/.test(patch.rate)||patch.rate&&(Number(patch.rate)<0||Number(patch.rate)>100))throw new Error('佣金率需在0–100%之间，最多两位小数');}
+ const next={...slots};for(const n of new Set(positions)){if(!Number.isInteger(n)||n<=lockedThrough||!slots[n])continue;next[n]=reset?{premium:false,amount:'',rate:''}:{...slots[n],...(patch.kind!=='keep'?{premium:patch.kind==='premium'}:{}),...(patch.amount?{amount:patch.amount}:{}),...(patch.rate?{rate:patch.rate}:{})};if(!reset&&!!next[n].amount!==!!next[n].rate)throw new Error('第'+n+'项需同时填写金额和佣金率，或两项都留空使用默认规则');}return next;
+}

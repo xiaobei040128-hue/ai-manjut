@@ -1,3 +1,11 @@
+import {useTaskRecords} from './studio/useTaskRecords';
+import CustomerLedger from './studio/CustomerLedger';
+import Referrals from './studio/Referrals';
+import {coverImage} from "./cover-images";
+import {siteInformation,siteInformationUrl} from './studio/site-information';
+import CompanyFooter from './studio/CompanyFooter';
+import EarlyTaskRecord,{type EarlyTask} from './studio/EarlyTaskRecord';
+import AppScroll from './studio/AppScroll';
 import LanguageSelector from './i18n/LanguageSelector';
 import {useLanguage} from './i18n/language';
 import {translateText as tx,localizeNode as lx} from "./i18n/translate";
@@ -14,13 +22,15 @@ import {BrandMark,BrandLockup,NotificationIcon} from "./Brand";
 import "./visual-refresh.css";
 import {AccountReadiness} from "./studio/AccountOverview";
 import StageWork from "./studio/StageWork";
-import StageHub from "./studio/StageHub";
+import StageHub,{type StageHubSnapshot} from "./studio/StageHub";
 import DesignBoundary from "./studio/DesignBoundary";
 import "./studio/platform-upgrade.css";
 import "./studio/experience-v3.css";
 import "./studio/page-polish.css";
 import "./studio/account-pages.css";
 import "./studio/main-navigation.css";
+import "./studio/native-mobile.css";
+import "./studio/visual-consistency.css";
 import FinancePanel from "./studio/FinancePanel";
 import CreatorAccess, { type CreatorUser } from "./studio/CreatorAccess";
 import {
@@ -65,7 +75,6 @@ import {
   MobileIcon,
 } from "@radix-ui/react-icons";
 import {
-  MobileScroll,
   Carousel,
   KeyboardInput,
   KeyboardTextarea,
@@ -96,7 +105,7 @@ const HelpCenter = lazy(() => import("./studio/HelpCenter"));
 const StoryCatalog = lazy(() => import("./studio/StoryCatalog"));
 function DesignPreview({ children }: { children: ReactNode }) {
   const native =
-    new URLSearchParams(location.search).get("view") === "app" ||
+    import.meta.env.PROD || new URLSearchParams(location.search).get("view") === "app" ||
     window.innerWidth <= 600;
   return (
     <DesignBoundary>
@@ -123,7 +132,6 @@ function DesignPreview({ children }: { children: ReactNode }) {
     </DesignBoundary>
   );
 }
-const customerLedgerNote=(r:{kind:string;note:string})=>r.kind==='admin_credit'?r.note.replace(/^后台上分/,'余额调增'):r.kind==='admin_debit'?r.note.replace(/^后台下分/,'余额调减'):r.kind==='withdraw_hold'?r.note.replace(/^提现申请冻结/,'提现处理中'):r.note;
 type Page =
   | "discover"
   | "help"
@@ -283,7 +291,7 @@ function TaskCard({
         onClick={() => onDetail(t)}
         aria-label={tx("查看" + t.title)}
       >
-        <img src={t.cover} alt={tx(t.title)} />
+        <img src={coverImage(t.cover, "display")} decoding="async" alt={tx(t.title)} />
         {lx((t.badge || !t.active) && <span>{lx(t.active ? t.badge : "已暂停")}</span>)}
       </button>
       <div className="s-task-content">
@@ -326,10 +334,10 @@ function AssignmentCard({
   return (
     <button className="s-owned-card" onClick={() => onOpen(a)}>
       <div className="s-owned-top">
-        <img src={a.task.cover} alt="" />
+        <img src={coverImage(a.task.cover, "thumbnail")} loading="lazy" decoding="async" alt="" />
         <div>
           <h3>{lx(a.task.title)}</h3>
-          {lx(a.task.stage===3?<span className="s-platform">{lx(a.task.premium?'高阶任务 · 全集版权':'作品版权任务')}</span>:<Platform name={a.task.platform} />)}
+          {lx(a.task.stage===3?<span className="s-platform">{lx(a.task.premium?'高阶任务 · 多集版权':'作品版权任务')}</span>:<Platform name={a.task.platform} />)}
           <p>
             {lx(a.task.stage===3?'版权任务':`发布 ${a.task.posts} 条`)} · {lx(date(a.created_at))}
           </p>
@@ -380,7 +388,7 @@ export default function Prototype() {
           const anchor = (event.target as Element).closest<HTMLAnchorElement>('a[href]');
           if (!anchor || anchor.target || anchor.hasAttribute('download')) return;
           const next = new URL(anchor.href, location.href);
-          if (next.origin === location.origin && next.pathname === '/' && next.searchParams.get('view') === 'app') {
+          if (next.origin === location.origin && next.pathname === '/' && (!next.searchParams.has('view') || next.searchParams.get('view') === 'app')) {
             event.preventDefault();
             navigateApp(next.href);
           }
@@ -406,7 +414,7 @@ function AccountContent({
   }, []);
   const query = new URLSearchParams(route);
   const design = query.get("design");
-  if (design && ['newcomer','advanced','third'].includes(design)) return <DesignPreview><StageWork key={design} stage={design==='newcomer'?1:design==='advanced'?2:3}/></DesignPreview>;
+  if (design && ['newcomer','advanced','third'].includes(design)) return <DesignPreview><StageWork key="daily-tasks" stage={3}/></DesignPreview>;
   if (query.get('copyright') === '1' && query.get('assignment')) return <DesignPreview><ThirdCopyright key={user.id+query.get('assignment')} assignmentId={query.get('assignment')!}/></DesignPreview>;
   return (
     <Studio
@@ -427,12 +435,14 @@ function Studio({
 }) {
   const activeLanguage=useLanguage();
   const initialRoute = useRef(readRoute());
+  const initialStageRequest=useRef<Promise<StageHubSnapshot>|null>(null);
+  const takeInitialStageRequest=useCallback(()=>{const pending=initialStageRequest.current;initialStageRequest.current=null;return pending;},[]);
   const externalWalletEntry = useRef(initialRoute.current.page === "wallet");
   const storyFavoriteCount = readStoryFavorites(user.id).length;
   const routeMode = useRef<"push" | "replace" | "pop">("replace");
   const routeDepth = useRef(Number(window.history.state?.studioDepth) || 0);
   const nativeMode =
-    new URLSearchParams(location.search).get("view") === "app" ||
+    import.meta.env.PROD || new URLSearchParams(location.search).get("view") === "app" ||
     window.innerWidth <= 600;
   const [data, setData] = useState<Bootstrap | null>(null),
     [page, setPage] = useState<Page>(initialRoute.current.page),
@@ -451,8 +461,7 @@ function Studio({
     [query, setQuery] = useState(""),
     [sort, setSort] = useState("推荐"),
     [genre, setGenre] = useState("全部题材"),
-    [tab, setTab] = useState("全部"),
-    [ledgerFilter, setLedgerFilter] = useState("全部");
+    [tab, setTab] = useState("全部");
   const [modal, setModal] = useState<string | null>(null),
     [preview, setPreview] = useState<{ src: string; name: string } | null>(
       null,
@@ -480,11 +489,8 @@ function Studio({
     [uploadName, setUploadName] = useState(""),
     [videoPreview, setVideoPreview] = useState<Material | null>(null),
     [archiveTarget, setArchiveTarget] = useState<Material | null>(null),
-    [installPrompt, setInstallPrompt] = useState<InstallPrompt | null>(null),
-    [serviceWorkerReady, setServiceWorkerReady] = useState(false);
-  const [ledgerExpanded,setLedgerExpanded]=useState(false);
-  const [ledgerSearch, setLedgerSearch] = useState(""),
-    [taskSearch, setTaskSearch] = useState("");
+    [installPrompt, setInstallPrompt] = useState<InstallPrompt | null>(null);
+  const [taskSearch, setTaskSearch] = useState("");
   const materialRef = useRef<HTMLInputElement>(null);
   const [loadedTask, setLoadedTask] = useState<Task | null>(null);
   const [routeError, setRouteError] = useState("");
@@ -521,24 +527,28 @@ function Studio({
     if (toastTimer.current) clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(null), 4200);
   }, []);
-  const refresh = useCallback(async () => {
-    try {
-      const next = await api<Bootstrap>("/bootstrap");
-      setData(next);
-      setInitialError("");
-      setConnectionError("");
-      return next;
-    } catch (e) {
-      setConnectionError((e as Error).message);
-      throw e;
-    }
+  const notificationVersion=useRef(0);useEffect(()=>()=>{notificationVersion.current++;},[user.id]);
+  const workspaceRoute=useRef(page);workspaceRoute.current=page;
+  const refreshRequest = useRef<{mode:string;ticket:number;request:Promise<Bootstrap>}|null>(null),refreshVersion=useRef(0);
+  const refresh = useCallback(() => {
+    const mode=["home","hall","wallet","profile","help","discover","saved","notices","tasks"].includes(workspaceRoute.current)?"?view=workspace":"";
+    if(refreshRequest.current?.mode===mode)return refreshRequest.current.request;
+    const ticket=++refreshVersion.current;
+    const request=(async()=>{try{const next=await api<Bootstrap>("/bootstrap"+mode);if(ticket===refreshVersion.current){setData(current=>current&&JSON.stringify(current)===JSON.stringify(next)?current:next);setInitialError("");setConnectionError("");}return next;}catch(e){if(ticket===refreshVersion.current)setConnectionError((e as Error).message);throw e;}finally{if(refreshRequest.current?.ticket===ticket)refreshRequest.current=null;}})();
+    refreshRequest.current={mode,ticket,request};return request;
   }, []);
   useEffect(() => {
+    if(["home","hall"].includes(initialRoute.current.page)){
+      const pending=api<StageHubSnapshot>("/stage-finance?view=task&roundOnly=1");
+      initialStageRequest.current=pending;
+      void pending.catch(()=>{});
+    }
     refresh().catch((e) => setInitialError(e.message));
     return () => {
       if (toastTimer.current) clearTimeout(toastTimer.current);
     };
   }, [refresh]);
+  useEffect(()=>{void refresh().catch(()=>{});},[page,refresh]);
   useEffect(() => {
     const update = () => refresh().catch(() => {});
     window.addEventListener("focus", update);
@@ -563,7 +573,6 @@ function Studio({
       navigator.serviceWorker
         .register("/sw.js",{updateViaCache:"none"})
         .then(registration => {void registration.update();return navigator.serviceWorker.ready;})
-        .then(() => setServiceWorkerReady(true))
         .catch(() => {});
     return () => window.removeEventListener("beforeinstallprompt", onInstall);
   }, []);
@@ -589,7 +598,9 @@ function Studio({
     };
   }, [page, taskId, !!data, !!task]);
   useLayoutEffect(() => {
-    screenRef.current?.scrollTo(0, 0);
+    const scroll=screenRef.current?.querySelector<HTMLElement>(".app-native-scroll .mobile-scroll");
+    if(scroll)scroll.scrollTop=0;
+    else screenRef.current?.scrollTo(0, 0);
   }, [page, screenRef]);
   useEffect(()=>{document.title=tx(page === "home" ? "AI CREATOR · 创作者工作台" : pageTitles[page]+" · AI CREATOR");});
   useEffect(() => {
@@ -599,6 +610,7 @@ function Studio({
       return;
     }
     const url = new URL(location.href);
+    if(url.searchParams.get("view")==="app")url.searchParams.delete("view");
     if (page !== "wallet") {
       url.searchParams.delete("returnDesign");
       url.searchParams.delete("finance");
@@ -680,7 +692,7 @@ function Studio({
     if (page === "wallet") {
       const returnDesign = new URLSearchParams(location.search).get("returnDesign");
       if (returnDesign && ["newcomer", "advanced", "third"].includes(returnDesign)) {
-        navigateApp("/?view=app&design=" + returnDesign);
+        navigateApp("/?design=" + returnDesign);
         return;
       }
       const walletReturn = window.history.state?.walletReturnUrl;
@@ -709,6 +721,7 @@ function Studio({
     go("detail");
   }
   function viewAssignment(a: Assignment, isReviewer = false) {
+    if(a.task.stage===3&&!isReviewer){navigateApp('/?page=assignment&copyright=1&assignment='+encodeURIComponent(a.id));return;}
     setAssignmentId(a.id);
     setTaskId(a.task_id);
     setReviewer(isReviewer);
@@ -1025,46 +1038,19 @@ function Studio({
             ? b.created_at.localeCompare(a.created_at)
             : Number(b.badge === "高佣推荐") - Number(a.badge === "高佣推荐"),
     );
-  const assignedTasks = (data?.assignments || []).filter(
-      (a) =>
-        (tab === "全部" || statusText[a.status] === tab) &&
-        (!taskSearch.trim() ||
-          (a.task.title + " " + a.id)
-            .toLowerCase()
-            .includes(taskSearch.trim().toLowerCase())),
-    ),
-    pendingReviews = (data?.assignments || []).filter(
-      (a) => a.status === "review",
-    );
+  const [earlyTasks,setEarlyTasks]=useState<EarlyTask[]>([]),[earlyError,setEarlyError]=useState('');
+  useEffect(()=>{if(page!=='tasks')return;let live=true;setEarlyError('');void api<EarlyTask[]>('/stage-journey/history').then(rows=>{if(live)setEarlyTasks(rows);}).catch(e=>{if(live)setEarlyError(e.message);});return()=>{live=false;};},[page,data]);
+  const earlyFiltered=earlyTasks.filter(r=>(tab==='全部'||statusText[r.status]===tab)&&(!taskSearch.trim()||(r.title+' '+tx(r.title)+' '+r.artwork+' '+r.id).toLowerCase().includes(taskSearch.trim().toLowerCase())));
+  const recordStatus=Object.entries(statusText).find(([,label])=>label===tab)?.[0]||'all';
+  const taskRecords=useTaskRecords({enabled:page==='tasks',ownerId:user.id,status:recordStatus,query:taskSearch,refreshKey:data});
+  const assignedTasks=taskRecords.items,pendingReviews=(data?.assignments||[]).filter(a=>a.status==='review');
   const notices = data?.notifications || [],
     unread = data?.notificationsUnread??notices.filter((n) => !n.is_read).length,
     footerStyle = {
       bottom: nativeMode ? 14 : Math.max(16, insets.bottomInset),
     };
-  useEffect(()=>setLedgerExpanded(false),[ledgerFilter,ledgerSearch]);
   if(assignment?.task.stage===3&&!reviewer&&['assignment','submit'].includes(page))return <DesignPreview><ThirdCopyright assignmentId={assignment.id}/></DesignPreview>;
   if(task?.stage===3&&page==='detail')return <DesignPreview><StageWork stage={3}/></DesignPreview>;
-  const filteredLedger=(data?.ledger || [])
-                        .filter(
-                          (r) =>
-                            (!ledgerSearch.trim() ||
-                              customerLedgerNote(r)
-                                .toLowerCase()
-                                .includes(ledgerSearch.trim().toLowerCase()) ||
-                              money(r.amount).includes(ledgerSearch.trim())) &&
-                            (ledgerFilter === "全部" ||
-                              (ledgerFilter === "活动奖励" && ["activity_reward","registration_reward","onboarding_reward"].includes(r.kind)) ||
-                              (ledgerFilter === "佣金" &&
-                                r.kind === "reward") ||
-                              (ledgerFilter === "占用" &&
-                                ["hold", "withdraw_hold"].includes(r.kind)) ||
-                              (ledgerFilter === "返还" &&
-                                [
-                                  "release",
-                                  "refund",
-                                  "withdraw_refund",
-                                ].includes(r.kind))),
-                        );
   const pageHeader = (<>
       <header className={"s-header " + (page === "home" ? "brand-header" : "")}>
         {lx(page === "home" ? (
@@ -1120,7 +1106,7 @@ function Studio({
             <MixerHorizontalIcon />
           </button>
         ) : page === "tasks" || page === "wallet" || page === "reviews" ? (
-          <div className="wallet-header-tools">{lx(page==='wallet'?<SupportContact variant="header"/>:<button
+          <div className="wallet-header-tools">{lx(page==='wallet'?<SupportContact variant="header" identity={{id:user.id,name:data?.profile.name||"",email:user.email}}/>:<button
             className={"s-icon-button " + (refreshing ? "spinning" : "")}
             aria-label={tx("刷新数据")}
             onClick={reload}
@@ -1158,9 +1144,9 @@ function Studio({
       }
     >
       {lx(!hasNav && pageHeader)}
-      <MobileScroll
+      <AppScroll
         className={"s-scroll " + (hasNav ? "nav-scroll" : "")}
-        key={page}
+        key={nativeMode ? "native-scroll" : page}
       >
         {lx(hasNav && pageHeader)}
         <main
@@ -1211,15 +1197,15 @@ function Studio({
               ))}
               {lx(page === "home" && (
                 <>
-                  <div className="v3-home-welcome"><span>{tx("你的创作空间")}</span><b>{data.profile.name}{tx("，欢迎回来")}</b></div>
+                  <div className="v3-home-welcome"><span>{tx("你的创作空间")}</span><b>{user.id.slice(0,8).toUpperCase()}{tx("，欢迎回来")}</b></div>
                   <section className="s-hero">
-                    <img src="/art/studio-access-fantasy-20261026.png" alt={tx("月光城堡与漫剧故事世界")} fetchPriority="high" />
+                    <img src="/art/studio-access-fantasy-20261026.webp" alt={tx("月光城堡与漫剧故事世界")} fetchPriority="high" />
                     <div className="s-hero-shade" />
                     <div className="s-hero-copy">
                       <span className="s-hero-eyebrow">{tx("STORIES WORTH SHARING")}</span>
                       <h1>{activeLanguage==='zh-SG'?<>让好故事<br />成为你的<span>新可能</span></>:tx("让好故事成为新可能")}</h1>
                       <p>{tx("精选漫剧 · 创作素材")}<br />{tx("用你的创作，连接更多观众")}</p>
-                      <Button kind="light" onClick={() => go("hall", true)}>{tx("继续当前任务")}<ArrowRightIcon />
+                      <Button kind="light" onClick={() => navigateApp("/?design=third")}>{tx("继续当前任务")}<ArrowRightIcon />
                       </Button>
                     </div>
                     <div className="s-hero-label">
@@ -1256,7 +1242,7 @@ function Studio({
                       </button>
                     </div>
                   </section>
-                  <StageHub compact />
+                  <StageHub compact takeInitialRequest={takeInitialStageRequest} />
                   <div className="s-shortcuts">
                     <button onClick={() => go("saved")}>
                       <span className="peach">
@@ -1280,7 +1266,7 @@ function Studio({
                     </div>
                     <div className="u-discovery-posters" aria-hidden="true">
                       {lx(data.tasks.slice(0, 3).map((t) => (
-                        <img key={t.id} src={t.cover} alt="" />
+                        <img key={t.id} src={coverImage(t.cover, "display")} decoding="async" alt="" />
                       )))}
                     </div>
                     <ChevronRightIcon />
@@ -1323,7 +1309,7 @@ function Studio({
                   </Suspense>
                 </DesignBoundary>
               ))}
-              {lx(page === "hall" && <StageHub />)}
+              {lx(page === "hall" && <StageHub takeInitialRequest={takeInitialStageRequest} />)}
               {lx(page === "saved" && (
                 <>
                   <DesignBoundary><Suspense fallback={<div className="u-inline-loading">{tx("正在读取收藏故事…")}</div>}><StoryCatalog ownerId={user.id} savedOnly/></Suspense></DesignBoundary>
@@ -1486,7 +1472,7 @@ function Studio({
               {lx(page === "detail" && task && (
                 <>
                   <section className="s-detail-art">
-                    <img src={task.cover} alt={tx(task.title)} />
+                    <img src={coverImage(task.cover, "display")} decoding="async" alt={tx(task.title)} />
                     <div />
                     <span className="s-detail-badge">
                       {lx(task.badge || "精选剧集")}
@@ -1648,17 +1634,17 @@ function Studio({
                         {
                           label: "创作中",
                           tab: "进行中",
-                          value: data.counts.active,
+                          value: data.counts.active+earlyTasks.filter(r=>r.status==='active').length,
                         },
                         {
                           label: "审核中",
                           tab: "审核中",
-                          value: data.counts.review,
+                          value: data.counts.review+earlyTasks.filter(r=>r.status==='review').length,
                         },
                         {
                           label: "已完成",
                           tab: "已完成",
-                          value: data.counts.completed,
+                          value: data.counts.completed+earlyTasks.filter(r=>r.status==='completed').length,
                         },
                       ].map((item) => (
                         <button
@@ -1671,7 +1657,7 @@ function Studio({
                       )))}
                     </div>
                   </section>
-                  <div className="v3-record-heading"><h3>{tx("作品记录")}</h3><span>{lx(data.assignments.length)}{tx(" 条记录")}</span></div>
+                  <div className="v3-record-heading"><h3>{tx("任务记录")}</h3><span>{activeLanguage==='en'?`${taskRecords.allTotal+earlyTasks.length} ${taskRecords.allTotal+earlyTasks.length===1?'record':'records'}`:`${taskRecords.allTotal+earlyTasks.length} ${tx("条记录")}`}</span></div>
                   <div className="u-ledger-search u-task-search">
                     <MagnifyingGlassIcon />
                     <KeyboardInput
@@ -1690,10 +1676,7 @@ function Studio({
                       </button>
                     ))}
                   </div>
-                  <Carousel
-                    ariaLabel={tx('任务状态')}
-                    contentClassName="s-status-track"
-                  >
+                  <div className="s-status-track task-status-grid" role="group" aria-label={tx('任务状态')}>
                     {lx(tabs.map((t) => (
                       <button
                         aria-pressed={tab === t}
@@ -1704,14 +1687,14 @@ function Studio({
                         {lx(t)}
                         <span>
                           {lx(t === "全部"
-                            ? data.assignments.length
-                            : data.assignments.filter(
-                                (a) => statusText[a.status] === t,
-                              ).length)}
+                            ? taskRecords.allTotal+earlyTasks.length
+                            : (taskRecords.counts[Object.entries(statusText).find(([,label])=>label===t)?.[0]||'']||0)+earlyTasks.filter(r=>statusText[r.status]===t).length)}
                         </span>
                       </button>
                     )))}
-                  </Carousel>
+                  </div>
+                  {earlyError&&<p role="alert">{tx(earlyError)}</p>}{taskRecords.error&&<div role="alert"><p>{tx(taskRecords.error)}</p><button className="account-show-more" disabled={taskRecords.loading} onClick={taskRecords.retry}>{tx('重新连接')}</button></div>}{taskRecords.loading&&!assignedTasks.length&&<p role="status">{tx('正在加载…')}</p>}
+                  {earlyFiltered.map(r=><EarlyTaskRecord key={r.id} record={r}/>)}
                   {lx(assignedTasks.length ? (
                     assignedTasks.map((a) => (
                       <AssignmentCard
@@ -1720,7 +1703,7 @@ function Studio({
                         key={a.id}
                       />
                     ))
-                  ) : (
+                  ) : earlyFiltered.length||taskRecords.loading||taskRecords.error ? null : (
                     <Empty
                       title={
                         tx(taskSearch
@@ -1745,6 +1728,7 @@ function Studio({
                       </Button>
                     </Empty>
                   ))}
+                  {taskRecords.nextCursor&&<button className="account-show-more" disabled={taskRecords.loading} onClick={taskRecords.more}>{tx(taskRecords.loading?"正在加载…":"加载更多记录")} · {Math.max(0,taskRecords.total-assignedTasks.length)}</button>}
                 </>
               ))}
               {lx(page === "assignment" && assignment && (
@@ -1785,7 +1769,7 @@ function Studio({
                     </div>
                   </div>
                   <div className="s-assignment-title">
-                    <img src={assignment.task.cover} alt="" />
+                    <img src={coverImage(assignment.task.cover, "display")} decoding="async" alt="" />
                     <div>
                       <h2>{lx(assignment.task.title)}</h2>
                       <Platform name={assignment.task.platform} />
@@ -1917,18 +1901,13 @@ function Studio({
                       </Button>
                     </div>
                   ))}
-                  {lx(["active", "revision"].includes(assignment.status) && (
-                    <button
-                      className="s-cancel-link"
-                      onClick={() => open("cancel")}
-                    >{tx("取消任务并返还任务本金")}</button>
-                  ))}
+
                 </>
               ))}
               {lx(page === "submit" && assignment && (
                 <>
                   <div className="s-submit-summary">
-                    <img src={assignment.task.cover} alt="" />
+                    <img src={coverImage(assignment.task.cover, "display")} decoding="async" alt="" />
                     <div>
                       <b>{lx(assignment.task.title)}</b>
                       <p>
@@ -2100,116 +2079,22 @@ function Studio({
               ))}
               {lx(page === "wallet" && (
                 <>
-                  <FinancePanel onChange={refresh} />
-                  <Section
-                    title={tx("交易记录")}
-                    action={
-                      <span className="s-subtle">{lx(data.ledger.length)}{tx(" 笔")}</span>
-                    }
-                  >
-                    <div className="u-ledger-search">
-                      <MagnifyingGlassIcon />
-                      <KeyboardInput
-                        {...onFocus}
-                        value={ledgerSearch}
-                        onChange={(e) => setLedgerSearch(e.target.value)}
-                        placeholder={tx("搜索流水备注或金额")}
-                        aria-label={tx("搜索交易记录")}
-                      />
-                      {lx(ledgerSearch && (
-                        <button
-                          aria-label={tx("清空交易搜索")}
-                          onClick={() => setLedgerSearch("")}
-                        >
-                          <Cross2Icon />
-                        </button>
-                      ))}
-                    </div>
-                    <div className="s-ledger-tabs">
-                      {lx(["全部", "活动奖励", "佣金", "占用", "返还"].map((x) => (
-                        <button
-                          className={ledgerFilter === x ? "active" : ""}
-                          onClick={() => setLedgerFilter(x)}
-                          key={x}
-                        >
-                          {lx(x)}
-                        </button>
-                      )))}
-                    </div>
-                    <div className="s-ledger-list">
-                      {lx(filteredLedger.slice(0,ledgerExpanded?undefined:5).map((r) => (
-                          <div
-                            className="s-ledger-row"
-                            key={r.id}
-                          >
-                            <span className={"s-ledger-icon " + r.kind}>
-                              {lx(["reward", "activity_reward","registration_reward","onboarding_reward"].includes(r.kind) ? (
-                                <StarIcon />
-                              ) : r.kind === "hold" ? (
-                                <LockClosedIcon />
-                              ) : r.kind === "credit" ? (
-                                <PlusIcon />
-                              ) : (
-                                <ArrowTopRightIcon />
-                              ))}
-                            </span>
-                            <span className="s-ledger-copy">
-                              <b>{lx(customerLedgerNote(r))}</b>
-                              <small>{lx(date(r.created_at, true))}</small>
-                            </span>
-                            <span
-                              className={
-                                "s-ledger-amount " +
-                                (r.amount > 0 ? "positive" : "")
-                              }
-                            >
-                              <b>
-                                {lx(r.amount > 0 ? "+" : "")}
-                                {lx(money(r.amount))}
-                              </b>
-                              <small>{tx("余额 ")}{lx(money(r.balance_after))}</small>
-                            </span>
-                          </div>
-                        )))}
-                    </div>
-                    {lx(filteredLedger.length>5&&<button className="account-show-more" aria-expanded={ledgerExpanded} onClick={()=>setLedgerExpanded(v=>!v)}>{lx(ledgerExpanded?'收起记录':'展开更多记录 · '+filteredLedger.length+' 笔')}</button>)}
-                    {lx(filteredLedger.length === 0 && (
-                      <Empty
-                        title={
-                          tx(ledgerSearch ? "没有匹配的交易" : "还没有这类交易")
-                        }
-                        description={
-                          tx(ledgerSearch
-                            ? "试试其他备注或金额，或清空搜索。"
-                            : "奖励发放或资金申请产生变动后，可在这里查看对应流水。")
-                        }
-                      />
-                    ))}
-                  </Section>
+                  <FinancePanel onChange={refresh} supportIdentity={{id:user.id,name:data.profile.name,email:user.email}} />
+                  <CustomerLedger key={user.id} ownerId={user.id} refreshKey={data} />
                 </>
               ))}
               {lx(page === "profile" && (
                 <>
-                  <div className="profile-summary"><div className="profile-art-banner"><img src="/art/profile-creator-films-r15.png" alt="" /></div><section className="s-profile-card">
-                    <h2>{data.profile.name}</h2>
-                    <span className="profile-login-caption">{tx("登录账号 · ")}{user.email}</span>
-                    <ProfileAccountId id={user.id}/>
-                    <button
-                      onClick={() => {
-                        setProfileForm({
-                          name: data.profile.name,
-                          bio: data.profile.bio,
-                          channel: data.profile.channel,
-                        });
-                        open("profile");
-                      }}
-                    >
-                      <Pencil1Icon />{tx("修改昵称")}</button>
+                  <div className="profile-summary"><div className="profile-art-banner"><img src="/art/profile-creator-films-r15.webp" alt="" /></div><section className="s-profile-card">
+                    
+                    <span className="profile-login-caption">{tx('用户名')} · {user.username||'—'}</span>
+                    <ProfileAccountId id={user.id}/><div className="profile-reputation" aria-label={tx('信誉分')+' '+(data?.reputationScore??user.reputation_score??100)}><div className="reputation-heading"><span>{tx('信誉分')}</span></div><strong>{data?.reputationScore??user.reputation_score??100}</strong></div>
+
                   </section>
                   </div>
-                  <SupportContact variant="profile"/>
-                  <LanguageSelector/><AccountSecurity email={user.email}/>
-                  <AccountReadiness onWallet={()=>go("wallet")}/>
+                  <SupportContact variant="profile" identity={{id:user.id,name:data.profile.name,email:user.email}}/>
+                  <Referrals/><LanguageSelector/><AccountSecurity email={user.email}/>
+                  <AccountReadiness onWallet={()=>navigateApp("/?page=wallet&finance=card")}/>
                   <div className="v3-record-heading"><h3>{tx("账号服务")}</h3></div>
                   <div className="s-menu-group">
                     <button onClick={() => go("saved")}>
@@ -2229,10 +2114,11 @@ function Studio({
                   
                     <button onClick={() => go("hall", true)}><StarIcon/><span>{tx("我的成长计划")}</span><ChevronRightIcon/></button>
                   
+                    <button onClick={() => {location.href=siteInformationUrl('faq',activeLanguage);}}><FileTextIcon/><span>{siteInformation(activeLanguage).faq}</span><ChevronRightIcon/></button>
+                    <button onClick={() => {location.href=siteInformationUrl('about',activeLanguage);}}><FileTextIcon/><span>{siteInformation(activeLanguage).about}</span><ChevronRightIcon/></button>
                     <button onClick={() => go("help")}>
                       <FileTextIcon />
                       <span>{tx("帮助与服务")}</span>
-                      <small>{tx("说明与连接检查")}</small>
                       <ChevronRightIcon />
                     </button>
                   
@@ -2240,7 +2126,7 @@ function Studio({
                       <MobileIcon />
                       <span>{tx("添加到主屏幕")}</span>
                       <small>
-                        {lx(serviceWorkerReady ? "界面缓存已就绪" : "全屏应用体验")}
+                        {tx("全屏应用体验")}
                       </small>
                       <ChevronRightIcon />
                     </button>
@@ -2257,16 +2143,13 @@ function Studio({
                       <ChevronRightIcon />
                     </button>
                   </div>
-                  <div className="s-profile-footer">
-                    <b>{tx("STORIES. CREATE. CONNECT.")}</b>
-                    <span>{tx("AI CREATOR · 创作者平台")}</span>
-                  </div>
+
                 </>
               ))}
               {lx(page === "notices" && <Notifications onCountChange={count=>setData(old=>old?{...old,notificationsUnread:count}:old)} onOpen={n=>{
                 if(n.category==='finance'){go('wallet');return;}
-                if(n.category==='stage'){location.assign(n.record_id?.startsWith('newcomer-cover:')?'/?view=app&design=newcomer':'/?view=app&design=third');return;}
-                if(n.assignment_id){const a=data.assignments.find(a=>a.id===n.assignment_id);if(a){viewAssignment(a);return;}}
+                if(n.category==='stage'){navigateApp(n.record_id?.startsWith('newcomer-cover:')?'/?design=newcomer':'/?design=third');return;}
+                if(n.assignment_id){const a=data.assignments.find(a=>a.id===n.assignment_id);if(a){viewAssignment(a);return;}const ticket=++notificationVersion.current;void api<Assignment>('/assignments/'+encodeURIComponent(n.assignment_id)).then(record=>{if(ticket===notificationVersion.current)viewAssignment(record);}).catch(e=>{if(ticket===notificationVersion.current)say(e.message,true);});return;}
                 if(n.task_id){setTaskId(n.task_id);go('detail');return;}
                 open('guide');
               }}/>)}
@@ -2293,7 +2176,7 @@ function Studio({
                         key={a.id}
                         onClick={() => viewAssignment(a, true)}
                       >
-                        <img src={a.task.cover} alt="" />
+                        <img src={coverImage(a.task.cover, "thumbnail")} loading="lazy" decoding="async" alt="" />
                         <div>
                           <h3>{lx(a.task.title)}</h3>
                           <p>{tx("第")}{lx(a.submissions[0]?.version)}{tx(" 次提交 ·")}{lx(" ")}
@@ -2330,7 +2213,7 @@ function Studio({
                   </div>
                   {lx(managed.map((t) => (
                     <article className="s-manage-card" key={t.id}>
-                      <img src={t.cover} alt="" />
+                      <img src={coverImage(t.cover, "display")} decoding="async" alt="" />
                       <div>
                         <h3>{lx(t.title)}</h3>
                         <p>
@@ -2378,7 +2261,7 @@ function Studio({
               {lx(page === "assets" && task && (
                 <>
                   <div className="s-assets-hero">
-                    <img src={task.cover} alt="" />
+                    <img src={coverImage(task.cover, "display")} decoding="async" alt="" />
                     <div>
                       <h2>{lx(task.title)}</h2>
                       <p>{tx("让每一份素材，成为好创作的起点。")}</p>
@@ -2509,7 +2392,7 @@ function Studio({
                   </div>
                   <Section title={tx("剧集封面")}>
                     <div className="s-cover-picker">
-                      <img src={form.cover} alt={tx("任务封面预览")} />
+                      <img src={coverImage(form.cover, "display")} decoding="async" alt={tx("任务封面预览")} />
                       <div>
                         <Button
                           kind="secondary"
@@ -2537,7 +2420,7 @@ function Studio({
                             setForm((f) => ({ ...f, cover: t.cover }))
                           }
                         >
-                          <img src={t.cover} alt={tx("使用" + t.title + "封面")} />
+                          <img src={coverImage(t.cover, "display")} decoding="async" alt={tx("使用" + t.title + "封面")} />
                         </button>
                       )))}
                     </Carousel>
@@ -2605,8 +2488,8 @@ function Studio({
                       {lx([
                         ["episodes", "剧集集数"],
                         ["posts", "需发布视频数"],
-                        ["deposit", "预付额度（USD）"],
-                        ["commission", "任务佣金（USD）"],
+                        ["deposit", "预付额度"],
+                        ["commission", "任务佣金"],
                       ].map(([key, label]) => (
                         <label className="s-field" key={key}>
                           <span>{lx(label)}</span>
@@ -2646,8 +2529,9 @@ function Studio({
               ))}
             </>
           ))}
+          {data&&<CompanyFooter/>}
         </main>
-      </MobileScroll>
+      </AppScroll>
       {lx(data && hasNav && !keyboard.visible && (
         <nav className="s-bottom-nav" aria-label={tx("主导航")}>
           {lx(navItems.map(({ page: p, label, Icon }) => (
@@ -2730,7 +2614,6 @@ function Studio({
             rules: "费用与结算说明",
             approve: "确认审核通过",
             changes: "发送修改意见",
-            cancel: "取消任务",
             install: "添加到主屏幕",
             video: videoPreview?.name || "视频预览",
             "archive-material": "归档素材",
@@ -2760,7 +2643,7 @@ function Studio({
           {lx(modal === "profile" && (
             <>
               <div className="profile-edit-account"><span>{tx("登录账号","field")}</span><b>{user.email}</b></div>
-              <ProfileAccountId id={user.id}/>
+              <ProfileAccountId id={user.id}/><div className="profile-reputation" aria-label={tx('信誉分')+' '+(data?.reputationScore??user.reputation_score??100)}><div className="reputation-heading"><span>{tx('信誉分')}</span></div><strong>{data?.reputationScore??user.reputation_score??100}</strong></div>
               <label className="s-field">
                 <span>{tx("昵称")}</span>
                 <KeyboardInput
@@ -2822,7 +2705,7 @@ function Studio({
           {lx(modal === "rules" && (
             <div className="s-prose">
               <h3>{tx("每一笔变化，都有记录")}</h3>
-              <p>{tx("钱包按 USD 记账，充值经核实到账后入账。提现需完成实名认证、保存本人收款方式并验证资金密码，处理进度可在提款记录查看。")}</p>
+              <p>{tx("如果当前还有未处理的任务，请先完成任务后再申请提现。设置资金密码并添加本人银行卡后，可在钱包提交申请。")}</p>
               <h4>{tx("任务记录")}</h4>
               <p>{tx("以当前作品展示的金额、完成佣金和任务要求为准。接受后可在任务记录中查看。")}</p>
               <h4>{tx("版权码提交")}</h4>
@@ -2947,33 +2830,7 @@ function Studio({
               </div>
             </>
           ))}
-          {lx(modal === "cancel" && assignment && (
-            <>
-              <div className="s-approval-summary">
-                <ExclamationTriangleIcon />
-                <h3>{tx("确认取消这项任务？")}</h3>
-                <p>
-                  {lx(money(assignment.task.deposit))}{lx(" ")}{tx("任务本金会返还可用余额。已有提交记录与任务时间线会保留。")}</p>
-              </div>
-              <Button
-                disabled={busy}
-                kind="danger"
-                onClick={async () => {
-                  const r = await perform(
-                    () =>
-                      api(
-                        "/assignments/" + assignment.id + "/cancel",
-                        "POST",
-                        {},
-                      ),
-                    "任务已取消，任务本金已返还",
-                  );
-                  if (r) setModal(null);
-                }}
-              >{tx("确认取消任务")}</Button>
-              <Button kind="secondary" onClick={() => setModal(null)}>{tx("继续创作")}</Button>
-            </>
-          ))}
+
         </div>
       </BottomSheet>
     </div>

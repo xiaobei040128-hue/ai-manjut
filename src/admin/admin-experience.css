@@ -75,3 +75,84 @@
 
 .plan-balance{border:1px solid #e7e2ec;border-radius:12px;padding:18px;margin:18px 0}.plan-balance legend{font-weight:600;font-size:14px;padding:0 6px}.plan-balance-toggle{display:flex;align-items:center;gap:9px;font-size:13px}.plan-balance-toggle input{width:16px;height:16px}.plan-balance>div{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}.plan-balance>div label{font-size:12px;display:grid;gap:7px}.plan-balance>div input{width:100%;box-sizing:border-box;padding:10px;border:1px solid #dfd7e7;border-radius:8px}.plan-balance p{font-size:12px;line-height:1.7;color:#776b81;margin-bottom:0}
 .customer-workspace .plan-dispatch .plan-balance-toggle{display:flex;flex-direction:row;justify-content:flex-start;align-items:center;gap:9px;font-size:12px;color:#65516f}.customer-workspace .plan-balance-toggle input{flex:none;margin:0;width:16px;height:16px;accent-color:#7c56a0}@media(max-width:430px){.plan-balance>div{grid-template-columns:minmax(0,1fr)}}
+
+/* Compact operator pages: keep controls visible without adding navigation. */
+.ad-app .ad-topbar{height:64px}
+.ad-app .ad-main{padding-top:18px}
+.ad-app .ad-page-heading{margin-bottom:16px}
+.ad-app .ad-page-heading h1{font-size:25px;margin:4px 0 6px}
+.ad-app .ad-page-heading p{line-height:1.6}
+.ad-app .ad-review-alerts{margin-top:12px;padding:8px 14px;gap:10px}
+.ad-app .ad-review-alert-copy small{font-size:10px}
+.ad-app .ad-panel{border-radius:15px}
+.ad-app .ad-panel-heading,.ad-app .ad-toolbar{padding:14px 18px;gap:10px}
+.ad-app .ad-toolbar h2,.ad-app .ad-panel-heading h2{font-size:16px}
+.ad-app .ad-button{min-height:36px;padding:8px 14px;border-radius:9px}
+.ad-app .ad-button.small{min-height:32px;padding:6px 10px;font-size:11px}
+.ad-app .ad-toolbar :is(input,select){min-height:36px;padding:8px 11px;border-radius:9px}
+.ad-app th{padding:10px 14px;color:#887193}
+.ad-app td{padding:11px 14px;line-height:1.6}
+.ad-app td>small,.ad-app .ad-table-person small{color:#8e789a}
+.ad-app .ad-badge{padding:3px 8px}
+.ad-app .ad-pagination{padding:10px 16px}
+.ad-app .ad-empty{padding:30px 20px}
+.ad-app .customer-list-summary{gap:10px;margin-bottom:14px}
+.ad-app .customer-list-summary>div{padding:13px 16px;border-radius:13px}
+.ad-app .customer-list-summary span{margin-bottom:6px;color:#7d688b}
+.ad-app .customer-list-summary strong{font-size:23px}
+.ad-app .my-customers .customer-filter-unified{gap:10px 14px;padding:14px 18px}
+.ad-app .customer-filter-unified label{gap:5px;color:#80678f}
+.ad-app .customer-filter-unified :is(select,input){height:36px;min-height:36px;padding:7px 10px;border-radius:8px}
+.ad-app .my-customers .ad-panel-heading p{margin-top:4px}
+.ad-app .overview-header{margin-bottom:16px;gap:12px}
+.ad-app .overview-header h2{font-size:20px;margin-bottom:5px}
+.ad-app .overview-types{gap:12px;margin-bottom:16px}
+.ad-app .overview-types button{padding:15px 18px;gap:6px;border-radius:14px}
+.ad-app .overview-types strong{font-size:27px}
+.ad-app .overview-metrics{gap:12px}
+.ad-app .overview-metrics section{padding:16px 18px;gap:9px;border-radius:14px}
+.ad-app .overview-metrics strong{font-size:25px}
+.ad-app .overview-metrics :is(span,small){color:#806b8e}
+.ad-app .customer-back{margin-bottom:12px}
+.ad-app .customer-hero{padding:18px 20px;margin-bottom:14px;border-radius:16px}
+.ad-app .customer-avatar{width:46px;height:48px;border-radius:13px;font-size:22px}
+.ad-app .customer-hero h2{font-size:21px;margin:3px 0}
+.ad-app .customer-meta{margin:12px 0;gap:7px 16px}
+.ad-app .customer-hero-money{padding:13px 0;gap:14px}
+.ad-app .customer-hero-money span{margin-bottom:5px}
+.ad-app .customer-hero-money strong{font-size:23px}
+.ad-app .customer-progress{padding:11px 0;gap:7px 14px}
+.ad-app .customer-tabs{gap:6px;margin-bottom:15px}
+.ad-app .customer-tabs button{min-height:36px;padding:8px 12px;border-radius:9px}
+.ad-app .dispatch-defaults .ad-commission-body{padding:18px}
+.ad-app .dispatch-defaults .ad-edit-form{gap:16px}
+.ad-app .dispatch-defaults fieldset{padding:16px;border-radius:12px}
+.ad-app .dispatch-defaults legend{font-size:14px}
+.ad-app .dispatch-defaults .ad-form-grid{gap:12px 18px}
+.ad-app .dispatch-defaults .ad-edit-form input{height:38px;min-height:38px;padding:8px 11px}
+.ad-app .dispatch-defaults fieldset p{margin-top:10px;font-size:12px}
+@media(max-width:800px){
+ .ad-app .ad-main{padding:16px 16px 0}
+ .ad-app .ad-page-heading h1{font-size:23px}
+ .ad-app .ad-toolbar,.ad-app .ad-panel-heading{padding:13px 15px}
+ .ad-app .ad-review-alerts{margin-inline:16px;flex-wrap:wrap}
+ .ad-app .ad-review-alert-actions{width:auto;padding-left:0}
+ .ad-app .customer-hero{padding:16px}
+}
+@media(max-width:500px){
+ .ad-app .customer-list-summary>div{padding:12px}
+ .ad-app .customer-list-summary strong{font-size:21px}
+ .ad-app .my-customers .customer-filter-unified{padding:13px 15px;gap:10px}
+ .ad-app .overview-metrics{gap:10px}
+ .ad-app .overview-metrics section{padding:13px;gap:8px}
+ .ad-app .overview-metrics strong{font-size:22px}
+ .ad-app .customer-hero-money{grid-template-columns:1fr;gap:10px}
+ .ad-app .ad-review-alert-actions>button{min-height:36px}
+}
+
+.ad-app .ad-finance-overview{grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.ad-app .ad-finance-overview>button{padding:14px;border-radius:13px;min-width:0}
+.ad-app .ad-finance-overview>button>strong{font-size:26px;margin:7px 0 5px}
+.ad-app .ad-finance-overview>button>:is(span,small){color:#806b8f;overflow-wrap:anywhere}
+@media(max-width:1100px){.ad-app .ad-finance-overview{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){.ad-app .ad-finance-overview{grid-template-columns:repeat(2,minmax(0,1fr))}.ad-app .ad-finance-overview>button{padding:12px}}

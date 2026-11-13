@@ -2926,3 +2926,21 @@ body:has(.native-mode) .bottom-sheet:has(.s-finance-sheet){min-height:0;top:auto
 :where(.bottom-sheet) :where(button){font:inherit;color:inherit;border:0;background:transparent;cursor:pointer}
 :where(.bottom-sheet) :where(button):focus-visible{outline:2px solid #a38bb3;outline-offset:3px}
 :where(.bottom-sheet) :where(button):disabled{cursor:default}
+
+.profile-reputation{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 15px;margin-top:14px;border:1px solid #e5dbea;border-radius:12px;background:linear-gradient(120deg,#f6f0fa,#fff);color:#725684;font-size:13px}.profile-reputation strong{font-size:23px;font-weight:500;font-variant-numeric:tabular-nums}.profile-reputation small{font-size:11px;margin-inline-start:5px;color:#a08cab}.customer-reputation{color:#725684;font-size:13px}.customer-reputation strong{font-size:20px}
+
+/* Reputation belongs below account identity rather than an auto-placed grid cell. */
+.studio.experience-v3 .s-profile-card>.profile-reputation{grid-column:1/-1;grid-row:4;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:16px;row-gap:14px;margin:18px 0 0;padding:16px 0 0;border:0;border-top:1px solid #eee7f2;border-radius:0;background:none;color:#80638e;text-align:start}.studio.experience-v3 .profile-reputation .reputation-heading{display:flex;align-items:center;gap:10px;font-size:12px;font-weight:500}.reputation-icon{display:grid;place-items:center;width:33px;height:35px;border-radius:10px;background:#f2ebf7;color:#a082b2;flex:none}.reputation-icon svg{width:21px;height:21px}.studio.experience-v3 .profile-reputation>strong{font-size:27px;font-weight:450;line-height:1;letter-spacing:-.6px;color:#80628e;font-variant-numeric:tabular-nums}.studio.experience-v3 .profile-reputation>strong small{font-size:10px;font-weight:400;letter-spacing:0;margin-inline-start:6px;color:#b6a5bf}.reputation-track{grid-column:1/-1;width:100%;height:3px;border-radius:3px;background:#f0e9f4;overflow:hidden}.reputation-track>i{display:block;height:100%;background:linear-gradient(90deg,#c4add2,#a181b6);border-radius:inherit}
+
+.studio.experience-v3 .s-profile-card>.profile-login-caption{font-size:12px;line-height:1.6;color:#94809f;letter-spacing:0}.studio.experience-v3 .s-profile-card>.profile-account-id{font-size:11px;line-height:1.6}.studio.experience-v3 .s-profile-card>.profile-reputation{margin-top:14px}.profile-account-id>code{color:#8f789e}
+
+.studio.experience-v3 .s-profile-card>.profile-reputation{padding-top:14px;margin-top:12px;row-gap:0}.studio.experience-v3 .profile-reputation>strong{font-size:25px;font-weight:500;letter-spacing:-.5px;color:#866694}.studio.experience-v3 .profile-reputation .reputation-heading{font-weight:400;color:#9982a6}.reputation-icon{width:30px;height:32px;background:#f7f2fa;border-radius:9px;color:#ad94ba}
+
+/* Keep reputation beside account identity as a compact, quiet status. */
+.studio.experience-v3.page-profile .s-profile-card{grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;gap:8px 18px;align-items:center;padding-top:21px;padding-bottom:21px}
+.studio.experience-v3.page-profile .s-profile-card>.profile-login-caption{grid-column:1;grid-row:1;margin:0;font-size:12px;line-height:1.6}
+.studio.experience-v3.page-profile .s-profile-card>.profile-account-id{grid-column:1;grid-row:2;margin:0;gap:7px;font-size:11px}
+.studio.experience-v3.page-profile .s-profile-card>.profile-reputation{grid-column:2;grid-row:1/3;display:flex;flex-direction:column;justify-content:center;gap:5px;align-self:stretch;min-width:66px;margin:0;padding:2px 0 2px 18px;border:0;border-inline-start:1px solid #eee7f2;background:none;border-radius:0;text-align:center}
+.studio.experience-v3.page-profile .profile-reputation .reputation-heading{font-size:10px;line-height:1.4;font-weight:400;color:#9b8ba6;justify-content:center;max-width:95px}
+.studio.experience-v3.page-profile .profile-reputation>strong{font-size:24px;line-height:1;font-weight:500;letter-spacing:-.4px;color:#80618f}
+@media(max-width:360px){.studio.experience-v3.page-profile .s-profile-card{gap:8px 10px;padding-inline:17px}.studio.experience-v3.page-profile .s-profile-card>.profile-reputation{min-width:55px;padding-inline-start:10px}.studio.experience-v3.page-profile .s-profile-card>.profile-account-id{gap:5px;flex-wrap:wrap}}

@@ -22,7 +22,7 @@ export function playWelcomeChime(delaySeconds: number): () => void {
     const at = start + i * .075;
     oscillator.type = 'sine'; oscillator.frequency.value = frequency;
     gain.gain.setValueAtTime(0, at);
-    gain.gain.linearRampToValueAtTime(.025, at + .012);
+    gain.gain.linearRampToValueAtTime(.06, at + .012);
     gain.gain.exponentialRampToValueAtTime(.0001, at + .65);
     oscillator.connect(gain); gain.connect(audio.destination);
     oscillator.start(at); oscillator.stop(at + .7);
@@ -30,4 +30,14 @@ export function playWelcomeChime(delaySeconds: number): () => void {
     nodes.push(oscillator); gains.push(gain);
   });
   return cancel;
+}
+
+export function playTaskCue(kind:'standard'|'premium'|'complete'):()=>void{
+ const audio=context;if(document.hidden||!audio||audio.state!=='running')return()=>{};
+ const nodes:OscillatorNode[]=[],gains:GainNode[]=[];
+ const stop=()=>{audio.removeEventListener('statechange',changed);nodes.forEach(n=>{try{n.stop();}catch{}n.disconnect();});gains.forEach(g=>g.disconnect());};
+ const changed=()=>{if(audio.state!=='running')stop();};audio.addEventListener('statechange',changed);
+ const notes=kind==='complete'?[659.25,830.61,987.77]:kind==='premium'?[440,659.25,880]:[587.33,880];
+ notes.forEach((frequency,index)=>{const at=audio.currentTime+.03+index*(kind==='complete'?.095:.13),oscillator=audio.createOscillator(),gain=audio.createGain();oscillator.type='sine';oscillator.frequency.value=frequency;gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(.055,at+.014);gain.gain.exponentialRampToValueAtTime(.0001,at+.62);oscillator.connect(gain);gain.connect(audio.destination);oscillator.start(at);oscillator.stop(at+.7);nodes.push(oscillator);gains.push(gain);oscillator.onended=()=>{oscillator.disconnect();gain.disconnect();if(index===notes.length-1)audio.removeEventListener('statechange',changed);};});
+ return stop;
 }

@@ -10,7 +10,7 @@ export function createFundPassword(store){
  function fail(id){db.prepare('INSERT INTO fund_password_attempts(user_id,failures) VALUES(?,1) ON CONFLICT(user_id) DO UPDATE SET failures=failures+1').run(id);db.prepare('UPDATE fund_password_attempts SET locked_until=? WHERE user_id=? AND failures>=5').run(Date.now()+900000,id);throw new AppError('资金密码或验证密码不正确',400);}
  function matches(value,row){return typeof value==='string'&&value.length<=128&&timingSafeEqual(scryptSync(value,row.salt,64),Buffer.from(row.password_hash,'hex'));}
  function verify(id,password){active(id);checkLock(id);const row=db.prepare('SELECT * FROM fund_passwords WHERE user_id=?').get(id);if(!row)throw new AppError('请先设置资金密码',409);if(!matches(password,row))fail(id);db.prepare('DELETE FROM fund_password_attempts WHERE user_id=?').run(id);return true;}
- function save(id,input){const account=active(id);checkLock(id);const old=db.prepare('SELECT * FROM fund_passwords WHERE user_id=?').get(id);const value=input.newPassword;if(typeof value!=='string'||value.length<8||value.length>128)throw new AppError('资金密码需为8–128位字符');if(value!==input.confirmPassword)throw new AppError('两次输入的资金密码不一致');if(matches(value,account))throw new AppError('资金密码不能与登录密码相同');if(old){verify(id,input.currentPassword);}else if(!matches(input.loginPassword,account))fail(id);
+ function save(id,input){const account=active(id);checkLock(id);const old=db.prepare('SELECT * FROM fund_passwords WHERE user_id=?').get(id);const value=input.newPassword;if(typeof value!=='string'||!/^\d{6}$/.test(value))throw new AppError('资金密码需为6位数字');if(value!==input.confirmPassword)throw new AppError('两次输入的资金密码不一致');if(matches(value,account))throw new AppError('资金密码不能与登录密码相同');if(old){verify(id,input.currentPassword);}else if(!matches(input.loginPassword,account))fail(id);
  const salt=randomBytes(16).toString('hex'),hash=scryptSync(value,salt,64).toString('hex');
  return store.audited(id,old?'fund_password.change':'fund_password.setup',id,()=>{db.prepare('INSERT INTO fund_passwords VALUES(?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET password_hash=excluded.password_hash,salt=excluded.salt,updated_at=excluded.updated_at').run(id,hash,salt,new Date().toISOString());db.prepare('DELETE FROM fund_password_attempts WHERE user_id=?').run(id);return {ok:true,configured:true};});
  }
@@ -18,7 +18,7 @@ export function createFundPassword(store){
  function reset(operator,id,input,scope){
   adminState(operator,id,scope);if(input.confirmed!==true)throw new AppError('请确认重设客户资金密码');
   const value=input.newPassword,account=db.prepare('SELECT * FROM creator_accounts WHERE id=?').get(id);
-  if(typeof value!=='string'||value.length<8||value.length>128)throw new AppError('资金密码需为8–128位字符');
+  if(typeof value!=='string'||!/^\d{6}$/.test(value))throw new AppError('资金密码需为6位数字');
   if(value!==input.confirmPassword)throw new AppError('两次输入的资金密码不一致');
   if(matches(value,account))throw new AppError('资金密码不能与登录密码相同');
   const salt=randomBytes(16).toString('hex'),hash=scryptSync(value,salt,64).toString('hex');

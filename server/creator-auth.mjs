@@ -1,3 +1,5 @@
+import {generateInviteCode,migrateInviteCodes} from './invite-codes.mjs';
+import {initializeReferrals,personalInviter,bindNewReferral,personalInvite} from './referrals.mjs';
 import {createAttemptLimit,attemptAddress} from './attempt-limit.mjs';
 import {
   randomBytes,
@@ -42,8 +44,11 @@ export function createCreatorAuth(store, port) {
       db.exec(
         `ALTER TABLE creator_accounts ADD COLUMN ${column} TEXT NOT NULL DEFAULT ''`,
       );
+  if (!customerColumns.has('reputation_score')) db.exec('ALTER TABLE creator_accounts ADD COLUMN reputation_score INTEGER NOT NULL DEFAULT 100 CHECK(reputation_score BETWEEN 0 AND 100)');
   if (!customerColumns.has('customer_type'))
     db.exec("ALTER TABLE creator_accounts ADD COLUMN customer_type TEXT NOT NULL DEFAULT 'real' CHECK(customer_type IN ('real','test'))");
+  if (!customerColumns.has('username')) db.exec('ALTER TABLE creator_accounts ADD COLUMN username TEXT');
+  db.exec('CREATE UNIQUE INDEX IF NOT EXISTS creator_username_unique ON creator_accounts(username COLLATE NOCASE) WHERE username IS NOT NULL');
   // Replace only the exact historical generated default; preserve custom names.
   db.prepare("UPDATE creator_profiles SET name='User '||upper(substr(user_id,1,4)) WHERE name='创作者 '||substr(user_id,1,4)").run();
   function recordAccess(req, id, registration = false) {
@@ -78,13 +83,19 @@ export function createCreatorAuth(store, port) {
       .map((v) => v.trim())
       .find((v) => v.startsWith(name + "="))
       ?.slice(name.length + 1) || "";
+  initializeReferrals(db);
+  migrateInviteCodes(db);
   const safe = (row) =>
     row
       ? {
           id: row.id,
           email: row.email,
+          username: row.username || null,
+          reputation_score: row.reputation_score ?? 100,
           created_at: row.created_at,
           emailVerified: false,
+          phone: row.email.startsWith('+')?row.email:null,
+          phoneVerified: false,
           country: row.country || "",
           frozen: !!row.frozen,
           freeze_reason: row.freeze_reason || "",
@@ -102,15 +113,21 @@ export function createCreatorAuth(store, port) {
     );
   }
   function limited(req) { attempts.hit(attemptAddress(req)); }
-  function credentials(input) {
-    const email =
-        typeof input.email === "string" ? input.email.trim().toLowerCase() : "",
-      password = typeof input.password === "string" ? input.password : "";
-    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      throw new AppError("请输入有效的邮箱地址");
+  function loginContact(value) {
+    if(value.includes('@'))return value.toLowerCase();
+    const phone=value.replace(/[\s().-]/g,'');
+    return /^\+[1-9]\d{6,14}$/.test(phone)?phone:value;
+  }
+  function credentials(input, login = false) {
+    const raw=typeof input.account==='string'?input.account:typeof input.email==='string'?input.email:'';
+    const value=raw.trim(),password=typeof input.password==='string'?input.password:'';
+    let email;
+    if(login){if(!value||value.length>254)throw new AppError('账号或密码不正确',401);email=loginContact(value);}
+    else if(value.includes('@')){email=value.toLowerCase();if(email.length>254||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new AppError('请输入有效的邮箱地址');}
+    else{email=value.replace(/[\s().-]/g,'');if(!/^\+[1-9]\d{6,14}$/.test(email))throw new AppError('请输入包含国际区号的有效手机号');}
     if (password.length < 8 || password.length > 128)
       throw new AppError("密码需为 8–128 位字符");
-    return { email, password };
+    return { email, password, value };
   }
   function session(userId) {
     const value = randomBytes(32).toString("hex"),
@@ -140,19 +157,21 @@ export function createCreatorAuth(store, port) {
     },
     async register(req, input) {
       limited(req);
+      const username=typeof input.username==='string'?input.username.trim():null;
+      if(username!==null&&(!username||username.length>254||/[\p{Cc}]/u.test(username)))throw new AppError('请输入有效的用户名');
       const { email, password } = credentials(input),
         code =
           typeof input.inviteCode === "string"
             ? input.inviteCode.trim().toUpperCase()
             : "";
-      if (!/^[A-Z0-9-]{8,40}$/.test(code))
+      if (!/^(?:[A-Z0-9]{6}|[A-Z0-9-]{8,40})$/.test(code))
         throw new AppError("请输入有效的邀请码");
       const salt = randomBytes(16).toString("hex"),
         hash = (await derive(password, salt, 64)).toString("hex");
       return store.audited("creator", "creator.register", "", () => {
-        const invite = db
-          .prepare("SELECT * FROM invitations WHERE code_hash=?")
-          .get(digest(code));
+        const inviter=personalInviter(db,code);
+        if(inviter?.frozen)throw new AppError('邀请人账号已停用',400);
+        const invite = inviter?db.prepare('SELECT * FROM invitations WHERE id=?').get(inviter.invite_id):db.prepare("SELECT * FROM invitations WHERE code_hash=? OR id=(SELECT target_id FROM invite_code_aliases WHERE code IN (?,?) AND kind='admin')").get(digest(code),code,'hash:'+digest(code));
         if (!invite || !invite.active)
           throw new AppError("邀请码无效、已过期或已用完", 400);
         if (
@@ -168,16 +187,25 @@ export function createCreatorAuth(store, port) {
         if (
           db.prepare("SELECT id FROM creator_accounts WHERE email=?").get(email)
         )
-          throw new AppError("该邮箱已注册，请直接登录", 409);
+          throw new AppError("该账号已注册，请直接登录", 409);
+        const usernameTaken=db.prepare('SELECT id FROM creator_accounts WHERE username=? COLLATE NOCASE');
+        const contactTaken=db.prepare('SELECT id FROM creator_accounts WHERE email=?');
+        if(usernameTaken.get(email)||db.prepare("SELECT username FROM creator_accounts WHERE username LIKE '%+%' OR username LIKE '%@%'").all().some(row=>loginContact(row.username)===email))
+          throw new AppError('\u8be5\u8d26\u53f7\u5df2\u6ce8\u518c\uff0c\u8bf7\u76f4\u63a5\u767b\u5f55',409);
+        if(username&&(usernameTaken.get(username)||contactTaken.get(loginContact(username))))
+          throw new AppError('\u7528\u6237\u540d\u5df2\u88ab\u4f7f\u7528',409);
         const id = randomUUID(),
           created = new Date().toISOString();
         db.prepare(
           "INSERT INTO creator_accounts(id,email,password_hash,salt,created_at,invite_id) VALUES(?,?,?,?,?,?)",
         ).run(id, email, hash, salt, created, invite.id);
+        if(username)db.prepare('UPDATE creator_accounts SET username=? WHERE id=?').run(username,id);
+        if(inviter)bindNewReferral(db,id,inviter.id);
+        personalInvite(db,id);
         const country = recordAccess(req, id, true);
         db.prepare("INSERT INTO creator_profiles VALUES(?,?,?,?,?)").run(
           id,
-          "User " + id.slice(0, 4).toUpperCase(),
+          username || "User " + id.slice(0, 4).toUpperCase(),
           "让好故事被更多人看见。",
           "",
           created,
@@ -185,16 +213,14 @@ export function createCreatorAuth(store, port) {
         db.prepare("UPDATE invitations SET used=used+1 WHERE id=?").run(
           invite.id,
         );
-        const rewardId='registration:'+id;
-        db.prepare("INSERT INTO ledger(kind,amount,balance_after,note,operation_key,created_at,owner_id) VALUES('registration_reward',100,100,?,?,?,?)").run('新手任务奖励 · 注册成功',rewardId,created,id);
-        store.notifyUser(id,'新手奖励已到账','注册成功，1.00 USD 新手奖励已计入可用余额，可在钱包查看。','finance',rewardId);
         return {
-          registrationReward:{id:rewardId,amount:100,currency:'USD'},
           user: {
             id,
             email,
+            username,
             created_at: created,
             emailVerified: false,
+            reputation_score: 100,
             country,
           },
           token: session(id),
@@ -203,17 +229,17 @@ export function createCreatorAuth(store, port) {
     },
     async login(req, input) {
       limited(req);
-      const { email, password } = credentials(input),
+      const { email, password, value } = credentials(input, true),
         row = db
-          .prepare("SELECT * FROM creator_accounts WHERE email=?")
-          .get(email);
+          .prepare("SELECT * FROM creator_accounts WHERE email=? OR username=? COLLATE NOCASE")
+          .get(email,value);
       const hash = await derive(
         password,
         row?.salt || "unknown-account-salt",
         64,
       );
       if (!row || !timingSafeEqual(hash, Buffer.from(row.password_hash, "hex")))
-        throw new AppError("邮箱或密码不正确", 401);
+        throw new AppError("账号或密码不正确", 401);
       if (
         db
           .prepare("PRAGMA table_info(creator_accounts)")
@@ -224,8 +250,13 @@ export function createCreatorAuth(store, port) {
       )
         throw new AppError("账号已冻结，请联系管理员", 403);
       return store.audited("creator", "creator.login", row.id, () => {
-        row.country = recordAccess(req, row.id);
-        return { user: safe(row), token: session(row.id) };
+        // Password hashing is asynchronous. A reset during that await must not
+        // authorize a new session using credentials that have already changed.
+        const live=db.prepare('SELECT * FROM creator_accounts WHERE id=?').get(row.id);
+        if(!live||live.password_hash!==row.password_hash||live.salt!==row.salt)throw new AppError('账号或密码已变更，请重新登录',401);
+        if(live.frozen)throw new AppError('账号已冻结，请联系管理员',403);
+        live.country = recordAccess(req, live.id);
+        return { user: safe(live), token: session(live.id) };
       });
     },
     async changeOwnPassword(req,input) {
@@ -248,7 +279,7 @@ export function createCreatorAuth(store, port) {
         return {ok:true};
       });
     },
-    async updatePassword(actor,id,input) {
+    async updatePassword(actor,id,input,authorize) {
       const row=db.prepare('SELECT email FROM creator_accounts WHERE id=?').get(id);
       if(!row)throw new AppError('客户不存在',404);
       const temporary=input.mode==='reset';
@@ -257,6 +288,7 @@ export function createCreatorAuth(store, port) {
       credentials({email:row.email,password});
       const salt=randomBytes(16).toString('hex'),hash=(await derive(password,salt,64)).toString('hex');
       return store.audited(actor,'customer.password_reset',id,()=>{
+        if(authorize)authorize();
         db.prepare('UPDATE creator_accounts SET password_hash=?,salt=? WHERE id=?').run(hash,salt,id);
         const revoked=db.prepare('DELETE FROM creator_sessions WHERE user_id=?').run(id).changes;
         return {ok:true,revoked,...(temporary?{temporaryPassword:password}:{})};
@@ -304,27 +336,20 @@ export function createCreatorAuth(store, port) {
         );
     },
     invitations(ownerId) {
+      const agents=db.prepare("SELECT name FROM sqlite_master WHERE name='agent_admins'").get()?new Map(db.prepare('SELECT id,username,name FROM agent_admins').all().map(a=>[a.id,a])):new Map();
       return db
         .prepare(
           "SELECT id,hint,code,label,used,active,created_at,owner_id FROM invitations" +
             (ownerId ? " WHERE owner_id=?" : "") +
             " ORDER BY created_at DESC",
         )
-        .all(...(ownerId ? [ownerId] : []));
+        .all(...(ownerId ? [ownerId] : [])).map(i=>({...i,owner_name:agents.get(i.owner_id)?.name||'',owner_username:agents.get(i.owner_id)?.username||''}));
     },
     createInvite(actor, input, ownerId = "super") {
       const label = String(input.label || "创作者邀请")
           .trim()
           .slice(0, 80),
-        alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-      let code;
-      do {
-        code = Array.from(randomBytes(8), (n) => alphabet[n & 31]).join("");
-      } while (
-        db
-          .prepare("SELECT id FROM invitations WHERE code_hash=?")
-          .get(digest(code))
-      );
+        code = generateInviteCode(db);
       const id = randomUUID();
       return store.audited(actor, "invite.create", id, () => {
         db.prepare(
@@ -351,19 +376,20 @@ export function createCreatorAuth(store, port) {
         return { ok: true };
       });
     },
-    users() {
+    users(owners) {
+      if(owners!==undefined&&(!Array.isArray(owners)||owners.some(id=>typeof id!=="string"||!id)))throw new AppError("无效客户范围");
       return db
         .prepare(
-          `SELECT a.id,a.email,a.created_at,a.country,a.registration_ip,a.last_login_ip,a.last_login_at,a.last_login_agent,a.admin_note,a.customer_type,a.country_source,a.registration_country,a.last_login_country,a.invite_id,p.name,p.bio,p.channel,
+          `SELECT a.id,a.email,a.reputation_score,a.created_at,a.country,a.registration_ip,a.last_login_ip,a.last_login_at,a.last_login_agent,a.admin_note,a.customer_type,a.country_source,a.registration_country,a.last_login_country,a.invite_id,p.name,p.bio,p.channel,
    (SELECT COUNT(*) FROM assignments WHERE owner_id=a.id) AS assignmentCount,
    (SELECT COUNT(*) FROM assignments WHERE owner_id=a.id AND status IN ('active','revision')) AS active,
    (SELECT COUNT(*) FROM assignments WHERE owner_id=a.id AND status='review') AS review,
    (SELECT COUNT(*) FROM assignments WHERE owner_id=a.id AND status='completed') AS completed,
    (SELECT COALESCE(SUM(amount),0) FROM ledger WHERE owner_id=a.id) AS available,
    (SELECT COALESCE(SUM(amount),0) FROM ledger WHERE owner_id=a.id AND kind='reward') AS earned
-   FROM creator_accounts a JOIN creator_profiles p ON p.user_id=a.id ORDER BY a.created_at DESC`,
+   FROM creator_accounts a JOIN creator_profiles p ON p.user_id=a.id ${owners===undefined?'':'WHERE a.id IN (SELECT value FROM json_each(?))'} ORDER BY a.created_at DESC`,
         )
-        .all()
+        .all(...(owners===undefined?[]:[JSON.stringify(owners)]))
         .map(({ active, review, completed, available, earned, ...u }) => ({
           ...u,
           emailVerified: false,

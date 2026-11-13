@@ -37,7 +37,7 @@ export default function RegistrationReward({amount,onClose,onStart}:{amount:numb
  }}>
   <div ref={dialog} className="registration-award" role="dialog" aria-modal="true" aria-labelledby="registration-reward-title" aria-describedby="registration-reward-description">
    <div className="registration-hero">
-    <img className="registration-character" src="/art/profile-creator-films-r15.png" alt="" aria-hidden="true" fetchPriority="high"/>
+    <img className="registration-character" src="/art/profile-creator-films-r15.webp" alt="" aria-hidden="true" fetchPriority="high"/>
     <div className="registration-scene-shade" aria-hidden="true"/>
     <button ref={close} className="registration-close" aria-label={tx("关闭欢迎页")} onClick={onClose}><Cross2Icon/></button>
    </div>

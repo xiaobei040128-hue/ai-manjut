@@ -1,0 +1,11 @@
+import {useCallback,useEffect,useRef,useState} from 'react';import {api,type Assignment} from '../api';
+type RecordsPage={items:Assignment[];total:number;allTotal:number;counts:Record<string,number>;nextCursor:string|null};
+const blank=():RecordsPage=>({items:[],total:0,allTotal:0,counts:{},nextCursor:null});
+export function useTaskRecords({enabled,ownerId,status,query,refreshKey}:{enabled:boolean;ownerId:string;status:string;query:string;refreshKey:unknown}){
+ const [data,setData]=useState<RecordsPage>(blank),[search,setSearch]=useState(''),[loading,setLoading]=useState(false),[error,setError]=useState(''),version=useRef(0),alive=useRef(false),pending=useRef(false),cursor=useRef<string|null>(null);const state=useRef(data);state.current=data;
+ useEffect(()=>{const timer=setTimeout(()=>setSearch(query.trim()),220);return()=>clearTimeout(timer);},[query]);
+ const load=useCallback(async(next:string|null=null)=>{const ticket=++version.current;pending.current=true;cursor.current=next;setLoading(true);setError('');try{const args=new URLSearchParams({status,q:search});if(next)args.set('cursor',next);const page=await api<RecordsPage>('/customer-records?'+args);if(alive.current&&ticket===version.current)setData(old=>({...page,items:next?[...old.items,...page.items.filter(r=>!old.items.some(x=>x.id===r.id))]:page.items}));}catch(e){if(alive.current&&ticket===version.current)setError((e as Error).message);}finally{if(ticket===version.current){pending.current=false;if(alive.current)setLoading(false);}}},[ownerId,status,search]);
+ useEffect(()=>{if(!enabled)return;alive.current=true;void load();return()=>{alive.current=false;version.current++;pending.current=false;};},[enabled,load]);
+ const previous=useRef(refreshKey);useEffect(()=>{if(previous.current===refreshKey)return;if(previous.current==null){previous.current=refreshKey;return;}previous.current=refreshKey;if(enabled&&!pending.current&&state.current.items.length<=20)void load();},[enabled,refreshKey,load]);
+ const more=()=>{if(!pending.current&&state.current.nextCursor)void load(state.current.nextCursor);};const retry=()=>{if(!pending.current)void load(cursor.current);};return {...data,loading,error,more,retry,searching:query.trim()!==search};
+}

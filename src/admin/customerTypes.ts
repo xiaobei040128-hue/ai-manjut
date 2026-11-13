@@ -1,5 +1,6 @@
 import { countryName } from "../countries";
 export interface Customer {
+  reputation_score: number;
   progress?: {stage:number;planDay:number|null;completed:number;total:number;dailyClaimed:number;dailyCompleted:number;dailyLimit?:number;currentOrdinal:number;currentTask:string};
   id: string;
   email: string;
@@ -23,6 +24,7 @@ export interface Customer {
   invite_label: string;
   agent_id: string;
   agent_username: string;
+  agent_name?: string;
   identity_status: string;
   approved_cards: number;
   pending_cards: number;

@@ -1,3 +1,4 @@
+import {earlyTaskHistory} from '../server/early-task-history.mjs';
 import {createFundPassword} from '../server/fund-password.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -15,7 +16,7 @@ test('original onboarding rewards and five explorations persist, validate, isola
   const auth=createCreatorAuth(s,4990),finance=createFinance(s,dir),journey=createStageJourney(s),enrollment=createStageEnrollments(s,createOperatorScope(s));
   const invitation=auth.createInvite('qa',{},'super'),req={headers:{},socket:{remoteAddress:'qa'}},register=async email=>(await auth.register(req,{email,password:'JourneyTestQA123!',inviteCode:invitation.code})).user;
   const a=await register('journey-a@example.invalid'),b=await register('journey-b@example.invalid'),image=(await readFile('public/art/poster0.png')).toString('base64');
-createFundPassword(s).save(a.id,{loginPassword:'JourneyTestQA123!',newPassword:'Funds-Only-QA-2026!',confirmPassword:'Funds-Only-QA-2026!'});
+createFundPassword(s).save(a.id,{loginPassword:'JourneyTestQA123!',newPassword:'24681357',confirmPassword:'24681357'});
   assert.equal(journey.sync(a.id).newcomer.complete,false);assert.equal(journey.snapshot(a.id).onboarding.step,1);assert.equal(journey.snapshot(a.id).onboarding.revealed,false);assert.equal(journey.take(a.id).onboarding.revealed,true);assert.equal(journey.snapshot(b.id).onboarding.revealed,false);assert.throws(()=>journey.reveal(a.id),e=>e.status===403);
   let identity=finance.identity(a.id,{name:'测试用户',documentType:'驾驶证',number:'TEST-DRIVER-001',frontPhoto:{data:image},backPhoto:{data:image}});assert.equal(journey.snapshot(a.id).identityReview.status,'review');assert.equal(journey.snapshot(a.id).onboarding.step,1);assert.equal(journey.snapshot(b.id).identityReview,null);finance.review('qa','identity',identity.id,{decision:'reject',note:'请重新上传清晰照片'});assert.equal(journey.snapshot(a.id).identityReview.status,'rejected');assert.equal(journey.snapshot(a.id).identityReview.note,'请重新上传清晰照片');identity=finance.identity(a.id,{name:'测试用户',documentType:'驾驶证',number:'TEST-DRIVER-001',frontPhoto:{data:image},backPhoto:{data:image}});assert.equal(journey.snapshot(a.id).identityReview.status,'review');finance.review('qa','identity',identity.id,{decision:'approve'});
   assert.equal(journey.sync(a.id).rewards[0].amount,100);assert.equal(journey.snapshot(a.id).onboarding.step,2);assert.equal(journey.snapshot(a.id).onboarding.revealed,false);assert.equal(journey.sync(a.id).rewards.length,0);
@@ -23,7 +24,7 @@ createFundPassword(s).save(a.id,{loginPassword:'JourneyTestQA123!',newPassword:'
   const as=fn=>s.asUser(a.id,fn),assignment=as(()=>s.claim(task.id,{amount:task.deposit,commission:task.commission,rateBps:task.commission_rate_bps}));
   const upload=as(()=>s.addUpload(assignment.id,{name:'proof.png',mime:'image/png',size:24,path:'/uploads/11111111-1111-1111-1111-111111111111.png'}));as(()=>s.submit(assignment.id,{links:['https://example.invalid/proof'],uploadIds:[upload.id]}));s.review(assignment.id,{decision:'approve'});
   finance.card(a.id,{provider:'okx',number:'12345678'});const card=finance.snapshot(a.id).cards[0];
-  const request=finance.apply(a.id,{kind:'withdrawal',fundPassword:'Funds-Only-QA-2026!',amount:'1',cardId:card.id,operationKey:'first-withdrawal-journey-01'});finance.review('qa','fund',request.id,{decision:'approve'});assert.equal(journey.sync(a.id).newcomer.graduate,false);
+  const request=finance.apply(a.id,{kind:'withdrawal',fundPassword:'24681357',amount:'1',cardId:card.id,operationKey:'first-withdrawal-journey-01'});finance.review('qa','fund',request.id,{decision:'approve'});assert.equal(journey.sync(a.id).newcomer.graduate,false);
   finance.review('qa','fund',request.id,{decision:'paid',reference:'QA-PAID-JOURNEY-001'});const graduated=journey.sync(a.id);assert.equal(graduated.newcomer.complete,true);assert.equal(graduated.rewards[0].amount,200);assert.equal(journey.sync(a.id).rewards.length,0);assert.equal(as(()=>s.summary()).wallet.available,305);
   assert.equal(journey.snapshot(b.id).newcomer.complete,false);assert.throws(()=>journey.submit(b.id,{step:0,answer:0}),e=>e.status===403);
   finance.adjust('qa',a.id,{direction:'credit',amount:'100',note:'版权购买测试资金',operationKey:'community-license-funding-01'});
@@ -38,5 +39,13 @@ createFundPassword(s).save(a.id,{loginPassword:'JourneyTestQA123!',newPassword:'
   }
   assert.equal(enrollment.status(a.id).eligible,true);assert.equal(enrollment.status(b.id).eligible,false);
   assert.equal(createStageJourney(s).snapshot(a.id).community.completed,5);assert.equal(journey.snapshot(b.id).community.completed,0);assert.equal(as(()=>s.summary()).wallet.available,10506+commissions);
+  const history=earlyTaskHistory(s.db,a.id),other=earlyTaskHistory(s.db,b.id);
+  assert.equal(history.filter(r=>r.stage===2).length,5);
+  assert.ok(history.some(r=>r.id==='registration'&&r.reward===100&&r.status==='completed'));
+  assert.ok(history.some(r=>r.id==='graduation'&&r.reward===200));
+  assert.equal(other.length,1);assert.equal(other[0].id,'registration');
+  const ledgerCount=s.db.prepare('SELECT COUNT(*) n FROM ledger').get().n;
+  assert.deepEqual(earlyTaskHistory(s.db,a.id),history);
+  assert.equal(s.db.prepare('SELECT COUNT(*) n FROM ledger').get().n,ledgerCount);
  }finally{s.close();}
 });

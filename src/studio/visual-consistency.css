@@ -1,0 +1,57 @@
+/* Consistent surfaces and readable supporting text, scoped to customer pages. */
+.studio.experience-v3{--ui-ink:#342c3e;--ui-muted:#7e708a;--ui-line:#ece6f0;--ui-accent:#806092}
+.studio.experience-v3 .s-header h1{font-size:20px;font-weight:600;letter-spacing:-.35px;color:var(--ui-ink)}
+.studio.experience-v3 .s-bottom-nav button{color:#82758d}
+.studio.experience-v3 .s-bottom-nav button span{font-size:11px;line-height:1.4}
+.studio.experience-v3 .s-bottom-nav button.active{color:#76558e}
+.studio.experience-v3 .s-bottom-nav button.active:before{border-radius:12px}
+.studio.experience-v3 :is(.s-owned-card,.s-notice-card,.personal-referrals,.u-task-overview,.wallet-overview){border-color:var(--ui-line);box-shadow:0 4px 16px #38204403;border-radius:20px}
+.studio.experience-v3 .hub-heading>div>span,.studio.experience-v3 .u-task-overview>div>span{display:none}
+.studio.experience-v3 .hub-heading h2{font-size:21px;line-height:1.4;letter-spacing:-.4px;margin-top:0}
+.studio.experience-v3 .hub-current-card{border-radius:20px;border-color:var(--ui-line)}
+.studio.experience-v3 .hub-current-card>p{font-size:13px;line-height:1.8;color:var(--ui-muted)}
+.studio.experience-v3 .hub-today span{font-size:12px;color:var(--ui-muted)}
+.studio.experience-v3 .hub-current-top small{color:var(--ui-muted);font-size:11px}
+.studio.experience-v3 .s-stage-hub-continue{min-height:48px;border-radius:12px;font-size:14px;box-shadow:0 4px 12px #78518e12}
+.studio.experience-v3 .v3-record-heading{margin-top:22px;margin-bottom:12px}
+.studio.experience-v3 .v3-record-heading h3{font-size:15px;color:var(--ui-ink);font-weight:600}
+.studio.experience-v3 .v3-record-heading>span{font-size:11px;color:var(--ui-muted)}
+.studio.experience-v3.page-tasks .u-task-overview{padding:20px 20px 0;margin-bottom:22px}
+.studio.experience-v3.page-tasks .u-task-overview h2{font-size:21px;font-weight:600;line-height:1.45;margin:0 0 18px}
+.studio.experience-v3.page-tasks .u-task-counts{padding:16px 0}
+.studio.experience-v3.page-tasks .u-task-counts strong{font-size:25px;font-weight:500}
+.studio.experience-v3.page-tasks .u-task-counts span{font-size:12px;color:var(--ui-muted)}
+.studio.experience-v3.page-tasks .task-status-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;padding:14px 0 18px}
+.studio.experience-v3.page-tasks .task-status-grid button{min-height:40px;padding:9px 12px;font-size:12px;border-radius:10px;flex:0 1 auto;white-space:normal;overflow-wrap:anywhere;color:var(--ui-muted)}
+.studio.experience-v3.page-tasks .task-status-grid button.active{background:#f0e8f6;color:#75528d;border-color:#e2d3ec}
+.studio.experience-v3 :is(.u-task-search,.u-ledger-search) input{font-size:14px}
+.studio.experience-v3 :is(.u-task-search,.u-ledger-search) input::placeholder{color:#9c8da7}
+.studio.experience-v3 :is(.u-task-search,.u-ledger-search):focus-within{border-color:#baa2c9;box-shadow:0 0 0 3px #ad8bc015}
+.studio.experience-v3:is(.page-tasks,.page-wallet,.page-profile) .s-empty{padding:28px 20px 26px;border-radius:20px}
+.studio.experience-v3 .s-empty-icon{width:48px;height:50px;border-radius:16px;background:#f5f0f8;color:#9c83ad;margin-bottom:15px}
+.studio.experience-v3 .s-empty-icon svg{width:23px;height:23px}
+.studio.experience-v3 .s-empty h3{font-size:16px;font-weight:600;line-height:1.5}
+.studio.experience-v3 .s-empty p{font-size:13px;line-height:1.75;color:var(--ui-muted);margin-bottom:16px}
+.studio.experience-v3 .wallet-overview{padding:20px 22px 0;margin-bottom:16px;background:linear-gradient(135deg,#fcfaff,#fff 70%)}
+.studio.experience-v3 .wallet-overview-balance{padding:16px 0 19px}
+.studio.experience-v3 .wallet-overview-balance strong{font-size:36px;font-weight:550;letter-spacing:-.8px}
+.studio.experience-v3 .wallet-overview-balance>div,.studio.experience-v3 .wallet-overview-metrics>div>span{color:var(--ui-muted);font-size:12px}
+.studio.experience-v3 .wallet-overview-metrics{padding:15px 0 17px}
+.studio.experience-v3 .wallet-overview-metrics b{font-size:21px;font-weight:500;margin-top:6px}
+.studio.experience-v3 .wallet-overview footer{margin-inline:-22px;padding:11px 22px;background:#faf7fc;color:var(--ui-muted)}
+.studio.experience-v3 .wallet-transfer-actions>button{border-radius:12px!important;border-color:#e5dbeC!important;font-size:14px!important}
+.studio.experience-v3 .wallet-transfer-actions>button:first-child{background:#826195!important;color:#fff!important;border-color:#826195!important}
+.studio.experience-v3 .wallet-transfer-actions>button:first-child svg{color:inherit}
+.studio.experience-v3 .personal-referrals h2{font-size:16px;font-weight:600;color:#574260}
+.studio.experience-v3 .referral-stats span,.studio.experience-v3 .referral-share-label{font-size:12px;color:var(--ui-muted)}
+.studio.experience-v3 .referral-share-row code{font-size:17px;letter-spacing:1.5px;font-weight:500;color:#755287}
+.studio.experience-v3 .referral-domain{font-size:13px;color:#8a7497}
+.studio.experience-v3 .personal-referrals .referral-share-row button{min-height:42px;padding-inline:15px;font-size:12px;border-radius:10px}
+.studio.experience-v3 .personal-referrals .referral-rule{font-size:12px;line-height:1.8;color:#8d7a99}
+.studio.experience-v3 .personal-referrals .referral-expand{font-size:12px;color:#80678f;min-height:42px}
+.studio.experience-v3 .personal-referrals .referral-copy-status:empty{min-height:0;margin:0}
+.studio.experience-v3 .profile-login-caption{color:#807087!important}
+.studio.experience-v3 .s-menu-group small{font-size:12px;color:#87788f}
+.studio.experience-v3 button:focus-visible,.studio.experience-v3 a:focus-visible{outline:2px solid #a98aba;outline-offset:3px}
+@media(max-width:360px){.studio.experience-v3.page-tasks .task-status-grid button{padding:9px 10px}.studio.experience-v3 .wallet-overview{padding-inline:18px}.studio.experience-v3 .wallet-overview footer{margin-inline:-18px;padding-inline:18px}.studio.experience-v3 .referral-share-row code{font-size:16px}}
+@media(hover:hover){.studio.experience-v3 .personal-referrals button:hover{background:#f2eaf7}.studio.experience-v3 .task-status-grid button:hover{border-color:#cdb8da}}

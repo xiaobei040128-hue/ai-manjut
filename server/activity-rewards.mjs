@@ -2,7 +2,7 @@ import {randomUUID} from 'node:crypto';
 import {AppError} from './store.mjs';
 const now=()=>new Date().toISOString();
 const text=(v,n)=>typeof v==='string'?v.trim().slice(0,n):'';
-function amount(v){if(!/^(?:0|[1-9]\d{0,5})(?:\.\d{1,2})?$/.test(String(v)))throw new AppError('请输入最多两位小数的金额');const n=Math.round(Number(v)*100);if(n<1||n>10000000)throw new AppError('金额须在 0.01–100,000 USD 之间');return n;}
+function amount(v){if(!/^(?:0|[1-9]\d{0,5})(?:\.\d{1,2})?$/.test(String(v)))throw new AppError('请输入最多两位小数的金额');const n=Math.round(Number(v)*100);if(n<1||n>10000000)throw new AppError('金额须在 0.01–100,000 之间');return n;}
 export function createActivityRewards(store,scope){
  const db=store.db;
  db.exec(`CREATE TABLE IF NOT EXISTS reward_campaigns(id TEXT PRIMARY KEY,name TEXT NOT NULL,amount INTEGER NOT NULL,budget INTEGER NOT NULL,operator_id TEXT NOT NULL,active INTEGER NOT NULL DEFAULT 1,created_by TEXT NOT NULL,created_at TEXT NOT NULL);
@@ -18,7 +18,7 @@ export function createActivityRewards(store,scope){
   grant(op,id,input){
    const userId=text(input.userId,80),reason=text(input.reason,500),key=typeof input.operationKey==='string'?input.operationKey.trim():'';
    scope.assertUser(op,userId);campaign(op,id);
-   if(reason.length<3||!/^[-a-zA-Z0-9]{16,80}$/.test(key)||input.confirm!==true)throw new AppError('请填写发放原因并确认入账');
+   if(!/^[-a-zA-Z0-9]{16,80}$/.test(key)||input.confirm!==true)throw new AppError('请确认入账');
    return store.audited(op.username,'activity.grant',userId,()=>{
     const old=db.prepare('SELECT * FROM activity_grants WHERE operation_key=?').get(key);
     if(old){if(old.user_id!==userId||old.campaign_id!==id||old.actor_id!==op.id||old.reason!==reason)throw new AppError('请求标识已被其他发放使用',409);return receipt(old.id);}
@@ -31,7 +31,7 @@ export function createActivityRewards(store,scope){
     const grantId=randomUUID(),time=now(),balance=db.prepare('SELECT COALESCE(SUM(amount),0) AS n FROM ledger WHERE owner_id=?').get(userId).n;
     db.prepare('INSERT INTO activity_grants(id,campaign_id,user_id,amount,actor_id,actor_name,reason,operation_key,created_at) VALUES(?,?,?,?,?,?,?,?,?)').run(grantId,id,userId,c.amount,op.id,op.username,reason,key,time);
     db.prepare('INSERT INTO ledger(kind,amount,balance_after,note,operation_key,created_at,owner_id) VALUES(?,?,?,?,?,?,?)').run('activity_reward',c.amount,balance+c.amount,'活动奖励 · '+c.name+' · '+reason,'activity:'+grantId,time,userId);
-    store.notifyUser(userId,'活动奖励已到账',c.name+'：'+(c.amount/100).toFixed(2)+' USD。可在钱包查看流水。','finance',grantId);
+    store.notifyUser(userId,'活动奖励已到账',c.name+'：'+(c.amount/100).toFixed(2)+'。可在钱包查看流水。','finance',grantId);
     return receipt(grantId);
    },{campaignId:id,reason,operationKey:key});
   }

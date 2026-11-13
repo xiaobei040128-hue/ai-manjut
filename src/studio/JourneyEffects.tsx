@@ -47,8 +47,8 @@ export default function JourneyEffects({
   if (!event) return null;
   const reward = event.kind !== "task";
   const artwork = reward
-    ? "/art/reward-medal-v1.png"
-    : "/art/task-invitation-v1.png";
+    ? "/art/reward-medal-v1.webp"
+    : "/art/task-invitation-v1.webp";
   return (
     <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal container={screenRef.current}>

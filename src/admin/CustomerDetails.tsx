@@ -1,5 +1,6 @@
 import {usePermission} from './PermissionContext';
 import CustomerFundPassword from './CustomerFundPassword';
+import CustomerReputation from './CustomerReputation';
 import { useEffect, useRef, useState } from "react";
 import { api, date, money } from "../api";
 import { countryName } from "../countries";
@@ -71,12 +72,9 @@ export default function CustomerDetails({
     >
       <div className="ad-customer-detail">
         <div className="ad-customer-heading">
-          <h3>{u.name}</h3>
+          <h3>{u.name}</h3>{inline?<Badge tone="green">信誉分 {u.reputation_score??100}</Badge>:<CustomerReputation key={u.id} customerId={u.id} score={u.reputation_score??100} onUpdated={onRefresh}/>}
           <Badge tone={u.frozen ? "red" : "green"}>
             {u.frozen ? "已冻结" : "正常"}
-          </Badge>
-          <Badge tone={u.identity_status === "approved" ? "green" : "amber"}>
-            {identityLabel(u.identity_status)}
           </Badge>
         </div>
         <dl className="ad-customer-grid">
@@ -122,7 +120,7 @@ export default function CustomerDetails({
             </>
           )}
         </dl>
-        <h4>账户资金 · USD</h4>
+        <h4>账户资金</h4>
         <div className="ad-customer-balances">
           <div>
             <span>可用余额</span>

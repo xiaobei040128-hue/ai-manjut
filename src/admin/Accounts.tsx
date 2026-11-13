@@ -1,3 +1,4 @@
+import {copyTaskCode as copyText} from '../studio/task-clipboard';
 import {usePermission} from './PermissionContext';
 import CustomerDetails from "./CustomerDetails";
 import { type Customer, identityLabel, geoLabel } from "./customerTypes";
@@ -15,6 +16,8 @@ interface Invite {
   active: number;
   created_at: string;
   owner_id: string;
+  owner_name?: string;
+  owner_username?: string;
 }
 type User = Customer;
 export default function Accounts({invitesOnly=false}:{invitesOnly?:boolean}) {
@@ -111,7 +114,7 @@ export default function Accounts({invitesOnly=false}:{invitesOnly?:boolean}) {
   );
   async function copy(value: string) {
     try {
-      await navigator.clipboard.writeText(value);
+      await copyText(value);
       setMessage("邀请码已复制");
       setError("");
     } catch {
@@ -169,13 +172,12 @@ export default function Accounts({invitesOnly=false}:{invitesOnly?:boolean}) {
         "注册时间（北京时间）",
         "最近登录时间",
         "账号状态",
-        "实名状态",
-        "可用余额 USD",
-        "冻结 USD",
-        "总额 USD",
-        "累计佣金 USD",
-        "已入账充值 USD",
-        "已出款提现 USD",
+        "可用余额",
+        "冻结",
+        "总额",
+        "累计佣金",
+        "已入账充值",
+        "已出款提现",
         "归属后台",
         "邀请码",
         "待审资金笔数",
@@ -192,7 +194,6 @@ export default function Accounts({invitesOnly=false}:{invitesOnly?:boolean}) {
         date(u.created_at, true),
         u.last_login_at ? date(u.last_login_at, true) : "",
         u.frozen ? "冻结" : "正常",
-        identityLabel(u.identity_status),
         (u.wallet.available / 100).toFixed(2),
         (u.wallet.held / 100).toFixed(2),
         (u.wallet.total / 100).toFixed(2),
@@ -277,21 +278,6 @@ export default function Accounts({invitesOnly=false}:{invitesOnly?:boolean}) {
             )}
           </select>
           <select
-            aria-label="实名状态筛选"
-            value={kycFilter}
-            onChange={(e) => {
-              setKycFilter(e.target.value);
-              setPage(1);
-            }}
-          >
-            <option value="all">全部实名状态</option>
-            {["not_submitted", "review", "approved", "rejected"].map((k) => (
-              <option key={k} value={k}>
-                {identityLabel(k)}
-              </option>
-            ))}
-          </select>
-          <select
             aria-label="账号状态筛选"
             value={accountFilter}
             onChange={(e) => {
@@ -323,8 +309,8 @@ export default function Accounts({invitesOnly=false}:{invitesOnly?:boolean}) {
               <tr>
                 <th>客户 / 账号</th>
                 <th>国家与 IP</th>
-                <th>账号 / 实名</th>
-                <th>资金 · USD</th>
+                <th>账号状态</th>
+                <th>资金</th>
                 <th>归属 / 邀请码</th>
                 <th>最近登录 / 注册</th>
                 <th>操作</th>
@@ -355,19 +341,6 @@ export default function Accounts({invitesOnly=false}:{invitesOnly?:boolean}) {
                     <Badge tone={u.frozen ? "red" : "green"}>
                       {u.frozen ? "已冻结" : "正常"}
                     </Badge>
-                    <small>
-                      <Badge
-                        tone={
-                          u.identity_status === "approved"
-                            ? "green"
-                            : u.identity_status === "review"
-                              ? "amber"
-                              : "neutral"
-                        }
-                      >
-                        {identityLabel(u.identity_status)}
-                      </Badge>
-                    </small>
                   </td>
                   <td>
                     <b>可用 {money(u.wallet.available)}</b>
@@ -392,8 +365,7 @@ export default function Accounts({invitesOnly=false}:{invitesOnly?:boolean}) {
                       客户档案
                     </button>
                     {(u.pending_funds > 0 ||
-                      u.pending_cards > 0 ||
-                      u.identity_status === "review") && (
+                      u.pending_cards > 0) && (
                       <small className="ad-customer-pending">有待办审批</small>
                     )}
                   </td>
@@ -423,7 +395,7 @@ export default function Accounts({invitesOnly=false}:{invitesOnly?:boolean}) {
           <div>
             <h2>我的注册邀请码</h2>
             <p>
-              新生成的 8 位邀请码长期有效，使用次数不限，归属于生成它的后台。
+              新生成的 6 位字母与数字邀请码长期有效，使用次数不限，归属于生成它的后台。
             </p>
           </div>
         </div>
@@ -535,7 +507,7 @@ export default function Accounts({invitesOnly=false}:{invitesOnly?:boolean}) {
                     <td>
                       {i.owner_id === "super"
                         ? "总后台"
-                        : "代理 #" + i.owner_id.slice(0, 8)}
+                        : i.owner_name ? i.owner_name + (i.owner_username ? "（" + i.owner_username + "）" : "") : i.owner_username || "已删除代理"}
                     </td>
                     <td>{i.used}</td>
                     <td>

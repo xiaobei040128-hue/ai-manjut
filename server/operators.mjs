@@ -3,7 +3,7 @@ import {AppError} from './store.mjs';
 export function createOperatorScope(store){
  const db=store.db,permissions=createAgentPermissions(store);
  function users(op){return op.role==='super'?null:new Set(db.prepare('SELECT a.id FROM creator_accounts a JOIN invitations i ON i.id=a.invite_id WHERE i.owner_id=?').all(op.id).map(r=>r.id));}
- function assertUser(op,id){if(op.role!=='super'&&!users(op).has(id))throw new AppError('无权访问此客户',403);}
+ function assertUser(op,id){if(op.role==='super')return;if(typeof id!=='string'||!id||!db.prepare('SELECT 1 FROM creator_accounts a JOIN invitations i ON i.id=a.invite_id WHERE a.id=? AND i.owner_id=?').get(id,op.id))throw new AppError('无权访问此客户',403);}
  function assertTarget(op,type,id){if(op.role==='super')return;const table={identity:'identities',bank:'bank_cards',fund:'fund_requests',assignment:'assignments'}[type];if(!table){assertUser(op,id);return;}const row=db.prepare('SELECT '+(type==='assignment'?'owner_id':'user_id')+' AS user_id FROM '+table+' WHERE id=?').get(id);if(!row)throw new AppError('记录不存在',404);assertUser(op,row.user_id);}
  return {users,assertUser,assertTarget,
   filterUsers(op,rows){const allowed=users(op);return allowed?rows.filter(r=>allowed.has(r.id)):rows;},
@@ -12,13 +12,15 @@ export function createOperatorScope(store){
   guard(op,path,method){if(op.role==='super')return;const permission=permissions.key(path,method);if(permission)permissions.assert(op,permission);
    if(path==='/api/admin/deposit-channels'){const flags=permissions.read(op.id).permissions;if(!flags.depositConfigure&&!flags.supportConfigure)throw new AppError('充值渠道和客服配置权限未开通',403);return;}
    const plan=path.match(/^\/api\/admin\/plan-dispatch\/([^/]+)$/);if(plan&&['GET','POST'].includes(method)){assertUser(op,plan[1]);return;}
-   const detail=path.match(/^\/api\/admin\/customers\/([^/]+)$/);if(detail&&method==='GET'){assertUser(op,detail[1]);return;}
+   const detail=path.match(/^\/api\/admin\/customers\/([^/]+)(?:\/(?:records|ledger))?$/);if(detail&&method==='GET'){assertUser(op,detail[1]);return;}
+   if(path==='/api/admin/review-notices'&&method==='GET')return;
+   if(path==='/api/admin/early-stage-policy')return;
    if(path==='/api/admin/commission-policy')throw new AppError('仅总后台可配置佣金比例',403);
    if(path==='/api/admin/premium-dispatch'&&method==='GET'||/^\/api\/admin\/premium-dispatch\/[^/]+$/.test(path)&&method==='POST')return;
    if(path==='/api/admin/stage-enrollments'&&method==='GET'||/^\/api\/admin\/stage-enrollments\/[^/]+\/review$/.test(path)&&method==='POST')return;
    if(path==='/api/admin/activity-rewards' &&method==='GET'||/^\/api\/admin\/activity-rewards\/[^/]+\/grant$/.test(path)&&method==='POST')return;
 
-   const customer=path.match(/^\/api\/admin\/accounts\/([^/]+)\/(notes|revoke-sessions|customer-type|password|fund-password)$/);if(customer){assertUser(op,customer[1]);return;}
+   const customer=path.match(/^\/api\/admin\/accounts\/([^/]+)\/(notes|revoke-sessions|customer-type|password|fund-password|reputation)$/);if(customer){assertUser(op,customer[1]);return;}
    if(['/api/admin/overview','/api/admin/bootstrap','/api/admin/accounts','/api/admin/finance','/api/admin/invitations','/api/export/ledger'].includes(path))return;
    const revoke=path.match(/^\/api\/admin\/invitations\/([^/]+)\/revoke$/);if(revoke){const invite=db.prepare('SELECT owner_id FROM invitations WHERE id=?').get(revoke[1]);if(invite?.owner_id!==op.id)throw new AppError('无权管理此邀请码',403);return;}
    const finance=path.match(/^\/api\/admin\/finance\/(identity|bank|fund|account)\/([^/]+)\/(review|reveal|adjust|freeze|photos\/(?:front|back))$/);if(finance){assertTarget(op,finance[1],finance[2]);return;}

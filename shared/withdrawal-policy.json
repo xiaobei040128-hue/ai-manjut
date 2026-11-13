@@ -1,4 +1,4 @@
 {
-  "bankMinimumCents": 50000,
+  "bankMinimumCents": 10000,
   "defaultMinimumCents": 100
 }

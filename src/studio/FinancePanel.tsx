@@ -1,3 +1,4 @@
+import type {SupportIdentity} from './support-identity';
 import {translateText as tx,localizeNode as lx} from "../i18n/translate";
 import PayoutDestinationPicker from './PayoutDestinationPicker';
 import {payoutMethodName} from '../finance';
@@ -12,7 +13,6 @@ import {hasDepositDetails} from '../deposit-options';
 import DepositChannelPicker from './DepositChannelPicker';
 import {PaymentIcon as CardStackIcon,IdentityIcon as PersonIcon,DepositIcon as PlusIcon,WithdrawIcon as ArrowTopRightIcon} from './PlatformIcons';
 import {navigateApp} from './app-navigation';
-import IdentityReward from './IdentityReward';
 import IdentityPhotos, { type IdentityPhoto } from "./IdentityPhotos";
 import {
   useCallback,
@@ -40,7 +40,7 @@ import "./finance-panel.css";
 type ModalKind = "" | "identity" | "card" | "deposit" | "withdrawal";
 const modalTitles = {
   identity: "实名认证",
-  card: "添加收款方式",
+  card: "添加银行卡",
   deposit: "充值",
   withdrawal: "提现",
 };
@@ -54,8 +54,10 @@ function RequestRecord({ record: r }: { record: FundRequest }) {
 }
 export default function FinancePanel({
   onChange,
+  supportIdentity,
 }: {
   onChange: () => Promise<unknown>;
+  supportIdentity?: SupportIdentity;
 }) {
   const [data, setData] = useState<FinanceSnapshot | null>(null),
     [modal, setModal] = useState<ModalKind>(""),
@@ -93,7 +95,7 @@ export default function FinancePanel({
   const load = useCallback(async () => {
     const request = ++version.current;
     const snapshot = await api<FinanceSnapshot>("/finance");
-    if (mounted.current && request === version.current){setData(snapshot);setForm(old=>snapshot.cards.some(c=>c.id===old.cardId&&c.status==='approved')?old:{...old,cardId:snapshot.cards.find(c=>c.status==='approved')?.id||''});}
+    if (mounted.current && request === version.current){setData({...snapshot,cards:snapshot.cards.filter(c=>c.provider==='bank')});setForm(old=>snapshot.cards.some(c=>c.provider==='bank'&&c.id===old.cardId&&c.status==='approved')?old:{...old,cardId:snapshot.cards.find(c=>c.provider==='bank'&&c.status==='approved')?.id||''});}
     return snapshot;
   }, []);
   useEffect(() => {
@@ -135,7 +137,10 @@ export default function FinancePanel({
     setPhotos({});
     setForm({
       documentType: "居民身份证",
-      provider: "okx",
+      provider: "bank",
+      methodGroup:"bank",
+      depositGroup: "bank",
+      depositChannel: kind==='deposit'?'bank_wire':'',
       network: "TRC20",
       cardId: data?.cards.find((c) => c.status === "approved")?.id || "",
     });
@@ -144,7 +149,7 @@ export default function FinancePanel({
     setModal(kind);
   }
   useEffect(()=>{
-    const query=new URLSearchParams(location.search),requested=query.get('finance');if(requested==='identity'||requested==='card'||requested==='withdrawal'||requested==='deposit'){const amount=query.get('amount')||'';query.delete('finance');query.delete('amount');history.replaceState(null,'','/?'+query.toString());open(requested);if(requested==='deposit'&&/^(?:0|[1-9]\d{0,5})(?:\.\d{1,2})?$/.test(amount)&&Number(amount)>0)setForm(old=>({...old,amount}));}
+    const query=new URLSearchParams(location.search),requested=query.get('finance');if(requested==='card'||requested==='withdrawal'||requested==='deposit'){const amount=query.get('amount')||'';query.delete('finance');query.delete('amount');history.replaceState(null,'','/?'+query.toString());open(requested);if(requested==='deposit'&&/^(?:0|[1-9]\d{0,5})(?:\.\d{1,2})?$/.test(amount)&&Number(amount)>0)setForm(old=>({...old,amount}));}
   },[]);
   const [refreshNote,setRefreshNote]=useState('');
   async function refresh() {
@@ -176,7 +181,8 @@ export default function FinancePanel({
       if(!fundPasswordReady||!form.fundPassword){setError('请先设置并输入资金密码');return;}
       const amount=/^(?:0|[1-9]\d{0,5})(?:\.\d{1,2})?$/.test(form.amount||'')?Math.round(Number(form.amount)*100):0;
       if(!data){setError('正在读取余额，请稍后再试');return;}
-      if(amount<minimumWithdrawal){setError(selectedPayout?.provider==='bank'?'银行转账单笔最低提现金额为 $500.00':'最低提款金额为 $1.00');return;}
+      if(data?.hasUnsettledThirdTask){setError('请先完成当前任务后再申请提现');return;}
+      if(amount<minimumWithdrawal){setError('请调整金额或选择其他收款方式');return;}
       if(amount>data.account.available){setError('余额不足，可用余额 '+money(data.account.available));return;}
       if(!data.cards.some(c=>c.id===form.cardId&&c.status==='approved')){setError('请选择收款方式');return;}
     }
@@ -185,7 +191,7 @@ export default function FinancePanel({
     setBusy(true);
     setError("");
     try {
-      const result = await api<{ id?: string;firstBinding?:boolean;status?:string }>(
+      const result = await api<{ id?: string;firstBinding?:boolean;status?:string;newcomer_task?:number }>(
         "/finance/" +
           (kind === "identity"
             ? "identity"
@@ -209,7 +215,8 @@ export default function FinancePanel({
       setModal("");
       setPhotos({});
       setForm({});
-      if(kind==='withdrawal'){navigateApp('/?view=app&design=newcomer&withdrawal=submitted');return;}
+      if(kind==='withdrawal'&&result.newcomer_task===1){navigateApp('/?design=newcomer&withdrawal=submitted');return;}
+      if(kind==='withdrawal'&&data?.fullBalanceWithdrawal){navigateApp('/?design=advanced');return;}
       if(kind==='card'&&result.firstBinding){navigateApp('/?view=app&design=newcomer&binding=completed');return;}
       // A successful server receipt remains successful even when the subsequent refresh fails.
       try {
@@ -227,6 +234,7 @@ export default function FinancePanel({
       if (mounted.current) setBusy(false);
     }
   }
+  useEffect(()=>{if(modal==='withdrawal'&&data?.fullBalanceWithdrawal)setForm(old=>({...old,amount:(data.account.available/100).toFixed(2)}));},[modal,data?.fullBalanceWithdrawal,data?.account.available]);
   const field = (
     label: string,
     name: string,
@@ -238,6 +246,7 @@ export default function FinancePanel({
       <KeyboardInput
         required
         type={name==='amount'?'number':type}
+        readOnly={name==='amount'&&modal==='withdrawal'&&!!data?.fullBalanceWithdrawal}
         name={name==='amount'?'transfer-amount':name}
         inputMode={name==='amount'?'decimal':undefined}
         min={name==='amount'?(modal==='withdrawal'?String(minimumWithdrawal/100):'1'):undefined}
@@ -281,16 +290,15 @@ export default function FinancePanel({
       : data?.cards.find(c=>c.id===receipt.id)?.status || data?.requests.find((r) => r.id === receipt.id)?.status
     : undefined;
   return (
-    <section className="s-finance"><IdentityReward onReward={()=>{void load();void onChange();}}/>
+    <section className="s-finance">
       {lx(returnHref&&<a className="purchase-return" href={returnHref}>{tx("‹ 返回已领取的任务")}</a>)}
       {lx(data?.overview&&<WalletOverview available={data.account.available} data={data.overview} actions={<div className="wallet-overview-refresh"><span className="wallet-refresh-status" role="status">{lx(refreshNote)}</span><button type="button" aria-label={tx("刷新余额")} disabled={refreshing} onClick={()=>void refresh()}><ReloadIcon className={refreshing?'wallet-refresh-spinning':''}/>{lx(refreshing?'更新中…':'刷新')}</button></div>}/>)}
       <div className="wallet-transfer-actions" aria-label={tx("资金操作")}>
         <button onClick={() => open("deposit")}><PlusIcon/><span>{tx("充值")}</span></button>
         <button onClick={() => open("withdrawal")}><ArrowTopRightIcon/><span>{tx("提现")}</span></button>
       </div>
-      <div className="wallet-management" aria-label={tx("收款与认证")}>
+      <div className="wallet-management" aria-label={tx("收款方式")}>
         <button onClick={() => open("card")}><CardStackIcon/><span><b>{tx("收款方式")}</b><small>{lx(data?.cards.length ? data.cards.length+' 个已添加' : '添加收款账户')}</small></span><i aria-hidden="true">›</i></button>
-        <button onClick={() => open("identity")}><PersonIcon/><span><b>{tx("实名认证")}</b><small>{lx(identity ? financeStatus(identity.status) : "待提交")}</small></span><i aria-hidden="true">›</i></button>
       </div>
       {lx(receipt && (
         <div className="f-receipt" role="status">
@@ -359,10 +367,10 @@ export default function FinancePanel({
         open={!!modal}
         onOpenChange={(v) => !v && closeModal()}
         title={tx(modal==='deposit'?(selectedChannel?channelName(selectedChannel.id,selectedChannel.name,depositLocale):form.depositGroup==='crypto'?dt.crypto:dt.deposit):modal==='card'&&!addingMethod&&data?.cards.length?'收款方式':modal==='identity'&&identity?.status==='approved'?'实名资料':modal ? modalTitles[modal] : '账户申请')}
-        description={tx(modal==='deposit'?(selectedChannel?(selectedChannel.id==='bank_wire'||!selectedChannel.enabled||!hasDepositDetails(selectedChannel)?undefined:dt.review):form.depositGroup==='crypto'?dt.chooseCrypto:dt.choose):modal==='withdrawal'?"选择收款方式并核对金额，提交后可查看处理进度。":modal==='card'?(data?.cards.length&&!addingMethod?"查看已保存的收款账户。":"选择方式并填写本人的收款资料。"):modal==='identity'&&identity?.status==='approved'?"查看已认证的身份资料。":modal==='identity'&&identity?.status==='review'?"资料已提交，等待审核结果。":"请填写属于本人的资料。")}
+        description={tx(modal==='deposit'?(selectedChannel?(selectedChannel.id==='bank_wire'||!selectedChannel.enabled||!hasDepositDetails(selectedChannel)?undefined:dt.review):form.depositGroup==='crypto'?dt.chooseCrypto:dt.choose):modal==='withdrawal'?"选择收款方式并核对金额，提交后可查看处理进度。":modal==='card'?(data?.cards.length&&!addingMethod?"查看已保存的收款账户。":"填写本人的银行收款资料。"):modal==='identity'&&identity?.status==='approved'?"查看已认证的身份资料。":modal==='identity'&&identity?.status==='review'?"资料已提交，等待审核结果。":"请填写属于本人的资料。")}
       >
         <div className={'s-finance-sheet is-'+modal}>
-          {lx(modal==='deposit'&&<><button type="button" className="deposit-flow-back" aria-label={tx(dt.back)} disabled={busy} onClick={()=>{keyboard.hide();if(form.depositChannel)setForm(old=>({...old,depositChannel:'',depositMethod:'',reference:'',depositGroup:old.depositGroup==='bank'?'':old.depositGroup}));else if(form.depositGroup)setForm(old=>({...old,depositGroup:''}));else closeModal();setError('');}}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="m14 5-7 7 7 7"/></svg></button></>)}
+          {lx(modal==='deposit'&&<><button type="button" className="deposit-flow-back" aria-label={tx(dt.back)} disabled={busy} onClick={()=>{keyboard.hide();closeModal();setError('');}}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="m14 5-7 7 7 7"/></svg></button></>)}
           <button
             type="button"
             className="s-finance-close"
@@ -377,7 +385,7 @@ export default function FinancePanel({
             <Cross2Icon/>
           </button>
           {lx(modal === "deposit" && (!selectedChannel || !selectedChannel.enabled || !hasDepositDetails(selectedChannel) || selectedChannel.id==='bank_wire') ? (
-            <div className="deposit-channels">{lx(selectedChannel?<div className={'deposit-state '+(selectedChannel.id==='bank_wire'&&selectedChannel.enabled?'is-bank':'')}><span className="deposit-state-icon"><ChannelIcon id={selectedChannel.id}/></span>{lx(selectedChannel.id==='bank_wire'&&selectedChannel.enabled?<><p>{lx(dt.bankBody)}</p><ContactLink url={channelSettings?.supportUrl} label={tx(dt.contact)} unavailableMessage={tx(dt.supportUnavailable)}/></>:<p>{lx(!selectedChannel.enabled?(selectedChannel.unavailableMessage==='当前区域暂未开通'||!selectedChannel.unavailableMessage?dt.unavailable:selectedChannel.unavailableMessage):dt.channelUnavailable)}</p>)}</div>:<DepositChannelPicker locale={depositLocale} settings={channelSettings} group={form.depositGroup||''} error={channelError} onGroup={group=>setForm(old=>({...old,depositGroup:group,depositChannel:group==='bank'?'bank_wire':'',depositMethod:'',reference:''}))} onChannel={id=>setForm(old=>({...old,depositChannel:id,depositMethod:'',reference:''}))}/>)}</div>
+            <div className="deposit-channels">{lx(selectedChannel?<div className={'deposit-state '+(selectedChannel.id==='bank_wire'&&selectedChannel.enabled?'is-bank':'')}><span className="deposit-state-icon"><ChannelIcon id={selectedChannel.id}/></span>{lx(selectedChannel.id==='bank_wire'&&selectedChannel.enabled?<><p>{lx(dt.bankBody)}</p><ContactLink identity={supportIdentity} url={channelSettings?.supportUrl} label={tx(dt.contact)} unavailableMessage={tx(dt.supportUnavailable)} forceModal={modal==='deposit'}/></>:<p>{lx(!selectedChannel.enabled?(selectedChannel.unavailableMessage==='当前区域暂未开通'||!selectedChannel.unavailableMessage?dt.unavailable:selectedChannel.unavailableMessage):dt.channelUnavailable)}</p>)}</div>:<DepositChannelPicker locale={depositLocale} settings={channelSettings} group={form.depositGroup||''} error={channelError} onGroup={group=>setForm(old=>({...old,depositGroup:group,depositChannel:group==='bank'?'bank_wire':'',depositMethod:'',reference:''}))} onChannel={id=>setForm(old=>({...old,depositChannel:id,depositMethod:'',reference:''}))}/>)}</div>
           ) : modal === "identity" &&
           identity &&
           ["approved", "review"].includes(identity.status) ? (
@@ -386,13 +394,11 @@ export default function FinancePanel({
               <dl><div><dt>{tx("姓名")}</dt><dd>{lx(identity.name)}</dd></div><div><dt>{tx("证件类型")}</dt><dd>{lx(identity.document_type)}</dd></div><div><dt>{tx("证件号码")}</dt><dd>{lx('•••• •••• '+identity.number_mask.slice(-2))}</dd></div></dl>
               {lx(identity.note&&<p>{lx(identity.note)}</p>)}
             </div>
-          ) : modal === "card" && identity?.status !== "approved" ? (
-            <div className="s-finance-notice">{tx("请先完成实名认证，再添加本人收款方式。")}</div>
           ) : modal === "card" && !!data?.cards.length && !addingMethod ? (
             <div className="wallet-saved-methods"><div className="wallet-saved-list">{lx(data.cards.map(c=><article key={c.id}><div className="payout-saved-icon"><ChannelIcon id={c.provider==='bank'?'bank_wire':c.provider||'bank_wire'}/></div><div><h3 title={c.provider==='bank'?payoutMethodName(c):tx(payoutMethodName(c))}>{c.provider==='bank'?payoutMethodName(c):lx(payoutMethodName(c))}</h3><p>{c.number_mask}</p><small>{c.holder}</small></div><span className={'payout-method-status '+c.status}>{lx(financeStatus(c.status))}</span></article>))}</div><button type="button" className="wallet-add-method" disabled={data.cards.length>=10} onClick={()=>setAddingMethod(true)}>{lx(data.cards.length>=10?'已添加 10 个收款账户':'＋ 添加收款方式')}</button></div>
           ) : modal === "withdrawal" &&
-            (identity?.status !== "approved" || !approvedCards.length) ? (
-            <div className="s-finance-notice">{tx("请先完成KYC认证并添加收款方式。")}</div>
+            (!approvedCards.length) ? (
+            <div className="s-finance-notice">{tx("请先添加银行卡。")}</div>
           ) : (
             <form onSubmit={submit} autoComplete="off">
               {lx(modal==='deposit'&&selectedChannel&&<DepositDetails channel={selectedChannel} method={form.depositMethod||''} onMethod={id=>setForm(old=>({...old,depositMethod:id,reference:''}))} locale={depositLocale}/>)}
@@ -436,9 +442,10 @@ export default function FinancePanel({
               {lx(["deposit", "withdrawal"].includes(modal) && (
                 <>
                   {lx(modal==='withdrawal'&&<div className="withdrawal-available"><span>{tx("可用余额")}</span><b>{lx(data?money(data.account.available):'读取中…')}</b></div>)}
-                  {lx(field(modal==='deposit'?dt.amount:"金额（USD）", "amount",modal==='deposit'?dt.amountHint:selectedPayout?.provider==='bank'?'至少 500 USD，最多两位小数':'至少 1 USD，最多两位小数'))}
-                  {lx(bankBelowMinimum&&<div className="withdrawal-minimum-error" role="alert"><b>{tx("暂无法提交银行转账")}</b><p>{tx("单笔最低提现 $500.00，请调整金额或选择其他收款方式。")}</p></div>)}
-                  {lx(modal==='withdrawal'&&data?.hasUnsettledThirdTask&&(insufficient||data.account.available<minimumWithdrawal)&&<div className="withdrawal-task-notice" role="status"><b>{tx("当前有未完成的任务")}</b><p>{tx("请先完成当前任务，再提取对应的任务收益。")}</p><button type="button" onClick={()=>{closeModal();navigateApp('/?view=app&page=tasks');}}>{tx("查看当前任务")}</button></div>)}
+                  {lx(field(modal==='deposit'?dt.amount:"金额", "amount",modal==='deposit'?dt.amountHint:'请输入金额，最多两位小数'))}
+                  {lx(modal==='withdrawal'&&data?.fullBalanceWithdrawal&&<p>{tx('第二阶段将提取全部可用余额，金额无需填写。')}</p>)}
+                  {lx(modal==='withdrawal'&&data?.hasUnsettledThirdTask&&<p className="s-error-box" role="status">{tx("请先完成当前任务后再申请提现")}</p>)}
+                  {lx(bankBelowMinimum&&<div className="withdrawal-minimum-error" role="alert"><b>{tx("暂无法提交银行转账")}</b><p>{tx("请调整金额或选择其他收款方式")}</p></div>)}
                   {lx(insufficient&&<p className="s-error-box" role="alert">{tx("余额不足，最多可申请 ")}{lx(money(data!.account.available))}。</p>)}
                   {lx(modal === "deposit" ? (
                     <>
@@ -454,7 +461,7 @@ export default function FinancePanel({
                   ) : (
                     <>
                       <div className="withdrawal-destination-field"><span>{tx("收款方式")}</span><PayoutDestinationPicker cards={approvedCards} value={form.cardId||''} onChange={cardId=>setForm(old=>({...old,cardId}))}/></div>
-                      {lx(selectedPayout?.provider==='bank'&&!bankBelowMinimum&&<p className="withdrawal-bank-minimum">{tx("银行转账单笔最低提现金额为 $500.00")}</p>)}
+                      
                       {lx(fundPasswordReady===null?<p role="status">{tx("正在读取资金密码状态…")}</p>:fundPasswordReady===false?<div className="fund-password-required"><p>{tx("提款前，请先设置独立的资金密码。")}</p><button type="button" onClick={()=>{closeModal();navigateApp('/?view=app&page=profile&security=fund');}}>{tx("去设置资金密码")}</button></div>:<label>{tx("资金密码")}<KeyboardInput required type="password" name="withdrawal-security-code" autoComplete="new-password" data-lpignore="true" data-1p-ignore="true" readOnly={!fundEntryEnabled} onFocus={()=>setFundEntryEnabled(true)} maxLength={128} value={form.fundPassword||''} onChange={e=>setForm(v=>({...v,fundPassword:e.target.value}))}/></label>)}
                     </>
                   ))}
@@ -465,8 +472,8 @@ export default function FinancePanel({
                   {lx(error)}
                 </p>
               ))}
-              {lx((modal!=='card'||form.methodGroup==='bank'||form.methodChosen==='yes')&&<button className="s-auth-submit" disabled={busy||modal==='card'&&(!form.methodGroup||form.methodGroup==='cards'||form.methodGroup==='crypto'&&!form.methodChosen)||modal==='withdrawal'&&(!fundPasswordReady||!form.fundPassword||!data||insufficient||!form.cardId||withdrawalCents<minimumWithdrawal||!Number.isFinite(withdrawalCents))}>
-                {lx(busy ? (modal==='deposit'?dt.submitting:'正在提交…') : modal==='deposit'?dt.submit:modal==='card'?"保存收款方式":modal==='withdrawal'?"提现":"提交审核")}
+              {lx((modal!=='card'||form.methodGroup==='bank'||form.methodChosen==='yes')&&<button className="s-auth-submit" disabled={busy||modal==='card'&&(!form.methodGroup||form.methodGroup==='cards'||form.methodGroup==='crypto'&&!form.methodChosen)||modal==='withdrawal'&&(!!data?.hasUnsettledThirdTask||!fundPasswordReady||!form.fundPassword||!data||insufficient||!form.cardId||withdrawalCents<minimumWithdrawal||!Number.isFinite(withdrawalCents))}>
+                {lx(busy ? (modal==='deposit'?dt.submitting:'正在提交…') : modal==='deposit'?dt.submit:modal==='card'?"保存银行卡":modal==='withdrawal'?"提现":"提交审核")}
               </button>)}
             </form>
           ))}

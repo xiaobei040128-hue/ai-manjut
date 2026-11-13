@@ -1,0 +1,26 @@
+/* Safari zooms focused controls below 16px and can keep that zoom on navigation.
+   Include portalled sheets, which are outside the .studio element. */
+body:has(.native-mode) {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body:has(.native-mode) :is(.device-screen, .bottom-sheet) {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+
+body:has(.native-mode) :is(.device-screen, .bottom-sheet)
+  :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]), textarea, select, [contenteditable="true"]) {
+  font-size: 16px !important;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+body:has(.native-mode) .bottom-sheet :is(.sheet-header, .sheet-content) {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}

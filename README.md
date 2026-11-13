@@ -1,19 +1,21 @@
 # AI CREATOR
 
-Comic & Short Drama Platform
+当前正式平台：https://aicreatorai.com/
 
-当前已交付版本：**2026-10-27，构建 `80ecfdc7515f`**。包含十种客户语言、钱包与动画修复、总后台删除代理账号、客户资料旧页面冲突校验。验证范围见 [最新版说明](docs/RELEASE-2026-10-27.md)。旧提交用于追溯，不是部署入口。
+2026-11-13 已核对当前生产版本 **b530dacbfceb**，构建时间 **2026-11-09T08:00:34.960Z**。本仓库当前源码直接提取自生产服务器，并包含 2026-11-10 发布的十种语言「关于我们」和「平台交易与使用规则」页面。当前交接说明见 [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md)。
 
-**当前产品规则和跨聊天交接以 [CURRENT_STATE.md](docs/CURRENT_STATE.md) 为准。** 旧版说明已归档，不能用旧ZIP或旧聊天恢复覆盖当前流程。
+## 安装与运行
 
-应用包含三阶段任务、版权码完成结算、客户独立档案、计划第1–5天普通/高阶报价配置、客户当地次日05:00开放，以及总后台/代理客户隔离。实际收付款仍需人工核实外部到账/出款。
+需要 Node.js 24+。执行 `npm ci` 安装依赖；开发运行 `npm run dev`；生产执行 `npm run build` 后运行 `npm start`。前台 `/?view=app`，后台 `/admin.html`。配置以 `.env.example` 为模板。升级时保留原有 `DRAMA_DATA_DIR`、数据库、账本、上传文件、会话和密钥。
 
-## 运行
+## 验证
 
-需要Node.js24+。npm ci 安装依赖；开发执行 npm run dev -- --port 4180；生产执行 npm run build 后 npm start。前台 /?view=app，后台 /admin.html。首次安装设置管理员；升级保留原DRAMA_DATA_DIR和finance.key，先通过后台备份。
+移动运行时完整性检查 28 项通过；当前业务测试 78 项通过；在含实际构建产物的服务器隔离测试环境运行当前 HTTP/API 检查 10 项通过。20 个公开语言页面与本次提取的正文及导航一致。测试使用隔离数据，不代表真实付款或所有设备验收。
 
-## 检查与交付
+`npm test` 包含业务及 HTTP/API 检查，后者需要先生成生产构建。构建使用 `npm run build` 保留旧哈希资源兼容；不要绕过该流程直接使用 `build:bundle`。
 
-npm test；npm run test:sites；npm run build。构建后的 /release-meta.json 标记buildId，交付包的RELEASE-MANIFEST.json标记提交和buildId。包不包含运行数据、登录会话、密钥、测试充值或node_modules。
+## 数据与退休项目
 
-公网配置见 [PRODUCTION.md](PRODUCTION.md)。当前交付与验证范围见 [最新版说明](docs/RELEASE-2026-10-27.md)。仓库按用户要求于2026-10-28重建，仅保留最新版快照。
+仓库不包含运行数据库、客户上传文件、私有 `.env`、凭据、密钥、`node_modules` 或 `dist`。`RELEASE-MANIFEST.json` 记录此次核对的线上构建信息；重新构建会生成新的构建信息。
+
+独立落地页 `datevera.date` 已停用并备份，容器、数据卷、路由服务和自启动已移除，公开入口返回 HTTP 410。Cloudflare DNS 记录及注册商域名尚未移除。

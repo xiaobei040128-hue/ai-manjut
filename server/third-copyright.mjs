@@ -1,3 +1,5 @@
+import {recordTaskActivity} from './reputation.mjs';
+import {settleReferralRound} from './referrals.mjs';
 import {randomBytes} from 'node:crypto';
 import {AppError} from './store.mjs';
 export function createThirdCopyright(store){
@@ -31,6 +33,8 @@ export function createThirdCopyright(store){
    post('reward',a.task.commission,'reward:'+a.id,'版权任务佣金 · '+a.task.title);
    db.prepare("INSERT INTO events(assignment_id,type,description,created_at) VALUES(?,'copyright_completed',?,?)").run(a.id,'版权码已核验，任务已完成，版权金额已返还，佣金已到账',time);
    store.notifyUser(user,'版权任务已完成',a.task.title+' · 版权金额已返还，佣金已到账','stage',a.id);
+   settleReferralRound(store,user,a.id);
+   recordTaskActivity(store,user);
    return {...view(user,a.id),first:true};
   });}
  };

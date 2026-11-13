@@ -20,7 +20,7 @@ export function filterCustomers(rows:Customer[],filter:CustomerFilters):Customer
   if(filter.registeredFrom && filter.registeredTo && filter.registeredFrom>filter.registeredTo) return [];
   return rows.filter(c=>{
     const day=registrationDay(c.created_at),pending=pendingCount(c);
-    return [c.name,c.email,c.id,c.agent_username].join(' ').toLowerCase().includes(filter.query.trim().toLowerCase())
+    return [c.name,c.email,c.id,c.agent_username,c.agent_name].join(' ').toLowerCase().includes(filter.query.trim().toLowerCase())
       && (filter.customerType==='all'||(c.customer_type||'real')===filter.customerType)
       && (filter.identity==='all'||c.identity_status===filter.identity)
       && (filter.stage==='all'||String(c.progress?.stage||1)===filter.stage)

@@ -1,3 +1,4 @@
+import {copyTaskCode as copyText} from '../studio/task-clipboard';
 import {usePermission} from './PermissionContext';
 import { createCsv, downloadBlob } from "../studio/downloads";
 import { useEffect, useRef, useState } from "react";
@@ -31,11 +32,16 @@ type Target = {
   frozen?: boolean;
   amount?: number;
   kind?: string;
+  bank?: string;
+  holder?: string;
+  number_mask?: string;
+  provider?: string;
+  network?: string;
 };
 export default function Finance({isSuper=true,customerId,initialTab="withdrawal",onUpdated}:{isSuper?:boolean;customerId?:string;initialTab?:string;onUpdated?:()=>Promise<void>}) {
  const can=usePermission();
   const [data, setData] = useState<Snapshot | null>(null),
-    [tab, setTab] = useState(initialTab),
+    [tab, setTab] = useState(initialTab==='identity'?'bank':initialTab),
     [status, setStatus] = useState("all"),
     [query, setQuery] = useState(
       () =>
@@ -77,6 +83,8 @@ export default function Finance({isSuper=true,customerId,initialTab="withdrawal"
   const canReveal=can('sensitiveReveal');
   useEffect(()=>{if(!canReveal){privateVersion.current++;setPrivate(null);}},[canReveal]);
   const reviewPermission=tab==='identity'?'identityReview':tab==='bank'?'payoutReview':tab==='deposit'?'depositReview':'withdrawalReview';
+  const withdrawalRequest=target?.type==='fund'&&target.kind==='withdrawal'?data?.requests.find(r=>r.id===target.id&&r.kind==='withdrawal'):undefined;
+  const withdrawalCard=withdrawalRequest?.card_id?data?.cards.find(c=>c.id===withdrawalRequest.card_id&&c.user_id===withdrawalRequest.user_id):undefined;
   function open(t: Target) {
     privateVersion.current++;
     setTarget(t);
@@ -116,7 +124,7 @@ export default function Finance({isSuper=true,customerId,initialTab="withdrawal"
       setTarget(null);
       setPrivate(null);
       setSuccess("操作已保存。");
-      try { await load();await onUpdated?.();if(alive.current)setSuccess("操作已保存，账本与客户状态已同步。"); }
+      try { window.dispatchEvent(new Event("creator-review-updated"));await load();await onUpdated?.();if(alive.current)setSuccess("操作已保存，账本与客户状态已同步。"); }
       catch { if(alive.current)setError("操作已保存，但列表暂未刷新。请刷新核对最新记录，无需重复提交。"); }
     } catch (e) {
       setError((e as Error).message);
@@ -184,7 +192,7 @@ export default function Finance({isSuper=true,customerId,initialTab="withdrawal"
         "客户邮箱",
         "申请编号",
         "申请类型",
-        "金额 USD",
+        "金额",
         "状态",
         "提交时间",
       ],
@@ -251,20 +259,6 @@ export default function Finance({isSuper=true,customerId,initialTab="withdrawal"
         </button>
         <button
           onClick={() => {
-            setTab("identity");
-            setStatus("review");
-            setPage(1);
-            setQuery("");
-          }}
-        >
-          <span>实名待审核</span>
-          <strong>
-            {data?.identities.filter((r) => r.status === "review").length || 0}
-          </strong>
-          <small>核对证件与正反面照片</small>
-        </button>
-        <button
-          onClick={() => {
             setTab("bank");
             setStatus("review");
             setPage(1);
@@ -275,7 +269,7 @@ export default function Finance({isSuper=true,customerId,initialTab="withdrawal"
           <strong>
             {data?.cards.filter((r) => r.status === "review").length || 0}
           </strong>
-          <small>核对收款账户姓名与实名资料</small>
+          <small>核对银行收款账户资料</small>
         </button>
       </section>}
       <div className="ad-callout" style={{ marginBottom: 20 }}>
@@ -290,10 +284,9 @@ export default function Finance({isSuper=true,customerId,initialTab="withdrawal"
             {[
               ["withdrawal", "提现审批"],
               ["deposit", "充值审批"],
-              ["identity", "实名认证"],
               ["bank", "提款方式"],
               ["account", "账户与上下分"],
-            ].filter(([id])=>!customerId||(initialTab==='identity'?['identity','bank'].includes(id):id===initialTab)).map(([id, label]) => (
+            ].filter(([id])=>!customerId||(initialTab==='identity'?id==='bank':id===initialTab)).map(([id, label]) => (
               <button
                 key={id}
                 className={tab === id ? "active" : ""}
@@ -430,7 +423,12 @@ export default function Finance({isSuper=true,customerId,initialTab="withdrawal"
                             <>
                               <b>{money(row.amount)}</b>
                               <small>#{row.id.slice(0, 8)}</small>
-                              {row.bank && (
+                              {("amount" in row)&&row.kind==='withdrawal'&&("bank" in row)&&row.bank&&(
+                                <small>
+                                  收款方式：{row.bank} {row.number_mask}{row.holder?' · '+row.holder:''}
+                                </small>
+                              )}
+                              {("amount" in row)&&row.kind==='deposit'&&("bank" in row)&&row.bank&&(
                                 <small>
                                   {row.bank} {row.number_mask}
                                 </small>
@@ -525,6 +523,7 @@ export default function Finance({isSuper=true,customerId,initialTab="withdrawal"
                                     查看资料
                                   </button>
                                 )}
+                                {tab==='withdrawal'&&<button disabled={!canReveal} onClick={()=>open({type:'fund',id:row.id,action:'review',kind:'withdrawal',amount:(row as FundRequest).amount})}>查看收款账户</button>}
                                 {s === "review" && (
                                   <>
                                     <button disabled={!can(reviewPermission)}
@@ -541,8 +540,13 @@ export default function Finance({isSuper=true,customerId,initialTab="withdrawal"
                                           decision: "approve",
                                           ...("amount" in row
                                             ? {
-                                                amount: row.amount,
-                                                kind: row.kind,
+                                                amount: (row as FundRequest).amount,
+                                                kind: (row as FundRequest).kind,
+                                                bank: (row as FundRequest).bank,
+                                                holder: (row as FundRequest).holder,
+                                                number_mask: (row as FundRequest).number_mask,
+                                                provider: (row as FundRequest).provider,
+                                                network: (row as FundRequest).network,
                                               }
                                             : {}),
                                         })
@@ -562,6 +566,17 @@ export default function Finance({isSuper=true,customerId,initialTab="withdrawal"
                                           id: row.id,
                                           action: "review",
                                           decision: "reject",
+                                          ...("amount" in row
+                                            ? {
+                                                amount: (row as FundRequest).amount,
+                                                kind: (row as FundRequest).kind,
+                                                bank: (row as FundRequest).bank,
+                                                holder: (row as FundRequest).holder,
+                                                number_mask: (row as FundRequest).number_mask,
+                                                provider: (row as FundRequest).provider,
+                                                network: (row as FundRequest).network,
+                                              }
+                                            : {}),
                                         })
                                       }
                                     >
@@ -579,7 +594,13 @@ export default function Finance({isSuper=true,customerId,initialTab="withdrawal"
                                           action: "review",
                                           decision: "paid",
                                           amount:
-                                            "amount" in row ? row.amount : 0,
+                                            "amount" in row ? (row as FundRequest).amount : 0,
+                                          kind: "withdrawal",
+                                          bank: (row as FundRequest).bank,
+                                          holder: (row as FundRequest).holder,
+                                          number_mask: (row as FundRequest).number_mask,
+                                          provider: (row as FundRequest).provider,
+                                          network: (row as FundRequest).network,
                                         })
                                       }
                                     >
@@ -592,6 +613,13 @@ export default function Finance({isSuper=true,customerId,initialTab="withdrawal"
                                           id: row.id,
                                           action: "review",
                                           decision: "reject",
+                                          amount: "amount" in row ? (row as FundRequest).amount : 0,
+                                          kind: "withdrawal",
+                                          bank: (row as FundRequest).bank,
+                                          holder: (row as FundRequest).holder,
+                                          number_mask: (row as FundRequest).number_mask,
+                                          provider: (row as FundRequest).provider,
+                                          network: (row as FundRequest).network,
                                         })
                                       }
                                     >
@@ -650,7 +678,7 @@ export default function Finance({isSuper=true,customerId,initialTab="withdrawal"
                   ? "冻结客户账户"
                   : "解冻客户账户"
                 : !target.decision
-                  ? "审核资料"
+                  ? target.kind==='withdrawal'?"提款收款账户":"审核资料"
                   : target.decision === "paid"
                     ? "确认已出款"
                     : target.decision === "reject"
@@ -731,16 +759,16 @@ export default function Finance({isSuper=true,customerId,initialTab="withdrawal"
                   </select>
                 </label>
                 <label>
-                  金额（USD）
+                  金额
                   <input
                     required
                     inputMode="decimal"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    placeholder="至少 1 USD，最多两位小数"
+                    placeholder="至少 1，最多两位小数"
                   />
                 </label>
-                <div className="ad-callout"><p>当前可用余额：{money(account(target.id)?.balance||0)}</p>{/^\d+(\.\d{1,2})?$/.test(amount)&&<p>调整后可用余额：{money((account(target.id)?.balance||0)+(direction==='credit'?1:-1)*Math.round(Number(amount)*100))}</p>}</div><p>请核对客户、调整前后余额并填写原因。下分不能扣成负余额。</p>
+                <div className="ad-callout"><p>当前可用余额：{money(account(target.id)?.balance||0)}</p>{/^\d+(\.\d{1,2})?$/.test(amount)&&<p>调整后可用余额：{money((account(target.id)?.balance||0)+(direction==='credit'?1:-1)*Math.round(Number(amount)*100))}</p>}</div><p>请核对客户及调整前后余额，备注可选填。下分不能扣成负余额。</p>
               </>
             )}
             {target.action === "freeze" && (
@@ -751,6 +779,24 @@ export default function Finance({isSuper=true,customerId,initialTab="withdrawal"
               </p>
             )}
             {target.amount != null && <h3>{money(target.amount)}</h3>}
+            {target.type==="fund"&&target.kind==="withdrawal"&&(
+              <div className="ad-callout"><p><b>本笔提款申请的收款账户</b></p>
+                <p>申请编号：{target.id}</p>
+                <dl className="ad-definition">
+                  <dt>收款渠道</dt><dd>{withdrawalCard?.bank||target.bank||'—'}</dd>
+                  <dt>收款人</dt><dd>{privateData?.name||withdrawalCard?.holder||target.holder||'—'}</dd>
+                  <dt>网络</dt><dd>{withdrawalCard?.network||target.network||'不适用'}</dd>
+                  <dt>{privateData?'完整账号 / 地址':'账号 / 地址（脱敏）'}</dt><dd style={{overflowWrap:'anywhere',userSelect:'text'}}>{privateData?.number||withdrawalCard?.number_mask||target.number_mask||'—'}</dd>
+                </dl>
+                {!withdrawalCard?<p role="alert">本笔申请关联的收款账户无法读取，请刷新核对。</p>:<button type="button" className="ad-button secondary" disabled={!canReveal} onClick={async()=>{
+                  const current=++privateVersion.current;setError('');
+                  try{const details=await api<NonNullable<typeof privateData>>('/admin/finance/bank/'+withdrawalCard.id+'/reveal','POST',{});if(alive.current&&current===privateVersion.current)setPrivate(details);}
+                  catch(e){if(alive.current&&current===privateVersion.current)setError((e as Error).message);}
+                }}>查看完整收款账户</button>}
+                {privateData&&<button type="button" className="ad-button secondary" onClick={async()=>{const current=privateVersion.current;try{await copyText(privateData.number);if(alive.current&&current===privateVersion.current)setSuccess('完整收款账号 / 地址已复制。');}catch{if(alive.current&&current===privateVersion.current)setError('复制失败，请选中完整账号手动复制。');}}}>复制完整账号 / 地址</button>}
+                <p>按本笔申请关联的收款方式显示；查看完整资料会记录操作日志。</p>
+              </div>
+            )}
             {target.decision === "approve" && target.kind === "deposit" && (
               <label className="ad-finance-checkbox">
                 <input
@@ -781,10 +827,8 @@ export default function Finance({isSuper=true,customerId,initialTab="withdrawal"
               <label>
                 {target.decision === "reject" ? "拒绝原因" : "操作备注"}
                 <textarea
-                  required={
-                    target.decision === "reject" || target.action !== "review"
-                  }
-                  minLength={target.action !== "review" ? 3 : 2}
+                  
+                  placeholder="备注（选填）"
                   maxLength={500}
                   rows={3}
                   value={note}

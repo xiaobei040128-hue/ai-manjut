@@ -1,0 +1,2 @@
+.app-native-scroll>.mobile-scroll{touch-action:pan-y pinch-zoom;user-select:auto;transition:none;overscroll-behavior-y:contain}
+.app-native-scroll>.mobile-scroll>.mobile-scroll-content{transform:none;will-change:auto}

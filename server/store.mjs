@@ -81,6 +81,9 @@ export function createStore(file, {fixtures=false,fixtureCatalog=[]}={}) {
     CREATE UNIQUE INDEX IF NOT EXISTS one_live_task_per_owner ON assignments(owner_id,task_id) WHERE status IN ('active','review','revision');
     CREATE INDEX IF NOT EXISTS assignments_owner ON assignments(owner_id,created_at);
     CREATE INDEX IF NOT EXISTS ledger_owner ON ledger(owner_id,id);
+    CREATE INDEX IF NOT EXISTS ledger_owner_totals ON ledger(owner_id,kind,amount);
+    CREATE INDEX IF NOT EXISTS ledger_owner_income ON ledger(owner_id,kind,created_at,amount);
+    CREATE INDEX IF NOT EXISTS assignment_terms_task_stage ON assignment_terms(assignment_id,stage);
     CREATE INDEX IF NOT EXISTS notifications_owner_time ON notifications(owner_id,created_at,id);
     CREATE INDEX IF NOT EXISTS notifications_owner_read ON notifications(owner_id,is_read);
   `);
@@ -101,8 +104,8 @@ export function createStore(file, {fixtures=false,fixtureCatalog=[]}={}) {
   function ensureActive() {
     if(context.getStore())ensureUserActive(owner());
   }
-  function atomic(fn) {
-    ensureActive();
+  function atomic(fn,{administrative=false}={}) {
+    if(!administrative)ensureActive();
     if (transactionDepth) return fn();
     db.exec("BEGIN IMMEDIATE");
     transactionDepth++;
@@ -252,9 +255,13 @@ export function createStore(file, {fixtures=false,fixtureCatalog=[]}={}) {
       submissions,
     };
   }
-  function summary({owners}={}) {
+  function summary({owners,taskView=false,assignmentIds,workspaceView=false,recordView=false}={}) {
     if(owners!==undefined&&(!Array.isArray(owners)||owners.some(id=>typeof id!=='string'||!id||id.length>100)))throw new AppError('无效客户范围');
     const selectedOwners=scoped()?[owner()]:owners,restricted=selectedOwners!==undefined,scopeArgs=restricted?[JSON.stringify(selectedOwners)]:[],whereOwner=column=>restricted?column+' IN (SELECT value FROM json_each(?))':'1';
+    if(recordView&&(!scoped()||workspaceView||taskView||!Array.isArray(assignmentIds)))throw new AppError('无效记录范围');
+    if(assignmentIds!==undefined&&(!(taskView||recordView)||!Array.isArray(assignmentIds)||assignmentIds.length>100||assignmentIds.some(id=>typeof id!=='string'||!id||id.length>100)))throw new AppError('无效任务范围');
+    if(workspaceView){if(!scoped()||taskView||assignmentIds!==undefined)throw new AppError('无效工作区范围');assignmentIds=all("SELECT id FROM assignments WHERE owner_id=? AND status IN ('active','review','revision') UNION SELECT id FROM (SELECT id FROM assignments WHERE owner_id=? AND status IN ('completed','cancelled') ORDER BY created_at DESC,id DESC LIMIT 20)",owner(),owner()).map(r=>r.id);}
+    const assignmentWhere=alias=>whereOwner(alias+'.owner_id')+(assignmentIds===undefined?'':' AND '+alias+'.id IN (SELECT value FROM json_each(?))'),assignmentArgs=assignmentIds===undefined?scopeArgs:[...scopeArgs,JSON.stringify(assignmentIds)];
     // Build the graph with a fixed number of reads, rather than one query per record.
     const group = (rows, key) => {
       const result = new Map();
@@ -264,39 +271,41 @@ export function createStore(file, {fixtures=false,fixtureCatalog=[]}={}) {
       }
       return result;
     };
-    const rawAssignments = all('SELECT * FROM assignments WHERE '+whereOwner('owner_id')+' ORDER BY created_at DESC',...scopeArgs);
-    const taken = new Map(all("SELECT task_id,COUNT(*) n FROM assignments WHERE status!='cancelled' GROUP BY task_id").map(row=>[row.task_id,row.n]));
+    const rawAssignments = all('SELECT a.* FROM assignments a WHERE '+assignmentWhere('a')+' ORDER BY a.created_at DESC',...assignmentArgs);
+    const taken = new Map(taskView?[]:all("SELECT task_id,COUNT(*) n FROM assignments WHERE status!='cancelled' GROUP BY task_id").map(row=>[row.task_id,row.n]));
     const rate=policy().rate_bps;
-    const frozenTerms=new Map(all('SELECT f.* FROM assignment_terms f JOIN assignments a ON a.id=f.assignment_id WHERE '+whereOwner('a.owner_id'),...scopeArgs).map(row=>[row.assignment_id,row]));
+    const frozenTerms=new Map(all('SELECT f.* FROM assignment_terms f JOIN assignments a ON a.id=f.assignment_id WHERE '+assignmentWhere('a'),...assignmentArgs).map(row=>[row.assignment_id,row]));
     const personalOwner=scoped()||!restricted?owner():null;
-    const bookmarks = personalOwner?all("SELECT task_id FROM creator_bookmarks WHERE user_id=?",personalOwner).map((x) => x.task_id):[];
+    const bookmarks = !taskView&&personalOwner?all("SELECT task_id FROM creator_bookmarks WHERE user_id=?",personalOwner).map((x) => x.task_id):[];
     const saved = new Set(bookmarks);
-    const materials = group(all("SELECT * FROM materials WHERE active=1 ORDER BY created_at,id"), "task_id");
-    const tasks = all("SELECT * FROM tasks ORDER BY created_at,id").map((row) => ({...quote(row,rate),materials:materials.get(row.id)||[],bookmarked:saved.has(row.id),remaining:Math.max(0,row.slots-(taken.get(row.id)||0)),tags:[row.genre,row.language,row.platform],regions:["US","UK","CA"]}));
+    const materials = group(taskView?[]:all("SELECT * FROM materials WHERE active=1 ORDER BY created_at,id"), "task_id");
+    const tasks = (taskView||recordView?all("SELECT * FROM tasks WHERE id IN (SELECT a.task_id FROM assignments a WHERE "+assignmentWhere("a")+")",...assignmentArgs):all("SELECT * FROM tasks ORDER BY created_at,id")).map((row) => ({...quote(row,rate),materials:materials.get(row.id)||[],bookmarked:saved.has(row.id),remaining:Math.max(0,row.slots-(taken.get(row.id)||0)),tags:[row.genre,row.language,row.platform],regions:["US","UK","CA"]}));
     const taskMap = new Map(tasks.map((t) => [t.id,t]));
-    const uploads = group(all('SELECT u.* FROM uploads u JOIN assignments a ON a.id=u.assignment_id WHERE '+whereOwner('a.owner_id')+' ORDER BY u.created_at,u.id',...scopeArgs),'assignment_id');
-    const evidence = group(all('SELECT su.submission_id,u.* FROM assignments a JOIN submissions s ON s.assignment_id=a.id JOIN submission_uploads su ON su.submission_id=s.id JOIN uploads u ON u.id=su.upload_id WHERE '+whereOwner('a.owner_id')+' ORDER BY u.created_at,u.id',...scopeArgs),'submission_id');
-    const submissions = group(all('SELECT s.* FROM submissions s JOIN assignments a ON a.id=s.assignment_id WHERE '+whereOwner('a.owner_id')+' ORDER BY s.version DESC',...scopeArgs).map((s) => ({...s,links:parse(s.links,[]),uploads:(evidence.get(s.id)||[]).map(({submission_id,...u})=>u)})), "assignment_id");
-    const events = group(all('SELECT e.* FROM events e JOIN assignments a ON a.id=e.assignment_id WHERE '+whereOwner('a.owner_id')+' ORDER BY e.id',...scopeArgs),'assignment_id');
+    const uploads = group(taskView?[]:all('SELECT u.* FROM uploads u JOIN assignments a ON a.id=u.assignment_id WHERE '+assignmentWhere('a')+' ORDER BY u.created_at,u.id',...assignmentArgs),'assignment_id');
+    const evidence = group(taskView?[]:all('SELECT su.submission_id,u.* FROM assignments a JOIN submissions s ON s.assignment_id=a.id JOIN submission_uploads su ON su.submission_id=s.id JOIN uploads u ON u.id=su.upload_id WHERE '+assignmentWhere('a')+' ORDER BY u.created_at,u.id',...assignmentArgs),'submission_id');
+    const submissions = group(taskView?[]:all('SELECT s.* FROM submissions s JOIN assignments a ON a.id=s.assignment_id WHERE '+assignmentWhere('a')+' ORDER BY s.version DESC',...assignmentArgs).map((s) => ({...s,links:parse(s.links,[]),uploads:(evidence.get(s.id)||[]).map(({submission_id,...u})=>u)})), "assignment_id");
+    const events = group(taskView?[]:all('SELECT e.* FROM events e JOIN assignments a ON a.id=e.assignment_id WHERE '+assignmentWhere('a')+' ORDER BY e.id',...assignmentArgs),'assignment_id');
     const assignments = rawAssignments.map((a) => ({...a,task:frozenTask(a,taskMap.get(a.task_id),frozenTerms.get(a.id)),draft:parse(a.draft),uploads:uploads.get(a.id)||[],events:events.get(a.id)||[],submissions:submissions.get(a.id)||[]}));
     const hasFunds=!!get("SELECT name FROM sqlite_master WHERE type='table' AND name='fund_requests'");
     const withdrawalHeld=hasFunds?get("SELECT COALESCE(SUM(amount),0) AS n FROM fund_requests WHERE kind='withdrawal' AND status IN ('review','paying') AND "+whereOwner("user_id"),...scopeArgs).n:0;
     const coverHeld=get("SELECT name FROM sqlite_master WHERE type='table' AND name='newcomer_cover_orders'")?get("SELECT COALESCE(SUM(amount),0) n FROM newcomer_cover_orders WHERE state='purchased' AND "+whereOwner('owner_id'),...scopeArgs).n:0;
-    const rows = all('SELECT * FROM ledger WHERE '+whereOwner('owner_id')+' ORDER BY id DESC',...scopeArgs);
+    const totals=taskView||workspaceView||recordView?get("SELECT COALESCE(SUM(amount),0) available,COALESCE(SUM(CASE WHEN kind='reward' THEN amount ELSE 0 END),0) earned FROM ledger WHERE "+whereOwner('owner_id'),...scopeArgs):null;
+    const rows = taskView||recordView?[]:all('SELECT * FROM ledger WHERE '+whereOwner('owner_id')+' ORDER BY id DESC'+(workspaceView?' LIMIT 5':''),...scopeArgs);
+    const completeCounts=workspaceView?get("SELECT SUM(CASE WHEN status IN ('active','revision') THEN 1 ELSE 0 END) active,SUM(CASE WHEN status='review' THEN 1 ELSE 0 END) review,SUM(CASE WHEN status='completed' THEN 1 ELSE 0 END) completed FROM assignments WHERE owner_id=?",owner()):null;
     return {
-      profile: personalOwner?get("SELECT * FROM creator_profiles WHERE user_id=?",personalOwner):null,
+      profile: !taskView&&personalOwner?get("SELECT * FROM creator_profiles WHERE user_id=?",personalOwner):null,
       wallet: {
-        available: rows.reduce((sum,row)=>sum+row.amount,0),
+        available: totals?.available??rows.reduce((sum,row)=>sum+row.amount,0),
         withdrawalHeld,
         coverHeld,
         held: (get("SELECT name FROM sqlite_master WHERE type='table' AND name='task_balance_reservations'")?get("SELECT COALESCE(SUM(amount),0) n FROM task_balance_reservations WHERE state='reserved' AND "+whereOwner('owner_id'),...scopeArgs).n:0) + coverHeld + (get("SELECT name FROM sqlite_master WHERE type='table' AND name='community_license_orders'")?get("SELECT COALESCE(SUM(amount),0) n FROM community_license_orders WHERE state='purchased' AND "+whereOwner('owner_id'),...scopeArgs).n:0) + withdrawalHeld + get(
           "SELECT COALESCE(SUM(COALESCE(f.amount,t.deposit)),0) AS n FROM assignments a JOIN tasks t ON t.id=a.task_id LEFT JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.status IN ('active','review','revision') AND "+whereOwner("a.owner_id"),...scopeArgs,
         ).n,
-        earned: rows.filter(row=>row.kind==='reward').reduce((sum,row)=>sum+row.amount,0),
+        earned: totals?.earned??rows.filter(row=>row.kind==='reward').reduce((sum,row)=>sum+row.amount,0),
         currency: "USD",
         testMode: false,
       },
-      counts: {
+      counts: completeCounts?{active:completeCounts.active||0,review:completeCounts.review||0,completed:completeCounts.completed||0}:{
         active: assignments.filter((a) =>
           ["active", "revision"].includes(a.status),
         ).length,
@@ -305,8 +314,8 @@ export function createStore(file, {fixtures=false,fixtureCatalog=[]}={}) {
       },
       assignments,
       ledger: rows,
-      notificationsUnread:personalOwner?get('SELECT COUNT(*) n FROM notifications WHERE owner_id=? AND is_read=0',personalOwner).n:0,
-      notifications: personalOwner?all(
+      notificationsUnread:!taskView&&personalOwner?get('SELECT COUNT(*) n FROM notifications WHERE owner_id=? AND is_read=0',personalOwner).n:0,
+      notifications: !taskView&&personalOwner?all(
         "SELECT * FROM notifications WHERE owner_id=? ORDER BY created_at DESC LIMIT 100",personalOwner,
       ):[],
       bookmarks,
@@ -321,6 +330,7 @@ export function createStore(file, {fixtures=false,fixtureCatalog=[]}={}) {
   function claim(taskId,expected) {
     return atomic(() => {
       let t = getTask(taskId);
+      if(scoped()&&t.stage!==3)throw new AppError('旧阶段已停用，请进入当前任务',410);
       // Only a persisted offer owned by this account can override catalog pricing.
       if(t.stage===3&&db.prepare("SELECT 1 FROM sqlite_master WHERE name='stage_task_offers'").get()&&db.prepare('PRAGMA table_info(stage_task_offers)').all().some(c=>c.name==='pricing')){
         const priced=get('SELECT pricing FROM stage_task_offers WHERE owner_id=? AND task_id=? AND assignment_id IS NULL AND retired=0',owner(),taskId);
@@ -333,13 +343,11 @@ export function createStore(file, {fixtures=false,fixtureCatalog=[]}={}) {
       );
       if (old) return assignment(old.id);
       if(policy().rate_bps!==null && scoped()){
-        if(t.stage===2&&!get("SELECT a.id FROM assignments a JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.owner_id=? AND a.status='completed' AND f.stage=1",owner()))throw new AppError('请先完成第一阶段任务并通过审核',403);
-        if(t.stage===3&&!get("SELECT id FROM stage_enrollments WHERE user_id=? AND status='approved' ORDER BY rowid DESC LIMIT 1",owner()))throw new AppError('请先完成创作新境报名审核',403);
       }
-      if(!fixtures&&policy().rate_bps===null)throw new AppError('平台尚未配置佣金比例',409);
-      if(policy().rate_bps!==null&&scoped()&&(!expected||expected.amount!==t.deposit||expected.commission!==t.commission||expected.rateBps!==t.commission_rate_bps))throw new AppError('任务金额或佣金规则已更新，请刷新后确认领取',409);
+      if(!fixtures&&policy().rate_bps===null&&t.stage!==3)throw new AppError('平台尚未配置佣金比例',409);
+      if((policy().rate_bps!==null||t.stage===3)&&scoped()&&(!expected||expected.amount!==t.deposit||expected.commission!==t.commission||expected.rateBps!==t.commission_rate_bps))throw new AppError('任务金额或佣金规则已更新，请刷新后确认领取',409);
 
-      if(t.stage===3){const plan=thirdPlan(db,owner());if(plan.complete||plan.waiting||plan.claimed>=plan.limit||plan.dailyClaimed>=plan.dailyLimit)throw new AppError(plan.complete?'本期任务已全部完成':'请完成今日任务，下一天再开启新任务',409);if(get("SELECT id FROM assignments a JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.owner_id=? AND f.stage=3 AND a.status IN ('active','review','revision')",owner()))throw new AppError('请先完成当前作品',409);}
+      if(t.stage===3){const plan=thirdPlan(db,owner());if(plan.waiting||plan.dailyCompleted>=plan.dailyLimit)throw new AppError(plan.complete?'本期任务已全部完成':'请完成今日任务，下一天再开启新任务',409);if(get("SELECT id FROM assignments a JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.owner_id=? AND f.stage=3 AND a.status IN ('active','review','revision')",owner()))throw new AppError('请先完成当前作品',409);}
       const id = randomUUID(),
         created = now(),
         deadline = new Date(Date.now() + 48 * 3600e3).toISOString();
@@ -541,11 +549,11 @@ export function createStore(file, {fixtures=false,fixtureCatalog=[]}={}) {
       return assignment(id);
     });
   }
-  function cancel(id) {
+  function cancel(id,{administrative=false}={}) {
     return atomic(() => {
       const a = assignment(id);
       if (a.status === "cancelled") return a;
-      editable(a);
+      if(!administrative||a.status!=='review')editable(a);
       run("UPDATE assignments SET status='cancelled' WHERE id=?", id);
       ledger(
         id,
@@ -557,7 +565,7 @@ export function createStore(file, {fixtures=false,fixtureCatalog=[]}={}) {
       event(id, "cancelled", "任务已取消，冻结任务本金已返还");
       notify("任务已取消", a.task.title + " · 任务本金已返还", id);
       return assignment(id);
-    });
+    },{administrative});
   }
   function validateTask(input) {
     const title = text(input.title, 60),
@@ -602,7 +610,7 @@ export function createStore(file, {fixtures=false,fixtureCatalog=[]}={}) {
       )
     )
       throw new AppError("请选择或上传有效封面");
-    const stage=Number(input.stage??1);if(![1,2,3].includes(stage))throw new AppError('请选择第一、二或三阶段');
+    const stage=Number(input.stage??3);if(stage!==3)throw new AppError('仅支持当前版权任务');
     const premium=input.premium===true||input.premium===1||input.premium==='1'?1:0;
     return {title,description,platform,language,genre:genre||"都市剧情",deposit,commission,posts,episodes,slots,cover,stage,premium};
   }
@@ -632,13 +640,14 @@ export function createStore(file, {fixtures=false,fixtureCatalog=[]}={}) {
   }
   return {
     db,
-    dispatchStatus(){return thirdPlan(db,owner());},
+    dispatchStatus(options){return thirdPlan(db,owner(),new Date(),options);},
     notifications:notificationPage,
     notifyUser,
     commissionSettings:policy,
     setCommissionRate(rate,revision){if(revision!==undefined&&(!Number.isSafeInteger(revision)||revision<0))throw new AppError('请刷新后提交佣金配置');if(revision!==undefined&&revision!==policy().revision)throw new AppError('佣金比例已被其他页面更新，请重新读取后保存',409);if(!/^(?:0|[1-9]\d?)(?:\.\d{1,2})?$|^100(?:\.0{1,2})?$/.test(String(rate)))throw new AppError('佣金比例须为 0–100，最多两位小数');const bps=Math.round(Number(rate)*100);run('UPDATE commission_policy SET rate_bps=?,updated_at=?,revision=revision+1 WHERE id=1',bps,now());return policy();},
     asUser:(id,fn)=>context.run(id,fn),
     summary,
+    drawContext(){const rate=policy().rate_bps;return {tasks:all('SELECT * FROM tasks WHERE active=1 ORDER BY created_at,id').map(row=>quote(row,rate)),wallet:{available:balance(owner())}};},
     getTask,
     assignment,
     claim,
@@ -661,12 +670,12 @@ export function createStore(file, {fixtures=false,fixtureCatalog=[]}={}) {
         return getTask(id);
       });
     },
-    audited(actor,action,target,fn,detail={}) {
+    audited(actor,action,target,fn,detail={},options) {
       return atomic(() => {
         const result=fn();
         run("INSERT INTO admin_audit(actor,action,target,detail,created_at) VALUES(?,?,?,?,?)",text(actor,32),text(action,80),text(target||result?.id||result?.user?.id,100),JSON.stringify(detail),now());
         return result;
-      });
+      },options);
     },
     auditLog() {return all("SELECT * FROM admin_audit ORDER BY id DESC LIMIT 200").map(row=>({...row,detail:parse(row.detail)}));},
     addMaterial(taskId, meta) {

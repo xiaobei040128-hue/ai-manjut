@@ -15,7 +15,7 @@ export default class DesignBoundary extends Component<
         <section
           className={
             "u-preview-error" +
-            (new URLSearchParams(location.search).get("view") === "app" ||
+            (import.meta.env.PROD || new URLSearchParams(location.search).get("view") === "app" ||
             window.innerWidth <= 600
               ? " native-mode"
               : "")

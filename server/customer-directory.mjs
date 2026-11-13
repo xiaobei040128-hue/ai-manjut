@@ -1,13 +1,19 @@
 import {customerJourneyProgress} from './customer-journey-progress.mjs';
 import {AppError} from './store.mjs';
-export function customerDirectory(store, auth, scope, operator, customerType='all') {
+export function customerDirectory(store, auth, scope, operator, customerType='all', customerId) {
   if (!['all','real','test'].includes(customerType)) throw new AppError('无效客户类型筛选');
-  const db = store.db,
-    rows = scope.filterUsers(operator, auth.users()).filter(row=>customerType==='all'||row.customer_type===customerType);
+  if(customerId!==undefined&&(typeof customerId!=='string'||!customerId))throw new AppError('无效客户范围');
+  let owners;
+  if(customerId!==undefined){scope.assertUser(operator,customerId);owners=[customerId];}
+  else{const allowed=scope.users(operator);owners=allowed?[...allowed]:undefined;}
+  const db=store.db,rows=auth.users(owners).filter(row=>customerType==='all'||row.customer_type===customerType);
+  const held=table=>db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(table)?db.prepare('SELECT COALESCE(SUM(amount),0) n FROM '+table+' WHERE owner_id=? AND state=?'):null;
+  const cover=held('newcomer_cover_orders'),reserved=held('task_balance_reservations'),episode=held('community_license_orders');
   // Only approved display fields are selected; no document numbers, photos or hashes.
   const record =
     db.prepare(`SELECT a.frozen,a.freeze_reason,i.code AS invite_code,i.label AS invite_label,i.owner_id AS agent_id,
     CASE WHEN i.owner_id='super' THEN '总后台' ELSE COALESCE(g.username,'已停用代理') END AS agent_username,
+    COALESCE(NULLIF(g.name,''),g.username,'总后台') AS agent_name,
     (SELECT status FROM identities WHERE user_id=a.id ORDER BY created_at DESC,rowid DESC LIMIT 1) AS identity_status,
     (SELECT COUNT(*) FROM bank_cards WHERE user_id=a.id AND status='approved') AS approved_cards,
     (SELECT COUNT(*) FROM fund_requests WHERE user_id=a.id AND status='review') AS pending_funds,
@@ -24,9 +30,9 @@ export function customerDirectory(store, auth, scope, operator, customerType='al
   return rows.map((row) => {
     const extra = record.get(now, row.id);
     const { task_held, withdrawal_held, ...fields } = extra;
-    const coverHeld=db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='newcomer_cover_orders'").get()?db.prepare("SELECT COALESCE(SUM(amount),0) n FROM newcomer_cover_orders WHERE owner_id=? AND state='purchased'").get(row.id).n:0;
-    const reservedHeld=db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='task_balance_reservations'").get()?db.prepare("SELECT COALESCE(SUM(amount),0) n FROM task_balance_reservations WHERE owner_id=? AND state='reserved'").get(row.id).n:0;
-    const episodeHeld=db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='community_license_orders'").get()?db.prepare("SELECT COALESCE(SUM(amount),0) n FROM community_license_orders WHERE owner_id=? AND state='purchased'").get(row.id).n:0;
+    const coverHeld=cover?.get(row.id,'purchased').n||0;
+    const reservedHeld=reserved?.get(row.id,'reserved').n||0;
+    const episodeHeld=episode?.get(row.id,'purchased').n||0;
     return {
       ...row,
       progress:customerJourneyProgress(db,row.id),

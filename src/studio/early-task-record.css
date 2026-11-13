@@ -1,0 +1,14 @@
+.studio.experience-v3.page-tasks .early-task-record{padding:18px;margin-bottom:12px;border:1px solid var(--account-line);border-radius:18px;box-shadow:0 3px 12px #24203103;color:var(--account-ink);text-align:start}
+.early-record-heading{display:flex;align-items:flex-start;gap:12px;min-width:0}
+.early-record-icon{display:grid;place-items:center;flex:none;width:38px;height:38px;border-radius:12px;color:#795b93;background:#f3eef8}
+.early-record-icon svg{width:19px;height:19px}.early-record-icon.completed{background:#eef6f2;color:#52836e}
+.early-record-copy{flex:1;min-width:0}.early-record-stage{display:block;font-size:10px;font-weight:500;line-height:1.5;color:var(--account-muted)}
+.studio.experience-v3.page-tasks .early-task-record h3{margin:4px 0 0;font-size:15px;font-weight:650;line-height:1.5;letter-spacing:-.2px;overflow-wrap:anywhere}
+.early-record-heading>.s-status{margin-top:1px;max-width:30%;white-space:normal!important;text-align:center;line-height:1.5}
+.early-task-record .early-record-artwork{margin:12px 0 0;font-size:12px;line-height:1.6;color:#68616f;overflow-wrap:anywhere}
+.early-record-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;flex-wrap:wrap}
+.early-record-time{display:block;margin:0;font-size:11px;line-height:1.5;color:#928b9a;font-variant-numeric:tabular-nums}
+.early-record-footer>.early-record-reward{margin-inline-start:auto;color:#4e7b66;font-size:15px;font-weight:600;line-height:1.5;font-variant-numeric:tabular-nums;white-space:nowrap}
+.early-task-record .early-record-purchase{margin:10px 0 0;font-size:11px;line-height:1.6;color:#817888}
+.early-record-action{display:flex;align-items:center;justify-content:center;gap:8px;min-height:40px;width:100%;margin-top:14px;border:1px solid #e7dfee;border-radius:10px;background:#faf7fd;font:inherit;font-size:12px;color:#71558d;cursor:pointer}
+@media(max-width:360px){.studio.experience-v3.page-tasks .early-task-record{padding:15px}.early-record-heading{gap:9px}.early-record-icon{width:32px;height:32px;border-radius:10px}.studio.experience-v3.page-tasks .early-task-record h3{font-size:14px}}

@@ -1,3 +1,6 @@
+import {customerMessage} from './studio/customer-messages';
+import {amountNumber} from './studio/task-display';
+import {formatMoney,formatDate} from './formatters';
 import {getFormatLocale} from './i18n/language';
 export type Status =
   | "active"
@@ -94,6 +97,7 @@ export interface Notice {
   created_at: string;
 }
 export interface Bootstrap {
+  reputationScore?: number;
   profile: {
     id: number;
     name: string;
@@ -157,12 +161,13 @@ export async function api<T>(
     throw new Error("服务连接中断，请稍后重试");
   }
   if (!response.ok) {
-    const creatorPath=['/bootstrap','/journey','/finance','/notifications','/stage-journey','/stage-finance','/assignments'].some(prefix=>path===prefix||path.startsWith(prefix+'/')||path.startsWith(prefix+'?'));
+    const creatorPath=['/bootstrap','/customer-records','/customer-ledger','/journey','/finance','/notifications','/stage-journey','/stage-finance','/assignments'].some(prefix=>path===prefix||path.startsWith(prefix+'/')||path.startsWith(prefix+'?'));
     if (response.status===401&&(creatorPath||path==='/auth/session'||!!creatorRequestIdentity&&!path.startsWith('/admin/')) || response.status===403&&['/bootstrap','/stage-finance'].includes(path))
       window.dispatchEvent(
         new CustomEvent("creator-session-expired", { detail: result.error }),
       );
-    throw new ApiError(result.error || "操作失败", response.status);
+    const message=result.error || "操作失败";
+    throw new ApiError(typeof location!=="undefined"&&location.pathname.includes("admin")?message:customerMessage(message), response.status);
   }
   if(['/auth/session','/auth/login','/auth/register'].includes(path))creatorRequestIdentity=result.user?.id||"";
   if(path==='/auth/logout')creatorRequestIdentity="";
@@ -176,22 +181,8 @@ export function fileData(file: File): Promise<string> {
     reader.readAsDataURL(file);
   });
 }
-export const money = (cents: number) =>
-  new Intl.NumberFormat((typeof location!=="undefined"&&location.pathname.includes("admin"))?"en-US":getFormatLocale(), {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(cents / 100);
-export const date = (iso: string, full = false) =>
-  new Intl.DateTimeFormat((typeof location!=="undefined"&&location.pathname.includes("admin"))?"zh-CN":getFormatLocale(), {
-    timeZone: "Asia/Shanghai",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    ...(full ? { year: "numeric" } : {}),
-  }).format(new Date(iso));
+export const money = (cents:number) => typeof location!=="undefined"&&location.pathname.includes("admin")?formatMoney(cents,"en-US"):amountNumber(cents);
+export const date = (iso:string,full=false) => formatDate(iso,full,(typeof location!=="undefined"&&location.pathname.includes("admin"))?"zh-CN":getFormatLocale());
 export const statusText: Record<Status, string> = {
   active: "进行中",
   review: "审核中",

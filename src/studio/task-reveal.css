@@ -1,0 +1,403 @@
+/* The preview shell is intentionally separate from the customer experience. */
+/* Gold is an accent, not a second visual system. */
+/* Motion only follows successful state changes. No animation delays the next action. */
+@keyframes spin{to{transform:rotate(360deg)}}@keyframes cover-open{from{opacity:.15;transform:perspective(800px) rotateY(-34deg) translateX(-9px) scale(.96)}to{opacity:1;transform:perspective(800px) rotateY(0) translateX(0) scale(1)}}@keyframes copy-arrive{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}@keyframes panel-in{from{opacity:0}to{opacity:1}}@keyframes sheen{0%{opacity:0;transform:translateX(-45%)}25%{opacity:.7}100%{opacity:0;transform:translateX(45%)}}@keyframes receipt-arrive{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}@keyframes stamp{from{opacity:0;transform:scale(1.35) rotate(-15deg)}to{opacity:1;transform:scale(1) rotate(0)}}@keyframes earned{0%{opacity:.4;transform:translateY(4px)}50%{color:#4e8a65}100%{opacity:1;transform:translateY(0)}}@keyframes draw-check{from{stroke-dashoffset:20}to{stroke-dashoffset:0}}@keyframes star{from{opacity:.2;transform:rotate(-45deg) scale(.5)}to{opacity:1;transform:rotate(0) scale(1)}}@keyframes collect{from{opacity:0;transform:translateY(-9px) rotate(-6deg) scale(.9)}to{opacity:1;transform:none}}@keyframes gold-outline{0%{opacity:0}35%{opacity:1}100%{opacity:0}}@keyframes pending-breathe{0%,100%{filter:brightness(1)}50%{filter:brightness(1.1)}}
+
+.task-reveal .motion-stage {
+  position: fixed;
+  inset: 0;
+  width: min(410px, 100vw);
+  height: min(806px, 100dvh);
+  margin: auto;
+  border-radius: 24px;
+  box-shadow: 0 0 0 100vmax #160e2866, 0 25px 90px #1d102c55;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+  isolation: isolate;
+  color: #f4edf9;
+  background: #21172e;
+  --metal: #d5b9ec;
+  --wash: #9160c5;
+  --duration: 2600ms;
+  animation: cinema-enter .25s ease-out both;
+}
+.task-reveal .motion-stage.premium { --metal: #e6c485; --wash: #b8803c; background: #211a26; --duration: 3200ms; }
+.task-reveal .cinema-grain { position:absolute; inset:0; z-index:-1; opacity:.07; background:repeating-linear-gradient(0deg,transparent 0 2px,#fff2 2px 3px); pointer-events:none; }
+.task-reveal .cinema-aura { position:absolute; z-index:-1; width:540px; height:590px; top:30px; left:50%; transform:translateX(-50%); background:radial-gradient(ellipse,var(--wash),transparent 65%); opacity:.25; animation:cinema-light 2.4s ease both; }
+.task-reveal .cinema-rings { position:absolute; left:50%; top:42%; width:350px; height:350px; transform:translate(-50%,-50%); pointer-events:none; }
+.task-reveal .cinema-rings i { position:absolute; inset:0; border:1px solid color-mix(in srgb,var(--metal) 15%,transparent); border-radius:50%; animation:ring-expand 2.3s .2s var(--ease) both; }
+.task-reveal .cinema-rings i:nth-child(2) { inset:27px; animation-delay:.38s; }
+.task-reveal .cinema-rings i:nth-child(3) { inset:53px; animation-delay:.55s; }
+.task-reveal .cinema-skip { position:absolute; right:18px; top:19px; padding:10px 12px; border:1px solid #ffffff20; border-radius:20px; background:#ffffff06; color:#c8b5d5; font-size:10px; z-index:4; }
+.task-reveal .cinema-skip span { margin-left:7px; color:var(--metal); }
+.task-reveal .cinema-header { margin-top:86px; text-align:center; display:grid; justify-items:center; gap:11px; animation:cinema-copy-in .6s .15s both; }
+.task-reveal .cinema-header>span { font-size:9px; letter-spacing:3px; color:var(--metal); }
+.task-reveal .cinema-header>i { width:22px; height:1px; background:var(--metal); opacity:.5; }
+.task-reveal .cinema-header>small { font-size:7px; letter-spacing:2px; color:#b7a2c3; }
+.task-reveal .cinema-object { position:relative; width:172px; height:248px; margin:44px auto 0; perspective:1000px; flex-shrink:0; }
+.task-reveal .cinema-poster { position:absolute; inset:0; border-radius:9px; overflow:hidden; box-shadow:0 22px 40px #0006,0 0 0 1px #ffffff40; transform-origin:50% 85%; animation:poster-unveil 1.35s .2s var(--ease) both; }
+.task-reveal .cinema-poster>img { width:100%; height:100%; object-fit:cover; display:block; }
+.task-reveal .cinema-poster:after { content:''; position:absolute; inset:0; border-radius:inherit; border:1px solid #fff4; border-left:4px solid #fff2; pointer-events:none; }
+.task-reveal .cinema-foil { position:absolute; inset:-50%; background:linear-gradient(115deg,transparent 40%,#fff8 50%,transparent 60%); animation:foil-cross 1s .6s ease-in-out both; pointer-events:none; }
+.task-reveal .cinema-sleeve { position:absolute; inset:-5px -5px -6px; z-index:2; display:flex; flex-direction:column; align-items:center; padding:27px 15px; background:linear-gradient(145deg,#75598d,#483452 70%); border:1px solid #c5a5d955; border-radius:10px; box-shadow:inset 0 1px 0 #ffffff30,0 15px 40px #0005; animation:sleeve-release 1.15s .18s cubic-bezier(.5,0,.2,1) both; transform-origin:bottom center; }
+.task-reveal .premium .cinema-sleeve { background:linear-gradient(140deg,#695442,#3a2b37); border-color:#d7b77888; }
+.task-reveal .cinema-sleeve>span { font-size:8px; letter-spacing:3px; color:var(--metal); }
+.task-reveal .cinema-sleeve>svg { width:65px; height:65px; stroke:var(--metal); stroke-width:.6; fill:none; margin:22px 0 15px; }
+.task-reveal .cinema-sleeve>b { font:17px/1.4 Georgia,serif; letter-spacing:2px; color:#eee0f4; text-align:center; }
+.task-reveal .cinema-sleeve>small { font-size:7px; letter-spacing:1.5px; margin-top:18px; color:#bba4c6; }
+.task-reveal .cinema-shadow { position:absolute; bottom:-28px; left:-15%; width:130%; height:22px; border-radius:50%; background:#0005; filter:blur(12px); animation:shadow-reveal 1.4s both; }
+.task-reveal .cinema-copy { position:relative; text-align:center; width:100%; padding:0 30px; margin-top:34px; animation:cinema-copy-in .65s .65s both; }
+.task-reveal .cinema-kicker { font-size:9px; color:var(--metal); letter-spacing:1.3px; }
+.task-reveal .cinema-copy>h2 { font:500 28px/1.2 Georgia,serif; letter-spacing:-.6px; margin:13px auto 0; max-width:300px; text-wrap:balance; color:#f7effb; }
+.task-reveal .cinema-line { width:32px; height:1px; background:var(--metal); opacity:.4; margin:19px auto 13px; }
+.task-reveal .cinema-copy>p { font-size:10px; line-height:1.8; color:#b9a6c6; margin:0; }
+.task-reveal .cinema-continue { margin:23px 24px 29px; min-height:44px; width:calc(100% - 56px); border:1px solid #d6b9e940; border-radius:10px; background:linear-gradient(110deg,#c7a2df22,#c7a2df0a); color:#e4cbee; font-size:11px; letter-spacing:1px; animation:cinema-copy-in .4s .85s both; flex-shrink:0; }
+.task-reveal .cinema-continue>span { margin-left:14px; }
+.task-reveal .premium .cinema-continue { color:#e7cb94; border-color:#dbc38a44; background:linear-gradient(110deg,#d6b37622,#d6b37606); }
+.task-reveal .cinema-timeline { position:absolute; bottom:0; left:0; right:0; height:2px; background:#ffffff08; }
+.task-reveal .cinema-timeline>i { display:block; height:100%; background:var(--metal); transform-origin:left; animation:cinema-time var(--duration) linear both; opacity:.65; }
+.task-reveal .cinema-particles { position:absolute; inset:0; pointer-events:none; }
+.task-reveal .cinema-particles>i { position:absolute; left:var(--x); top:var(--y); width:3px; height:3px; border-radius:50%; background:var(--metal); box-shadow:0 0 8px var(--metal); animation:spark-rise 2s var(--delay) ease-out both; }
+.task-reveal .cinema-particles>i:nth-child(3n) { width:1px; height:10px; border-radius:0; }
+.task-reveal .cinema-seal { display:none; position:absolute; bottom:12px; right:12px; width:43px; height:43px; border-radius:50%; background:#51435fef; box-shadow:0 3px 15px #0003; color:#e3ccef; }
+.task-reveal .cinema-seal svg { width:100%; height:100%; fill:none; stroke:currentColor; stroke-width:1.2; stroke-linecap:round; stroke-linejoin:round; }
+.task-reveal .motion-stage.settlement { --duration:2900ms; }
+.task-reveal .settlement .cinema-header { margin-top:72px; }
+.task-reveal .settlement .cinema-object { width:115px; height:165px; margin-top:33px; }
+.task-reveal .settlement .cinema-sleeve { display:none; }
+.task-reveal .settlement .cinema-poster { animation:receipt-poster .65s var(--ease) both; }
+.task-reveal .settlement .cinema-seal { display:block; width:35px; height:35px; bottom:7px; right:7px; animation:stamp .55s .35s var(--ease) both; }
+.task-reveal .settlement .cinema-seal path { stroke-dasharray:32; animation:receipt-check .5s .55s ease-out both; }
+.task-reveal .settlement .cinema-copy { margin-top:27px; animation-delay:.2s; }
+.task-reveal .settlement .cinema-copy>h2 { font-family:inherit; font-size:22px; font-weight:500; letter-spacing:1px; margin-top:10px; }
+.task-reveal .cinema-reward { margin-top:24px; }
+.task-reveal .cinema-reward>small { font-size:9px; color:#b8a1c7; letter-spacing:1px; display:block; }
+.task-reveal .cinema-reward>strong { display:block; font-size:55px; font-weight:350; letter-spacing:-2px; line-height:1.2; color:#f1dafb; margin-top:8px; font-variant-numeric:tabular-nums; animation:reward-arrive .7s .45s var(--ease) both; }
+.task-reveal .premium .cinema-reward>strong { color:#f2d79e; }
+.task-reveal .cinema-reward>span { display:block; font-size:9px; color:#bda9c9; margin-top:10px; }
+.task-reveal .settlement .cinema-continue { animation-delay:.65s; }
+.task-reveal .motion-stage.leaving { animation:cinema-leave .35s ease-in both; }
+.task-reveal .settlement.leaving .cinema-poster { animation:receipt-collect .35s ease-in both; }
+/* The waiting card establishes the same material and lighting as the reveal. */
+@keyframes cinema-enter { from{opacity:0} to{opacity:1} }
+@keyframes cinema-leave { to{opacity:0;filter:blur(3px)} }
+@keyframes cinema-copy-in { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+@keyframes sleeve-release { 0%,15%{opacity:1;transform:rotate(-5deg) translateY(0)} 70%{opacity:.9;transform:rotate(6deg) translateY(110px)} 100%{opacity:0;transform:rotate(12deg) translateY(160px) scale(.95)} }
+@keyframes poster-unveil { 0%{opacity:.5;transform:rotate(-5deg) translateY(25px) scale(.94)} 50%{opacity:1;transform:rotate(2deg) translateY(-18px) scale(1.02)} 100%{opacity:1;transform:rotate(0) translateY(0) scale(1)} }
+@keyframes foil-cross { 0%{transform:translateX(-70%);opacity:0} 25%{opacity:.7} 100%{transform:translateX(70%);opacity:0} }
+@keyframes ring-expand { from{opacity:0;transform:scale(.6) rotateX(40deg)} 35%{opacity:.8} to{opacity:.25;transform:scale(1.12) rotateX(0)} }
+@keyframes cinema-light { from{opacity:0;transform:translateX(-50%) scale(.7)} 45%{opacity:.4} to{opacity:.22;transform:translateX(-50%) scale(1.1)} }
+@keyframes spark-rise { 0%{opacity:0;transform:translateY(20px) scale(.4)} 30%{opacity:.7} 100%{opacity:0;transform:translateY(-70px) scale(.2)} }
+@keyframes shadow-reveal { from{opacity:0;transform:scale(.5)} to{opacity:1;transform:scale(1)} }
+@keyframes cinema-time { from{transform:scaleX(0)} to{transform:scaleX(1)} }
+@keyframes receipt-poster { from{opacity:0;transform:translateY(14px) rotate(-8deg)} to{opacity:1;transform:none} }
+@keyframes receipt-check { from{stroke-dashoffset:32} to{stroke-dashoffset:0} }
+@keyframes reward-arrive { from{opacity:0;transform:translateY(12px);filter:blur(4px)} to{opacity:1;transform:none;filter:blur(0)} }
+@keyframes receipt-collect { to{transform:translateY(180px) scale(.3);opacity:0} }
+@media(max-height:740px) {
+ .task-reveal .cinema-header{margin-top:65px}.task-reveal .cinema-object{width:140px;height:203px;margin-top:27px}.task-reveal .cinema-copy{margin-top:23px}.task-reveal .cinema-copy>h2{font-size:24px}.task-reveal .cinema-continue{margin-top:17px;margin-bottom:16px}.task-reveal .settlement .cinema-header{margin-top:60px}.task-reveal .settlement .cinema-object{margin-top:22px;width:95px;height:138px}.task-reveal .cinema-reward{margin-top:17px}.task-reveal .cinema-reward>strong{font-size:46px}.task-reveal .cinema-line{margin:14px auto 10px}
+}
+@media(prefers-reduced-motion:reduce) {
+ .task-reveal .motion-stage,.task-reveal .motion-stage *,.task-reveal .motion-stage *:before,.task-reveal .motion-stage *:after{animation:none!important;transition:none!important}.task-reveal .cinema-sleeve,.task-reveal .cinema-particles,.task-reveal .cinema-foil{display:none}
+}
+@media(max-width:720px) {
+ .task-reveal .motion-stage { inset:0; width:100%; max-width:460px; margin-inline:auto; height:100dvh; border-radius:0; }
+}
+
+/* Layered product artwork. The foreground lip occludes the emerging poster. */
+.task-reveal .archive-floor { position:absolute; bottom:-10px; left:3%; width:94%; height:35px; border:1px solid #d7b6f122; border-radius:50%; background:radial-gradient(ellipse,#b991d444,transparent 70%); box-shadow:0 10px 25px #16092755; }
+.task-reveal .cinema-header { margin-top:65px; }
+.task-reveal .cinema-object {
+  width: 302px;
+  height: 280px;
+  margin-top: 34px;
+}
+.task-reveal .archive-display {
+  position:absolute;
+  left:0;
+  bottom:0;
+  width:302px;
+  height:225px;
+  animation:archive-land .8s var(--ease) both;
+}
+.task-reveal .archive-base,.task-reveal .cinema-archive-front {
+  position:absolute;
+  left:0;
+  bottom:0;
+  width:302px;
+  height:225px;
+  object-fit:contain;
+}
+.task-reveal .archive-base { filter:drop-shadow(0 18px 18px #0c051b66); }
+.task-reveal .cinema-archive-front { z-index:3; clip-path:inset(70% 0 0); animation:archive-land .8s var(--ease) both; pointer-events:none; }
+.task-reveal .archive-beam {
+  position:absolute;
+  left:65px;
+  right:65px;
+  bottom:51px;
+  height:215px;
+  background:linear-gradient(0deg,#efb9ff70,transparent 90%);
+  clip-path:polygon(0 100%,100% 100%,85% 0,15% 0);
+  mix-blend-mode:screen;
+  filter:blur(10px);
+  animation:archive-beam 2.6s ease both;
+}
+.task-reveal .premium .archive-beam { background:linear-gradient(0deg,#ffd49780,transparent 90%); }
+.task-reveal .cinema-sleeve { display:none; }
+.task-reveal .cinema-poster {
+  inset:auto;
+  width:122px;
+  height:177px;
+  top:0;
+  left:90px;
+  z-index:2;
+  border:1px solid #e5d0f2aa;
+  border-radius:7px;
+  animation:archive-emerge 1.65s .15s cubic-bezier(.2,.8,.2,1) both;
+}
+.task-reveal .premium .cinema-poster { border-color:#ebcd93; box-shadow:0 15px 35px #14051e66,0 0 25px #e9c17530; }
+.task-reveal .cinema-poster:after { border-left-width:3px; }
+.task-reveal .cinema-foil { animation-delay:1.1s; }
+.task-reveal .cinema-shadow { display:none; }
+.task-reveal .cinema-copy { margin-top:22px; animation-delay:.7s; animation-duration:.45s; }
+.task-reveal .cinema-copy>h2 { font-size:27px; }
+.task-reveal .cinema-continue { animation-delay:.9s; }
+.task-reveal .cinema-rings { top:38%; opacity:.65; }
+.task-reveal .settlement .cinema-object {
+  width:260px;
+  height:205px;
+  margin-top:28px;
+}
+.task-reveal .settlement .archive-display,.task-reveal .settlement .cinema-archive-front { display:none; }
+.task-reveal .settlement .cinema-poster {
+  width:106px;
+  height:153px;
+  left:34px;
+  top:24px;
+  transform:rotate(-10deg);
+  animation:receipt-art-arrive .9s var(--ease) both;
+}
+.task-reveal .settlement .cinema-seal { display:none; }
+.task-reveal .settlement .cinema-header { margin-top:57px; }
+.task-reveal .settlement .cinema-copy { margin-top:13px; animation-delay:.45s; }
+.task-reveal .settlement .cinema-copy>h2 { font-size:21px; }
+.task-reveal .cinema-reward {
+  position:relative;
+  margin:23px auto 0;
+  padding:17px 15px;
+  width:270px;
+  max-width:100%;
+  border:1px solid #bda0d13b;
+  border-radius:14px;
+  background:linear-gradient(145deg,#b28bcb16,#b28bcb06);
+  box-shadow:inset 0 1px 0 #ffffff0d;
+}
+.task-reveal .cinema-reward:before,.task-reveal .cinema-reward:after { content:''; position:absolute; top:31px; width:9px; height:9px; border-radius:50%; background:#251a31; border:1px solid #bda0d133; }
+.task-reveal .cinema-reward:before { left:-5px; }.task-reveal .cinema-reward:after{right:-5px}
+.task-reveal .cinema-reward>strong { font-size:48px; margin:5px 0 10px; }
+.task-reveal .cinema-reward>span { border-top:1px dashed #ceb6df33; padding-top:11px; margin-top:9px; }
+.task-reveal .premium .cinema-reward { border-color:#d5b78144; background:linear-gradient(145deg,#cfad7019,#cfad7006); }
+.task-reveal .settlement .cinema-line { display:none; }
+.task-reveal .settlement .cinema-copy>p { margin-top:15px; font-size:9px; }
+.task-reveal .settlement .cinema-continue { margin-top:18px; }
+@keyframes invitation-hover {
+  0%,100% { transform:translateX(-50%) translateY(0) rotate(-5deg); }
+  50% { transform:translateX(-50%) translateY(-7px) rotate(-2deg); }
+}
+@keyframes archive-land {
+  from { opacity:0; transform:translateY(30px) rotateX(12deg) scale(.88); }
+  to { opacity:1; transform:translateY(0) rotateX(0) scale(1); }
+}
+@keyframes archive-emerge {
+  0%,12% { opacity:0; transform:translateY(173px) scale(.68) rotateY(-20deg); }
+  35% { opacity:1; }
+  75% { transform:translateY(-12px) scale(1.04) rotateY(4deg); }
+  100% { opacity:1; transform:translateY(0) scale(1) rotateY(0); }
+}
+@keyframes archive-beam {
+  0%,12% { opacity:0; transform:scaleY(.2); transform-origin:bottom; }
+  45% { opacity:1; transform:scaleY(1); }
+  100% { opacity:.25; transform:scaleY(1); }
+}
+@keyframes receipt-art-arrive {
+  from { opacity:0; transform:translateX(30px) translateY(20px) rotate(0); }
+  to { opacity:1; transform:translateX(0) translateY(0) rotate(-10deg); }
+}
+@keyframes medallion-arrive {
+  from { opacity:0; transform:translateY(-22px) rotateY(-45deg) rotate(12deg) scale(.7); }
+  to { opacity:1; transform:translateY(0) rotateY(0) rotate(0) scale(1); }
+}
+@media(max-height:740px) {
+  .task-reveal .cinema-header { margin-top:58px; gap:8px; }
+  .task-reveal .cinema-object { width:260px; height:230px; margin-top:22px; }
+  .task-reveal .archive-display,.task-reveal .archive-base,.task-reveal .cinema-archive-front { width:260px; height:194px; }
+  .task-reveal .cinema-poster { width:105px; height:152px; left:77px; }
+  .task-reveal .archive-beam { bottom:43px; left:55px; right:55px; height:185px; }
+  .task-reveal .cinema-copy { margin-top:16px; }
+  .task-reveal .cinema-copy>h2 { font-size:24px; margin-top:10px; }
+  .task-reveal .cinema-line { margin:12px auto 9px; }
+  .task-reveal .cinema-continue { margin-top:16px; min-height:42px; }
+  .task-reveal .settlement .cinema-header { margin-top:48px; }
+  .task-reveal .settlement .cinema-object { width:230px; height:160px; margin-top:15px; }
+  .task-reveal .settlement .cinema-poster { width:87px; height:126px; top:15px; left:29px; }
+  .task-reveal .settlement .cinema-copy { margin-top:8px; }
+  .task-reveal .settlement .cinema-copy>h2 { font-size:19px; }
+  .task-reveal .cinema-reward { margin-top:17px; padding:13px 15px; }
+  .task-reveal .cinema-reward>strong { font-size:42px; }
+  .task-reveal .settlement .cinema-copy>p { margin-top:10px; }
+  .task-reveal .settlement .cinema-continue { margin-top:13px; }
+}
+.task-reveal body.cinema-open { overflow:hidden; }
+@media(prefers-reduced-motion:reduce) { .task-reveal .archive-display,.task-reveal .archive-base,.task-reveal .cinema-archive-front,.task-reveal .cinema-poster,.task-reveal .archive-beam{animation:none!important} }
+
+/* V04: film-led composition, legible financial hierarchy, continuous task flow. */
+.task-reveal .cinema-artback{position:absolute;inset:-35px;width:calc(100% + 70px);height:calc(100% + 70px);object-fit:cover;filter:blur(24px) saturate(.55);opacity:.23;z-index:-3;animation:artback-arrive 2.8s ease-out both;pointer-events:none}
+.task-reveal .cinema-curtain{position:absolute;inset:0;z-index:-2;background:linear-gradient(180deg,#100d1bc9 0,#1e142b55 32%,#181220dd 65%,#16101efc 100%);pointer-events:none}.task-reveal .cinema-grain{opacity:.035}.task-reveal .cinema-aura{opacity:.15}.task-reveal .cinema-rings{display:none}
+.task-reveal .motion-stage{background:#17111f;border:1px solid #dac3e522;--metal:#e0c9ed}.task-reveal .motion-stage.premium{background:#201921;--metal:#f0d69e}.task-reveal .premium .cinema-curtain{background:linear-gradient(180deg,#19121bc9,#2c202855 32%,#201822ee 70%,#19131d)}
+.task-reveal .stage-coordinate{position:absolute;inset:0;pointer-events:none;z-index:1;font-size:6px;color:#cbb6d485;letter-spacing:2px}.task-reveal .stage-coordinate>span:first-child{position:absolute;top:280px;left:13px;writing-mode:vertical-rl;transform:rotate(180deg)}.task-reveal .stage-coordinate>span:last-child{position:absolute;right:13px;top:280px;writing-mode:vertical-rl}
+.task-reveal .cinema-header{margin-top:69px;gap:8px}.task-reveal .cinema-header>span{font-size:9px;letter-spacing:3.5px}.task-reveal .cinema-header>i{width:40px;background:linear-gradient(90deg,transparent,var(--metal),transparent)}.task-reveal .cinema-header>small{font-size:7px;color:#c0aecb}
+.task-reveal .cinema-object{width:300px;height:275px;margin-top:23px;perspective:1100px}
+.task-reveal .gallery-portal{position:absolute;inset:8px 30px 22px;border:1px solid #e5cefa28;border-radius:120px 120px 12px 12px;background:linear-gradient(120deg,#dec9e909,transparent 45%,#bfa2d109);box-shadow:inset 0 1px 0 #ead9f52b;animation:portal-open 1.1s var(--ease) both}.task-reveal .gallery-portal>i:first-child{position:absolute;inset:9px;border:1px solid #e9d4f410;border-radius:inherit}.task-reveal .gallery-portal>i:last-child{position:absolute;bottom:-12px;left:-15px;right:-15px;height:25px;border-radius:50%;border:1px solid #e2c5ee24;background:radial-gradient(ellipse,#b38bcb1c,transparent 70%)}
+.task-reveal .archive-display{width:238px;height:177px;left:31px;bottom:-13px;opacity:.75}.task-reveal .archive-base{width:238px;height:177px}.task-reveal .cinema-archive-front{width:238px;height:177px;left:31px;bottom:-13px;opacity:.75;z-index:3}.task-reveal .archive-beam{height:200px;bottom:42px;left:50px;right:50px;opacity:.25}
+.task-reveal .cinema-poster{width:142px;height:207px;left:79px;top:3px;border-radius:5px;transform-origin:50% 90%;animation:gallery-reveal 1.25s .1s var(--ease) both;box-shadow:0 14px 22px #0c071b99,7px 2px 0 -4px #e8d5f288,10px 4px 0 -5px #3f2c50;border:1px solid #f5e7ff88}.task-reveal .cinema-poster:after{border-left:2px solid #fff5;border-radius:5px}.task-reveal .cinema-foil{animation:foil-cross .9s .75s ease-in-out both}
+.task-reveal .poster-caption{position:absolute;z-index:4;bottom:52px;left:46px;right:46px;display:flex;justify-content:space-between;align-items:center;pointer-events:none;animation:cinema-copy-in .5s .8s both}.task-reveal .poster-caption>span{font-size:5px;letter-spacing:1.5px;padding:5px 7px;background:#21172fe8;border:1px solid #e3c6f331;border-radius:3px;color:#e5d0ee}.task-reveal .poster-caption>b{font:italic 21px Georgia;color:#e8cfef;text-shadow:0 2px 7px #160c22}
+.task-reveal .cinema-copy{margin-top:15px;padding:0 32px;animation-delay:.65s}.task-reveal .cinema-kicker{font-size:9px;letter-spacing:1px}.task-reveal .cinema-copy>h2{font-size:26px;line-height:1.15;margin-top:11px;max-width:300px;text-wrap:balance}.task-reveal .cinema-line{display:none}.task-reveal .cinema-copy>p{margin-top:11px;font-size:9px;color:#c2afcd}
+.task-reveal .scene-terms{display:flex;width:calc(100% - 64px);justify-content:center;gap:0;margin:20px 0 0;padding:13px 0;border-top:1px solid #d9bde526;border-bottom:1px solid #d9bde526;animation:cinema-copy-in .45s .85s both}.task-reveal .scene-terms>div{flex:1;text-align:center}.task-reveal .scene-terms>div+div{border-left:1px solid #d9bde526}.task-reveal .scene-terms span{display:block;font-size:8px;color:#b9a7c5}.task-reveal .scene-terms b{display:block;margin-top:6px;font-size:20px;font-weight:450;letter-spacing:.5px;font-variant-numeric:tabular-nums;color:#e9dcf1}.task-reveal .scene-terms>div:last-child b{color:var(--metal)}
+.task-reveal .cinema-continue{width:calc(100% - 64px);min-height:48px;margin:18px 32px 25px;background:linear-gradient(110deg,#e2c9f2,#bb96d5);border:1px solid #f0ddfc66;color:#302039;font-size:12px;font-weight:600;box-shadow:inset 0 1px 0 #fff7,0 8px 20px #09051244;animation-delay:.9s;transition:transform .15s,filter .15s}.task-reveal .cinema-continue:hover{filter:brightness(1.08)}.task-reveal .cinema-continue:active{transform:scale(.97)}.task-reveal .premium .cinema-continue{background:linear-gradient(110deg,#efddb5,#cba971);color:#392b22;border-color:#ffe9bd77}.task-reveal .cinema-skip{color:#d2c0dd;border-color:#dcc4eb33;font-size:10px;background:#251a3544}.task-reveal .cinema-particles>i{opacity:.65}
+.task-reveal .settlement .cinema-header{margin-top:61px}.task-reveal .settlement .cinema-object{width:260px;height:166px;margin-top:18px}.task-reveal .settlement .gallery-portal{inset:4px 30px 0;border-radius:90px 90px 15px 15px}.task-reveal .settlement .poster-caption{display:none}.task-reveal .settlement .cinema-poster{left:45px;top:5px;width:94px;height:137px;animation:receipt-art-arrive .8s var(--ease) both}.task-reveal .settlement .cinema-copy{margin-top:10px;animation-delay:.25s;padding:0 32px}.task-reveal .settlement .cinema-copy>h2{font-size:20px;margin-top:10px;letter-spacing:.2px}.task-reveal .settlement .cinema-kicker{font-size:9px}
+.task-reveal .cinema-reward{width:100%;margin:19px auto 0;padding:15px 20px 14px;border-radius:10px;background:linear-gradient(120deg,#d1afeb16,#f0d4ff06);border:1px solid #d8b8e740;box-shadow:inset 0 1px 0 #ffffff13,0 10px 30px #09041022}.task-reveal .cinema-reward>small{font-size:8px;color:#ccb6da;letter-spacing:1px}.task-reveal .cinema-reward>strong{font-size:48px;font-weight:350;line-height:1.15;margin:8px 0 12px;animation:reward-arrive .6s .4s both}.task-reveal .cinema-reward>span{padding-top:10px;font-size:9px;color:#c9b6d4}.task-reveal .cinema-reward:before,.task-reveal .cinema-reward:after{top:auto;bottom:29px;background:#201725}.task-reveal .settlement .cinema-copy>p{font-size:8px;margin-top:10px}.task-reveal .settlement .cinema-continue{margin-top:19px}.task-reveal .settlement .stage-coordinate>span{top:180px}
+@keyframes gallery-reveal{0%{opacity:0;transform:translateY(125px) rotateX(30deg) rotateY(-18deg) scale(.6)}35%{opacity:1}75%{transform:translateY(-8px) rotateY(5deg) scale(1.02)}100%{opacity:1;transform:none}}
+@keyframes portal-open{from{opacity:0;transform:scale(.8,.6) translateY(30px)}to{opacity:1;transform:none}}
+@keyframes artback-arrive{from{opacity:0;transform:scale(1.15)}to{opacity:.23;transform:scale(1)}}
+@keyframes ledger-fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes button-glint{to{transform:translateX(110%)}}
+@keyframes claim-charge{from{transform:translateX(-50%) translateY(0) rotate(-3deg)}to{transform:translateX(-50%) translateY(-15px) rotate(0);box-shadow:0 0 28px #d3a9f255}}
+@keyframes charge-ring{50%{opacity:.4;transform:translateX(-50%) scale(.9)}}
+@media(max-height:740px){.task-reveal .cinema-header{margin-top:55px;gap:6px}.task-reveal .cinema-object{width:260px;height:225px;margin-top:16px}.task-reveal .gallery-portal{inset:3px 29px 13px}.task-reveal .archive-display,.task-reveal .cinema-archive-front{width:205px;height:153px;left:27px;bottom:-16px}.task-reveal .archive-base{width:205px;height:153px}.task-reveal .cinema-poster{width:119px;height:173px;left:70px;top:0}.task-reveal .poster-caption{bottom:39px;left:36px;right:36px}.task-reveal .cinema-copy{margin-top:10px;padding:0 26px}.task-reveal .cinema-copy>h2{font-size:23px;margin-top:8px}.task-reveal .cinema-copy>p{margin-top:8px;font-size:8px}.task-reveal .scene-terms{margin-top:14px;padding:9px 0}.task-reveal .scene-terms b{font-size:18px;margin-top:4px}.task-reveal .cinema-continue{min-height:43px;margin-top:14px;margin-bottom:15px;font-size:11px}.task-reveal .stage-coordinate>span:first-child,.task-reveal .stage-coordinate>span:last-child{top:210px}.task-reveal .settlement .cinema-header{margin-top:48px}.task-reveal .settlement .cinema-object{height:124px;width:230px;margin-top:12px}.task-reveal .settlement .cinema-poster{width:74px;height:108px;left:44px;top:0}.task-reveal .settlement .cinema-copy{margin-top:9px}.task-reveal .settlement .cinema-copy>h2{font-size:18px;margin-top:7px}.task-reveal .cinema-reward{margin-top:13px;padding:12px 16px}.task-reveal .cinema-reward>strong{font-size:39px;margin:6px 0 9px}.task-reveal .cinema-reward>span{padding-top:8px;font-size:8px}.task-reveal .settlement .cinema-continue{margin-top:14px}.task-reveal .settlement .cinema-copy>p{margin-top:8px}}
+@media(max-width:360px){.task-reveal .cinema-copy>h2{font-size:22px}.task-reveal .settlement .cinema-copy>h2{font-size:17px}.task-reveal .scene-terms,.task-reveal .cinema-continue{width:calc(100% - 52px)}}
+@media(prefers-reduced-motion:reduce){.task-reveal .cinema-artback{opacity:.23}.task-reveal .gallery-portal{transform:none}.task-reveal .cinema-artback,.task-reveal .gallery-portal,.task-reveal .poster-caption,.task-reveal .scene-terms{animation:none!important}}
+@keyframes digit-settle{from{transform:translateY(0);filter:blur(2px)}to{transform:translateY(-50%);filter:blur(0)}}
+
+/* V06: compact hierarchy and state-to-state motion, without additional copy. */
+@keyframes license-unfold{from{opacity:0;transform:perspective(700px) rotateX(-24deg) translateY(-8px)}to{opacity:1;transform:none}}
+@keyframes code-develop{from{opacity:0;filter:blur(4px);transform:translateY(4px)}to{opacity:1;filter:blur(0);transform:none}}
+@keyframes code-check{from{stroke-dashoffset:14}to{stroke-dashoffset:0}}
+@keyframes state-confirm{0%{opacity:.3;transform:translateY(-5px)}55%{color:#6b9675}100%{opacity:1;transform:none}}
+@keyframes action-arrive{from{opacity:.3;transform:translateY(7px)}to{opacity:1;transform:none}}
+@keyframes receipt-confirm{from{opacity:.5;transform:translateY(5px)}55%{box-shadow:0 0 0 3px #a5c8af22}to{opacity:1;transform:none;box-shadow:0 0 0 0 #a5c8af00}}
+@keyframes tap-spread{from{opacity:.65;transform:translate(-50%,-50%) scale(0)}to{opacity:0;transform:translate(-50%,-50%) scale(24)}}
+
+/* V07: a real two-face reveal, followed by the existing shared-cover transfer. */
+.task-reveal .cinema-poster{overflow:visible;transform-style:preserve-3d;animation:chapter-turn 1.35s .08s cubic-bezier(.22,.75,.2,1) both;background:transparent;border:0;border-radius:6px}
+.task-reveal .cinema-poster>img{position:absolute;inset:0;border-radius:6px;backface-visibility:hidden;transform:translateZ(1px);border:1px solid #f5e5fc88}
+.task-reveal .cinema-poster:after{backface-visibility:hidden;transform:translateZ(2px);border-radius:6px;border-left-width:3px}
+.task-reveal .poster-back{position:absolute;inset:0;transform:rotateY(180deg) translateZ(1px);backface-visibility:hidden;border-radius:6px;padding:7px;background:linear-gradient(125deg,#ad8dc1,#5e426f 45%,#35223f 85%);border:1px solid #dabcebc4;box-shadow:inset 0 1px 0 #fff6,inset -3px 0 0 #23122f55;color:#e5ccee}
+.task-reveal .poster-back>div{height:100%;border:1px solid #d5b7e357;border-radius:3px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;background:repeating-linear-gradient(45deg,transparent 0 5px,#e3c7f006 5px 6px)}
+.task-reveal .poster-back span{font-size:6px;letter-spacing:2px}.task-reveal .poster-back svg{width:57px;height:57px;margin:16px 0 13px;stroke:#dfc3ec;stroke-width:.65;fill:none}.task-reveal .poster-back b{font:11px/1.5 Georgia,serif;letter-spacing:2px;text-align:center;font-weight:400}.task-reveal .poster-back i{font-size:11px;font-style:normal;margin-top:13px}
+.task-reveal .cinema-foil{inset:0;border-radius:6px;background:linear-gradient(115deg,transparent 34%,#fff8 48%,#fff2 53%,transparent 66%) -220% 0/280% 100% no-repeat;backface-visibility:hidden;transform:translateZ(3px);animation:face-polish .6s 1.12s ease-out both;mix-blend-mode:screen}
+.task-reveal .premium .poster-back{background:linear-gradient(130deg,#d0b785,#776046 48%,#392b39);border-color:#f6dfaea8;color:#f2dfb9}.task-reveal .premium .poster-back>div{border-color:#eacb925e}.task-reveal .premium .poster-back svg{stroke:#f0d7a3}.task-reveal .premium .cinema-poster{animation-name:premium-chapter-turn;animation-duration:1.6s}.task-reveal .premium .cinema-foil{animation-delay:1.35s}.task-reveal .premium .cinema-poster>img{border-color:#f0d4a1b3}
+.task-reveal .cinema-object:before{content:'';position:absolute;width:155px;height:18px;left:50%;bottom:40px;transform:translateX(-50%);border-radius:50%;background:#0e061970;filter:blur(9px);animation:turn-shadow 1.45s .08s ease-out both;pointer-events:none}.task-reveal .cinema-copy{animation-delay:.8s}.task-reveal .premium .cinema-copy{animation-delay:1s}.task-reveal .scene-terms{animation-delay:1s}.task-reveal .premium .scene-terms{animation-delay:1.18s}.task-reveal .cinema-continue{animation-delay:1.05s}.task-reveal .premium .cinema-continue{animation-delay:1.2s}
+.task-reveal .settlement .poster-back{display:none}.task-reveal .settlement .cinema-poster{transform-style:flat;animation:receipt-art-arrive .7s cubic-bezier(.16,1,.3,1) both}.task-reveal .settlement .cinema-poster>img{backface-visibility:visible;transform:none}.task-reveal .settlement .cinema-poster:after{transform:none}.task-reveal .settlement .cinema-object:before{bottom:2px;left:56%;width:180px;height:20px;animation:seal-shadow .85s .1s both}.task-reveal .settlement .cinema-foil{animation:face-polish .6s .55s ease-out both}.task-reveal .settlement .cinema-copy{animation-delay:.35s}.task-reveal .settlement .cinema-reward{animation:receipt-confirm .6s .65s both}.task-reveal .settlement .cinema-continue{animation-delay:1.05s}
+@keyframes chapter-turn{0%{opacity:0;transform:translateY(115px) rotateZ(-8deg) scale(.65)}18%{opacity:1;transform:translateY(45px) rotateZ(-5deg) scale(.88)}38%{transform:translateY(-7px) rotateZ(-3deg) scale(1)}78%{transform:translateY(-5px) rotateZ(1deg) scale(1.025)}100%{opacity:1;transform:translateY(0) rotateZ(0) scale(1)}}
+@keyframes premium-chapter-turn{0%{opacity:0;transform:translateY(125px) rotateZ(-10deg) scale(.6)}18%{opacity:1;transform:translateY(27px) rotateZ(-5deg) scale(.9)}36%{transform:translateY(-13px) rotateZ(-3deg) scale(1.02)}72%{transform:translateY(-8px) rotateZ(2deg) scale(1.04)}100%{opacity:1;transform:translateY(0) rotateZ(0) scale(1)}}
+@keyframes face-polish{0%{background-position:220% 0;opacity:0}20%{opacity:.8}100%{background-position:-120% 0;opacity:0}}
+@keyframes turn-shadow{0%{opacity:.15;transform:translateX(-50%) scale(.45)}45%{opacity:.6;transform:translateX(-50%) scale(.7)}100%{opacity:1;transform:translateX(-50%) scale(1)}}
+@keyframes certificate-seat{0%{opacity:0;transform:translateY(-35px) rotate(-16deg) scale(1.22)}45%{opacity:1;transform:translateY(5px) rotate(3deg) scale(.96)}68%{transform:translateY(-3px) rotate(-1deg) scale(1.015)}100%{opacity:1;transform:none}}
+@keyframes seal-shadow{from{opacity:0;transform:translateX(-50%) scale(.6)}60%{opacity:.9;transform:translateX(-50%) scale(1.08)}to{opacity:.7;transform:translateX(-50%) scale(1)}}
+@keyframes album-reflection{to{transform:translateX(100%)}}
+@media(max-height:740px){.task-reveal .poster-back svg{width:44px;height:44px;margin:11px 0}.task-reveal .poster-back b{font-size:9px;letter-spacing:1.5px}.task-reveal .poster-back span{font-size:5px}.task-reveal .poster-back i{margin-top:9px;font-size:9px}.task-reveal .cinema-object:before{bottom:28px;width:130px}.task-reveal .settlement .cinema-object:before{bottom:0;width:145px}}
+@media(prefers-reduced-motion:reduce){.task-reveal .cinema-poster{animation:none!important;transform:none}.task-reveal .poster-back{display:none}.task-reveal .cinema-foil,.task-reveal .cinema-object:before{display:none}}
+/* Rotate each face independently so compositing cannot flatten the back face. */
+.task-reveal .cinema-poster>img{animation:front-face-turn 1.35s .08s cubic-bezier(.22,.75,.2,1) both;z-index:2}
+.task-reveal .poster-back{animation:back-face-turn 1.35s .08s cubic-bezier(.22,.75,.2,1) both;z-index:1}
+.task-reveal .premium .cinema-poster>img,.task-reveal .premium .poster-back{animation-duration:1.6s}
+.task-reveal .settlement .cinema-poster>img{animation:none}
+@keyframes front-face-turn{0%,18%{transform:rotateY(-180deg)}38%{transform:rotateY(-155deg)}78%{transform:rotateY(8deg)}100%{transform:rotateY(0)}}
+@keyframes back-face-turn{0%,18%{transform:rotateY(0)}38%{transform:rotateY(25deg)}78%{transform:rotateY(188deg)}100%{transform:rotateY(180deg)}}
+@media(prefers-reduced-motion:reduce){.task-reveal .cinema-poster>img{animation:none!important;transform:none}}
+.task-reveal .motion-stage.leaving .cinema-copy,.task-reveal .motion-stage.leaving .scene-terms,.task-reveal .motion-stage.leaving .scene-ledger{transition:opacity .2s;opacity:0}.task-reveal .motion-stage.leaving .cinema-continue{pointer-events:none}
+/* A shorter choreography after the first completed task. */
+.task-reveal .returning:not(.settlement) .cinema-poster,.task-reveal .returning:not(.settlement) .cinema-poster>img,.task-reveal .returning:not(.settlement) .poster-back{animation-duration:.95s}
+.task-reveal .returning:not(.settlement) .cinema-copy{animation-delay:.48s}.task-reveal .returning:not(.settlement) .scene-terms{animation-delay:.65s}.task-reveal .returning:not(.settlement) .cinema-continue{animation-delay:.72s}.task-reveal .returning:not(.settlement) .cinema-foil{animation-delay:.8s}
+/* Focused reveal: artwork first, quieter supporting objects. */
+.task-reveal .motion-stage:not(.settlement) .archive-display,.task-reveal .motion-stage:not(.settlement) .cinema-archive-front{opacity:.44;filter:saturate(.65)}
+.task-reveal .motion-stage:not(.settlement) .gallery-portal{border-color:#dcc6e726;background:linear-gradient(120deg,#ddc5ef08,transparent 50%,#b990d20a)}
+.task-reveal .motion-stage:not(.settlement) .cinema-poster{box-shadow:0 18px 30px #09040e99,4px 2px 0 -2px #d7bfdc88}
+.task-reveal .cinema-particles>i:nth-child(n+9){display:none}.task-reveal .cinema-grain{opacity:.02}.task-reveal .cinema-header>span{letter-spacing:2.7px}.task-reveal .cinema-copy>h2{letter-spacing:-.4px}
+.task-reveal .settlement .gallery-portal{display:none}.task-reveal .settlement .cinema-poster{width:111px;height:161px;left:39px;top:0;transform:rotate(-6deg)}.task-reveal .settlement .cinema-object{height:177px}.task-reveal .settlement .cinema-reward{border:1px solid #d8b8e72e;background:linear-gradient(125deg,#d7b6e816,#d7b6e805);box-shadow:inset 0 1px 0 #ffffff0d}.task-reveal .settlement .cinema-reward>strong{font-size:53px}.task-reveal .settlement .cinema-kicker{letter-spacing:1.8px}.task-reveal .settlement .cinema-copy>h2{font-size:19px;letter-spacing:.8px}.task-reveal .settlement .cinema-reward:before,.task-reveal .settlement .cinema-reward:after{display:none}
+@media(max-height:740px){.task-reveal .settlement .cinema-object{height:132px}.task-reveal .settlement .cinema-poster{width:82px;height:119px;left:41px;top:0}.task-reveal .settlement .cinema-reward>strong{font-size:42px}.task-reveal .settlement .cinema-copy>h2{font-size:17px}}
+.task-reveal .motion-stage.settlement{--duration:2400ms}
+/* Exit owns opacity; entrance fill modes must not reassert it during transfer. */
+.task-reveal .motion-stage.leaving .cinema-copy,.task-reveal .motion-stage.leaving .scene-terms,.task-reveal .motion-stage.leaving .scene-ledger,.task-reveal .motion-stage.leaving .cinema-continue,.task-reveal .motion-stage.leaving .cinema-header{animation:none!important;opacity:0!important;transition:opacity .12s ease!important}.task-reveal .motion-stage.leaving .premium-vault{opacity:0;transition:opacity .15s}.task-reveal .motion-stage.leaving .completion-sculpture{opacity:0;animation:none!important;transition:opacity .12s}
+
+/* Reveal actions activate after the work and its amounts have appeared. */
+.task-reveal .cinema-continue:disabled{pointer-events:none;cursor:default}
+
+/* Platform page: fluid browser layout without preview furniture. */
+.task-reveal .stage-coordinate,.task-reveal .cinema-header>small,.task-reveal .poster-caption{display:none!important}.task-reveal .motion-stage{height:min(806px,100dvh);width:min(440px,100vw)}
+@media(max-width:480px){.task-reveal .motion-stage{width:100%;height:100dvh;border-radius:0;border:0}}
+/* Refined platform composition. */
+/* Completed task: one quiet confirmation, one coherent financial receipt. */
+/* Isolated QA view; never appears in the normal task page. */
+/* Landscape phone: preserve action visibility without shrinking text to illegibility. */
+@media(max-height:500px) and (min-width:560px){
+.task-reveal .motion-stage{width:100vw;height:100dvh;max-width:none;border-radius:0;display:grid;grid-template-columns:minmax(210px,.9fr) minmax(280px,1.1fr);grid-template-rows:52px 1fr auto auto;gap:0;padding:0 35px 15px;align-items:center;overflow:auto;align-content:start}
+.task-reveal .cinema-header,.task-reveal .settlement .cinema-header{grid-column:1;grid-row:1;margin:12px 0 0;gap:4px}.task-reveal .cinema-header>i{display:none}.task-reveal .cinema-skip{top:10px;right:15px;padding:7px 10px;font-size:9px}
+.task-reveal .cinema-object,.task-reveal .settlement .cinema-object{grid-column:1;grid-row:2/5;margin:0 auto;width:260px;height:225px;transform:scale(.82);transform-origin:center center}
+.task-reveal .cinema-copy,.task-reveal .settlement .cinema-copy{grid-column:2;grid-row:2;margin:12px 0 0;padding:0 10px;align-self:center}.task-reveal .cinema-copy>h2{font-size:23px;max-width:340px}.task-reveal .settlement .cinema-copy>h2{font-size:17px}.task-reveal .cinema-kicker{font-size:8px}
+.task-reveal .scene-terms{grid-column:2;grid-row:3;width:calc(100% - 20px);margin:12px 10px 0}.task-reveal .scene-terms{padding:9px 0}.task-reveal .scene-terms b{font-size:19px}.task-reveal .cinema-continue,.task-reveal .settlement .cinema-continue{grid-column:2;grid-row:4;width:calc(100% - 20px);margin:12px 10px 0;min-height:41px;font-size:11px}
+.task-reveal .settlement .cinema-object{height:177px}.task-reveal .settlement .cinema-poster{width:111px;height:161px;left:39px}.task-reveal .cinema-reward{margin-top:12px;padding:10px 14px}.task-reveal .settlement .cinema-reward>strong{font-size:34px;margin:3px 0 7px}.task-reveal .cinema-reward>span{font-size:8px;padding-top:7px}.task-reveal .cinema-rings,.task-reveal .stage-coordinate{display:none}
+}
+@supports not (height:100dvh){.task-reveal .motion-stage{height:100vh}}
+@media(max-height:500px) and (min-width:560px){.task-reveal .motion-stage{overflow:hidden;max-width:100%;box-sizing:border-box}.task-reveal .cinema-artback{max-width:none}}
+/* Reading scale: core task content stays readable on a real phone. */
+/* Stable artwork frames while local images decode; no extra interface copy. */
+
+/* Reading contrast on daylight mobile screens. */
+
+/* Album controls remain comfortable on touch screens and landscape phones. */
+
+/* A bounded reading area keeps album navigation available on short phones. */
+
+/* Preserve the browser page on edge-to-edge phone displays. */
+
+.task-reveal .cinema-open .workspace{pointer-events:none}
+
+/* Premium: an architectural reveal with a distinct, restrained material language. */
+.task-reveal .premium-vault{display:none}.task-reveal .premium:not(.settlement) .premium-vault{display:block;position:absolute;inset:-8px 27px 15px;perspective:900px;z-index:4;pointer-events:none}.task-reveal .premium:not(.settlement) .archive-display,.task-reveal .premium:not(.settlement) .cinema-archive-front,.task-reveal .premium:not(.settlement) .gallery-portal{display:none}
+.task-reveal .vault-halo{position:absolute;inset:-18px -20px 0;border:1px solid #cbb18024;border-radius:130px 130px 9px 9px;box-shadow:0 0 0 9px #d4b07706,inset 0 0 35px #e2bf7210;animation:vault-halo 1.4s ease both}.task-reveal .vault-plinth{position:absolute;left:-20px;right:-20px;bottom:-13px;height:25px;background:linear-gradient(180deg,#b6a07733,#322b2f 25%,#16121b);border:1px solid #d6b57344;border-radius:50%;box-shadow:0 15px 25px #09051099}.task-reveal .vault-door{position:absolute;top:0;bottom:0;width:50%;background:repeating-linear-gradient(90deg,transparent 0 8px,#d9bf8210 8px 9px),linear-gradient(120deg,#4e4249,#26212b 58%,#6c58484d);border:1px solid #c6a57566;backface-visibility:hidden;box-shadow:inset 0 0 0 6px #17121d,inset 0 0 0 7px #c3a06444;display:flex;align-items:center;justify-content:center;color:#e1c997;font:8px Georgia,serif;letter-spacing:2px}.task-reveal .vault-left{left:0;border-radius:100px 0 0 5px;transform-origin:left center;animation:vault-left 1.5s .15s cubic-bezier(.2,.7,.2,1) both}.task-reveal .vault-right{right:0;border-radius:0 100px 5px 0;transform-origin:right center;animation:vault-right 1.5s .15s cubic-bezier(.2,.7,.2,1) both}.task-reveal .vault-door span{margin-top:30px}.task-reveal .vault-monogram{position:absolute;left:50%;top:49%;transform:translate(-50%,-50%);font-size:32px;color:#e9d09a;text-shadow:0 0 20px #d5b27644;animation:vault-seal .75s .25s ease both}
+.task-reveal .premium:not(.settlement) .cinema-poster{top:10px;width:146px;height:214px;left:77px;animation:premium-rise 1.45s .35s cubic-bezier(.16,1,.3,1) both}.task-reveal .premium:not(.settlement) .poster-back{display:none}.task-reveal .premium:not(.settlement) .cinema-poster>img{animation:none;transform:none}.task-reveal .premium:not(.settlement) .cinema-foil{animation-delay:1.3s}.task-reveal .premium .cinema-header>span{color:#e9d4ac}.task-reveal .premium:not(.settlement) .cinema-copy{animation-delay:1.05s}.task-reveal .premium:not(.settlement) .scene-terms{animation-delay:1.2s}.task-reveal .premium:not(.settlement) .cinema-continue{animation-delay:1.25s}.task-reveal .premium .cinema-curtain{background:linear-gradient(180deg,#18141ce8,#29212d66 35%,#201923eb 70%,#17131d)}
+@keyframes vault-left{0%,15%{transform:rotateY(0);opacity:1}85%{opacity:1}100%{transform:rotateY(-112deg);opacity:0}}@keyframes vault-right{0%,15%{transform:rotateY(0);opacity:1}85%{opacity:1}100%{transform:rotateY(112deg);opacity:0}}@keyframes vault-seal{0%,20%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.4)}}@keyframes vault-halo{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:none}}@keyframes premium-rise{0%,15%{opacity:0;transform:translateY(35px) scale(.87)}65%{opacity:1;transform:translateY(-7px) scale(1.02)}100%{opacity:1;transform:none}}
+@media(max-height:740px){.task-reveal .premium:not(.settlement) .cinema-poster{width:120px;height:175px;left:70px;top:5px}.task-reveal .premium-vault{inset:-4px 27px 13px}.task-reveal .vault-door span{font-size:7px}}
+@media(prefers-reduced-motion:reduce){.task-reveal .premium-vault{display:none!important}}
+/* Hold the closed archive briefly, then open both leaves together. */
+.task-reveal .vault-left{animation-timing-function:cubic-bezier(.45,0,.2,1)}.task-reveal .vault-right{animation-timing-function:cubic-bezier(.45,0,.2,1)}
+.task-reveal .vault-halo:before{content:'';position:absolute;inset:10px;border:1px solid #d7ba7a1c;border-radius:inherit}.task-reveal .vault-plinth:after{content:'';position:absolute;left:18%;right:18%;top:3px;height:1px;background:linear-gradient(90deg,transparent,#e7d3a888,transparent)}
+.task-reveal .premium:not(.settlement) .scene-terms{border:1px solid #c6a77844;border-radius:10px;background:linear-gradient(110deg,#d4b47e10,#d4b47e03);padding:15px 0;position:relative}.task-reveal .premium:not(.settlement) .scene-terms:before{content:'';position:absolute;inset:3px;border:1px solid #ddc18b0d;border-radius:7px;pointer-events:none}.task-reveal .premium .scene-terms span{color:#c5b292}.task-reveal .premium .scene-terms b{color:#f0e1c3;font-size:23px}.task-reveal .premium .scene-terms>div+div{border-left-color:#e0c18d2b}
+.task-reveal .premium.settlement .cinema-object{width:282px;height:168px;margin-top:26px}.task-reveal .premium.settlement .cinema-object:after{content:'';position:absolute;left:22px;right:22px;top:12px;bottom:0;border:1px solid #c7ad7866;border-radius:9px;background:repeating-linear-gradient(120deg,transparent 0 13px,#d5bb7d06 13px 14px),linear-gradient(120deg,#65504555,#30243288);box-shadow:inset 0 0 0 5px #16101d88,inset 0 0 0 6px #c7ad7822,0 20px 35px #08030f55;z-index:0;transform:rotate(3deg);animation:premium-document .7s .15s both}.task-reveal .premium.settlement .cinema-poster{width:105px;height:153px;left:40px;top:0;z-index:2}.task-reveal .premium.settlement .cinema-reward{border-color:#d3b68155;background:linear-gradient(120deg,#cfac6620,#cfac6605);position:relative;overflow:hidden}.task-reveal .premium.settlement .cinema-reward:before{display:block;content:'';position:absolute;inset:4px;border:1px solid #d4b77d15;border-radius:7px;width:auto;height:auto;background:none}.task-reveal .premium.settlement .cinema-copy>h2{color:#e5d4b3}
+@keyframes premium-document{from{opacity:0;transform:translateY(15px) rotate(8deg)}to{opacity:1;transform:translateY(0) rotate(3deg)}}
+@media(max-height:740px){.task-reveal .premium.settlement .cinema-object{height:131px;width:244px;margin-top:15px}.task-reveal .premium.settlement .cinema-poster{width:80px;height:116px;left:38px}.task-reveal .premium:not(.settlement) .scene-terms{padding:10px 0}.task-reveal .premium .scene-terms b{font-size:20px}}
+@media(max-height:500px) and (min-width:560px){.task-reveal .premium.settlement .cinema-object{grid-column:1;grid-row:2/5;margin:0 auto;width:282px;height:168px}.task-reveal .premium.settlement .cinema-poster{width:105px;height:153px;left:40px}}
+@media(prefers-reduced-motion:reduce){.task-reveal .premium.settlement .cinema-object:after{animation:none}}
+/* Keep the fast premium sequence coherent rather than shortening isolated layers. */
+.task-reveal .premium.returning:not(.settlement) .vault-left,.task-reveal .premium.returning:not(.settlement) .vault-right{animation-duration:1s;animation-delay:.05s}.task-reveal .premium.returning:not(.settlement) .vault-monogram{animation-duration:.5s;animation-delay:.08s}.task-reveal .premium.returning:not(.settlement) .cinema-poster{animation-duration:1s;animation-delay:.15s}.task-reveal .premium.returning:not(.settlement) .cinema-copy{animation-delay:.7s}.task-reveal .premium.returning:not(.settlement) .scene-terms{animation-delay:.85s}.task-reveal .premium.returning:not(.settlement) .cinema-continue{animation-delay:.95s}.task-reveal .premium.returning:not(.settlement) .cinema-foil{animation-delay:.9s}
+/* Premium amount confirmation: one readable receipt with a clear hierarchy. */
+/* Confirmed premium purchase: light traces the receipt edge once, then rests. */
+@keyframes premium-receipt-edge{0%{opacity:0;clip-path:inset(0 100% 100% 0)}35%{opacity:.8}75%{clip-path:inset(0);opacity:.5}100%{clip-path:inset(0);opacity:0}}
+@keyframes premium-receipt-seat{from{opacity:.45;transform:translateY(7px)}65%{opacity:1;transform:translateY(-1px)}to{opacity:1;transform:none}}
+.task-reveal .cinema-poster.artwork-failed{background:linear-gradient(135deg,#6e527d,#34233e);border:1px solid #d8bde466}.task-reveal .cinema-poster.artwork-failed>img{opacity:0}.task-reveal .cinema-poster.artwork-failed:before{content:'✦';position:absolute;inset:0;display:grid;place-items:center;color:#ddc7e8;font-size:35px}.task-reveal .premium .cinema-poster.artwork-failed{background:linear-gradient(135deg,#685546,#302335);border-color:#cfb17d}.task-reveal .premium .cinema-poster.artwork-failed:before{color:#e6cf9e}
+
+/* Current composition: a single right-hand information column beside the cover. */
+
+/* The work has its own frame; the primary action sits below that frame. */
+
+/* Larger cover and a naturally balanced information column. */
+
+/* One compact, aligned specification pair under every synopsis. */
+
+.task-reveal { --ease:cubic-bezier(.16,1,.3,1); }
+.task-reveal .motion-stage { z-index:10000; max-width:100vw; max-height:100dvh; overflow:auto; font-family:system-ui,sans-serif; }
+.task-reveal .cinema-continue { cursor:pointer; flex-shrink:0; }

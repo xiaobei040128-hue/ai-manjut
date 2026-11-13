@@ -26,10 +26,10 @@ export default function FundPassword(){
   </button>
   {lx(notice&&<p className="fund-password-notice" role="status">{lx(notice)}</p>)}{lx(error&&!open&&<p className="fund-password-error" role="alert">{lx(error)}</p>)}
   <BottomSheet open={open} onOpenChange={v=>{if(!v)close();}} title={tx(configured?'修改资金密码':'设置资金密码')} description={tx("资金密码用于确认提款，请与登录密码分开设置。")}>
-   <form className="profile-password-form" onSubmit={submit}>
+   <form className="profile-password-form" onSubmit={submit}><p>{tx("请设置6位数字资金密码")}</p>
     <button type="button" className="profile-password-close" aria-label={tx("关闭资金密码")} onClick={close} disabled={busy}><Cross2Icon/></button>
-    {lx(fields.map(([key,label])=><label key={key}>{lx(label)}<KeyboardInput required type="password" autoComplete={key==='loginPassword'?'current-password':key==='currentPassword'?'off':'new-password'} minLength={key==='newPassword'||key==='confirmPassword'?8:undefined} maxLength={128} disabled={busy} value={form[key]} onChange={e=>setForm(v=>({...v,[key]:e.target.value}))}/></label>))}
-    {lx(error&&<p role="alert">{lx(error)}</p>)}<button className="profile-password-submit" disabled={busy||!form[fields[0][0]]||form.newPassword.length<8||!form.confirmPassword}>{lx(busy?'正在保存…':'确认保存')}</button>
+    {lx(fields.map(([key,label])=><label key={key}>{lx(label)}<KeyboardInput required type="password" autoComplete={key==='loginPassword'?'current-password':key==='currentPassword'?'off':'new-password'} minLength={key==='newPassword'||key==='confirmPassword'?6:undefined} maxLength={key==='newPassword'||key==='confirmPassword'?6:128} inputMode={key==='newPassword'||key==='confirmPassword'?'numeric':undefined} pattern={key==='newPassword'||key==='confirmPassword'?'[0-9]{6}':undefined} disabled={busy} value={form[key]} onChange={e=>setForm(v=>({...v,[key]:e.target.value}))}/></label>))}
+    {lx(error&&<p role="alert">{lx(error)}</p>)}<button className="profile-password-submit" disabled={busy||!form[fields[0][0]]||form.newPassword.length<6||!form.confirmPassword}>{lx(busy?'正在保存…':'确认保存')}</button>
    </form>
   </BottomSheet>
  </>;

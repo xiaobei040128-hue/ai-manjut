@@ -41,3 +41,26 @@
 .newcomer-cover-price{padding:16px;background:#f8f5fb;border:1px solid #eee7f3;border-radius:12px;margin:20px 0 17px}.newcomer-cover-price span{font-size:11px}.newcomer-cover-price strong{font-size:25px;font-weight:600}
 .studio.stage-work .newcomer-cover-copy .newcomer-cta{margin:0;min-height:47px;border-radius:11px;box-shadow:none;font-size:13px}
 @media(max-width:360px){.newcomer-cover-header{grid-template-columns:91px minmax(0,1fr);gap:14px;padding:18px 18px 0}.studio.stage-work .newcomer-cover-art img{width:91px}.studio.stage-work .newcomer-cover-identity>h2{font-size:19px}.studio.stage-work .newcomer-cover-copy{padding:18px}}
+/* Skip withdrawal button and dialog */
+.newcomer-cta-group{display:flex;flex-direction:column;gap:10px}
+.newcomer-skip-btn{display:block;width:100%;min-height:42px;padding:10px 16px;border:1px solid #e0d4e8;border-radius:11px;background:#faf7fc;color:#9680a5;font:500 13px Roboto,"Segoe UI",sans-serif;cursor:pointer;transition:all .15s ease}
+.newcomer-skip-btn:hover{background:#f3edf8;border-color:#c9b8d6;color:#7a5f92}
+.newcomer-skip-dialog-backdrop{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:rgba(30,18,45,.55);backdrop-filter:blur(4px);padding:20px}
+.newcomer-skip-dialog{background:#fff;border-radius:20px;padding:28px 24px 24px;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(60,30,80,.2);text-align:center}
+.newcomer-skip-dialog h3{font-size:18px;color:#4a3058;margin:0 0 12px;line-height:1.4}
+.newcomer-skip-dialog p{font-size:13px;color:#8a7498;line-height:1.6;margin:0 0 10px}
+.newcomer-skip-dialog ul{list-style:none;padding:0;margin:0 0 14px;text-align:left}
+.newcomer-skip-dialog li{font-size:13px;color:#7a5f92;padding:8px 12px;background:#f8f3fc;border-radius:8px;margin-bottom:6px}
+.newcomer-skip-dialog li:before{content:"✕ ";color:#c084a0;font-weight:600}
+.skip-warning{font-size:12px;color:#b07090;font-weight:500;margin-top:8px}
+.skip-dialog-actions{display:flex;gap:10px;margin-top:20px}
+.skip-dialog-actions button{flex:1;min-height:44px;border-radius:11px;font:500 14px Roboto,"Segoe UI",sans-serif;cursor:pointer;border:0;transition:all .15s ease}
+.skip-cancel{background:#f3edf8;color:#8a7498}
+.skip-cancel:hover{background:#ebe3f2}
+.skip-confirm{background:linear-gradient(110deg,#c07090,#a05575);color:#fff;box-shadow:0 3px 0 #7a3d58}
+.skip-confirm:hover{opacity:.9}
+.graduation-reward.skipped{border-color:#e8dce0;background:linear-gradient(105deg,#faf5f7,#f8f3fc)}
+.graduation-reward.skipped>span{color:#a08898}
+.graduation-reward.skipped strong{font-size:15px;color:#907888;font-weight:500}
+
+.newcomer-skip-overlay{position:fixed;inset:0;background:#20132988;z-index:10000}.newcomer-skip-dialog[data-state]{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);box-sizing:border-box;max-width:380px;width:calc(100% - 32px);max-height:calc(100dvh - 40px);overflow:auto;z-index:10001}.newcomer-skip-btn{margin-top:14px}.newcomer-skip-dialog button:disabled{opacity:.55;cursor:wait}

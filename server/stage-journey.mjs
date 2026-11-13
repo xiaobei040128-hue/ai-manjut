@@ -1,3 +1,4 @@
+import {createEarlyStagePolicy} from './early-stage-policy.mjs';
 import {createCommunityLicenses} from './community-licenses.mjs';
 import {createNewcomerCovers} from './newcomer-covers.mjs';
 import {randomBytes} from 'node:crypto';
@@ -7,6 +8,7 @@ export function createStageJourney(store){
  db.exec(`CREATE TABLE IF NOT EXISTS community_progress(owner_id TEXT PRIMARY KEY,completed INTEGER NOT NULL DEFAULT 0,revealed INTEGER NOT NULL DEFAULT -1,answers TEXT NOT NULL DEFAULT '{}',code TEXT NOT NULL,updated_at TEXT NOT NULL);`);
  db.exec('CREATE TABLE IF NOT EXISTS onboarding_reveals(owner_id TEXT NOT NULL,step INTEGER NOT NULL,created_at TEXT NOT NULL,PRIMARY KEY(owner_id,step))');
  db.exec('CREATE TABLE IF NOT EXISTS identity_reward_notices(owner_id TEXT PRIMARY KEY,seen_at TEXT NOT NULL)');
+ db.exec('CREATE TABLE IF NOT EXISTS newcomer_withdrawal_skips(owner_id TEXT PRIMARY KEY,skipped_at TEXT NOT NULL)');
  const has=(sql,id)=>!!db.prepare(sql).get(id);
  function newcomer(id){
   const registration=has("SELECT 1 FROM ledger WHERE owner_id=? AND kind='registration_reward'",id);
@@ -14,8 +16,9 @@ export function createStageJourney(store){
   const experience=has("SELECT 1 FROM assignments a JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.owner_id=? AND f.stage=1 AND a.status='completed'",id)||has("SELECT 1 FROM newcomer_cover_orders WHERE owner_id=? AND state='completed'",id);
   const card=has("SELECT 1 FROM bank_cards WHERE user_id=? AND status='approved'",id);
   const withdrawal=has("SELECT 1 FROM fund_requests WHERE user_id=? AND kind='withdrawal' AND (status='paid' OR newcomer_task=1)",id);
+  const withdrawalSkipped=has('SELECT 1 FROM newcomer_withdrawal_skips WHERE owner_id=?',id);
   const graduate=has("SELECT 1 FROM ledger WHERE owner_id=? AND operation_key='newcomer-graduate:'||owner_id",id);
-  return {registration,identity,experience,card,withdrawal,graduate,complete:identity&&experience&&card&&withdrawal&&graduate};
+  return {registration,identity,experience,card,withdrawal,withdrawalSkipped,graduate,complete:identity&&experience&&card&&(withdrawalSkipped||graduate)};
  }
  function grant(id,amount,key,note){
   if(db.prepare('SELECT 1 FROM ledger WHERE operation_key=?').get(key))return false;
@@ -24,13 +27,14 @@ export function createStageJourney(store){
   store.notifyUser(id,'成长奖励已到账',note+'，已计入可用余额。','finance',key);return true;
  }
  function progress(id){const row=db.prepare('SELECT * FROM community_progress WHERE owner_id=?').get(id);return row?{license:row.revealed===row.completed?licenses.snapshot(id,row.completed):null,completed:row.completed,revealed:row.revealed,answers:JSON.parse(row.answers),code:row.revealed===4||row.completed===5?row.code:null}:{completed:0,revealed:-1,answers:{},code:null};}
- function snapshot(id){
-  const n=newcomer(id),states=[true,n.identity,n.experience,n.card,n.withdrawal,n.graduate];
-  const running=db.prepare("SELECT 1 FROM assignments a JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.owner_id=? AND f.stage=1 AND a.status IN ('active','review','revision')").get(id);
-  const found=running?2:states.findIndex(done=>!done),step=found<0?null:found;
+  function snapshot(id){
+   const n=newcomer(id),states=[true,n.identity,n.experience,n.card,n.withdrawal||n.withdrawalSkipped,n.graduate||n.withdrawalSkipped];
+   const running=db.prepare("SELECT 1 FROM assignments a JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.owner_id=? AND f.stage=1 AND a.status IN ('active','review','revision')").get(id);
+   const found=running?2:states.findIndex(done=>!done),step=found<0?null:found;
   const pendingWithdrawal=db.prepare("SELECT id,status,amount,created_at FROM fund_requests WHERE user_id=? AND kind='withdrawal' AND status IN ('review','paying') ORDER BY created_at DESC LIMIT 1").get(id)||null;
   const identityReview=db.prepare('SELECT status,note FROM identities WHERE user_id=? ORDER BY created_at DESC,rowid DESC LIMIT 1').get(id)||null;
-  return {identityReview,walletAvailable:db.prepare('SELECT COALESCE(SUM(amount),0) n FROM ledger WHERE owner_id=?').get(id).n,pendingWithdrawal,newcomer:n,withdrawalInProgress:!!pendingWithdrawal,cover:covers.snapshot(id),onboarding:{step,revealed:step!==null&&(step===4&&!!pendingWithdrawal||!!running||!!db.prepare('SELECT 1 FROM onboarding_reveals WHERE owner_id=? AND step=?').get(id,step))},community:progress(id)};
+  const withdrawalSkipped=!!db.prepare('SELECT 1 FROM newcomer_withdrawal_skips WHERE owner_id=?').get(id);
+  return {earlyStageTerms:createEarlyStagePolicy(store).effective(id),identityReview,walletAvailable:db.prepare('SELECT COALESCE(SUM(amount),0) n FROM ledger WHERE owner_id=?').get(id).n,pendingWithdrawal,newcomer:{...n,withdrawalSkipped},withdrawalInProgress:!!pendingWithdrawal,cover:covers.snapshot(id),onboarding:{step,revealed:step!==null&&(step===4&&!!pendingWithdrawal||!!running||!!db.prepare('SELECT 1 FROM onboarding_reveals WHERE owner_id=? AND step=?').get(id,step))},community:progress(id)};
  }
  return {
   snapshot,
@@ -52,19 +56,19 @@ export function createStageJourney(store){
   }));},
   purchaseCover(id,input){covers.purchase(id,input);return snapshot(id);},
   submitCover(id,input){const settled=covers.submit(id,input);return {...snapshot(id),settlement:{first:settled.first,commission:settled.cover.commission}};},
-  sync(id){return store.asUser(id,()=>store.audited(id,'journey.sync',id,()=>{
-   const n=newcomer(id),rewards=[];
-   if(n.identity&&grant(id,100,'newcomer-identity:'+id,'实名认证奖励 · 1.00 USD'))rewards.push({id:'newcomer-identity:'+id,amount:100});
-   if(n.identity&&n.experience&&n.card&&n.withdrawal&&grant(id,200,'newcomer-graduate:'+id,'新手计划完成 · 毕业奖励 2.00 USD'))rewards.push({id:'newcomer-graduate:'+id,amount:200});
-   const current=snapshot(id);if(current.onboarding.step===2&&current.onboarding.revealed&&!current.cover&&!db.prepare("SELECT 1 FROM assignments a JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.owner_id=? AND f.stage=1 AND a.status IN ('active','review','revision')").get(id))covers.reveal(id);
-   const community=current.community;if(community.completed>=3&&community.completed<5&&community.revealed===community.completed)licenses.reserve(id,community.completed);
-   return {...snapshot(id),rewards};
-  }));},
+    sync(id){return store.asUser(id,()=>store.audited(id,'journey.sync',id,()=>{
+     const n=newcomer(id),rewards=[];
+     if(n.identity&&grant(id,100,'newcomer-identity:'+id,'实名认证奖励 · 1.00 USD'))rewards.push({id:'newcomer-identity:'+id,amount:100});
+     if(n.identity&&n.experience&&n.card&&n.withdrawal&&!n.withdrawalSkipped&&grant(id,200,'newcomer-graduate:'+id,'新手计划完成 · 毕业奖励 2.00 USD'))rewards.push({id:'newcomer-graduate:'+id,amount:200});
+     const current=snapshot(id);if(current.onboarding.step===2&&current.onboarding.revealed&&!current.cover&&!db.prepare("SELECT 1 FROM assignments a JOIN assignment_terms f ON f.assignment_id=a.id WHERE a.owner_id=? AND f.stage=1 AND a.status IN ('active','review','revision')").get(id))covers.reveal(id);
+     const community=current.community;if(community.completed>=3&&community.completed<5&&community.revealed===community.completed)licenses.reserve(id,community.completed);
+     return {...snapshot(id),rewards};
+    }));},
   reveal(id){return store.asUser(id,()=>store.audited(id,'community.reveal',id,()=>{
    if(!newcomer(id).complete)throw new AppError('请先完成创作启航',403);
    let row=db.prepare('SELECT * FROM community_progress WHERE owner_id=?').get(id);
    if(!row){db.prepare('INSERT INTO community_progress(owner_id,code,updated_at) VALUES(?,?,?)').run(id,randomBytes(4).toString('hex').toUpperCase(),new Date().toISOString());row=db.prepare('SELECT * FROM community_progress WHERE owner_id=?').get(id);}
-   if(row.completed<5)db.prepare('UPDATE community_progress SET revealed=completed,updated_at=? WHERE owner_id=?').run(new Date().toISOString(),id);
+   if(row.completed<5){const answers=JSON.parse(row.answers);if(row.completed<3&&row.revealed!==row.completed)answers._rewardQuote=createEarlyStagePolicy(store).effective(id)[['knowledge','review','genre'][row.completed]].amount;db.prepare('UPDATE community_progress SET revealed=completed,answers=?,updated_at=? WHERE owner_id=?').run(JSON.stringify(answers),new Date().toISOString(),id);}
    if(row.completed>=3&&row.completed<5){licenses.reveal(id,row.completed);licenses.reserve(id,row.completed);}
    return snapshot(id);
   }));},
@@ -72,14 +76,26 @@ export function createStageJourney(store){
    if(!newcomer(id).complete)throw new AppError('请先完成创作启航',403);
    const row=db.prepare('SELECT * FROM community_progress WHERE owner_id=?').get(id);
    if(!row||row.completed!==input.step||row.revealed!==row.completed||row.completed>=5)throw new AppError('请刷新当前探索记录后提交',409);
-   const answers=JSON.parse(row.answers),step=row.completed;
+   const answers=JSON.parse(row.answers),step=row.completed;delete answers._rewardQuote;
    if(step===0){if(input.answer!==0)throw new AppError('AI 生成不等于自动获得全部权利，请确认素材授权');answers.knowledge=true;}
    if(step===1){if(typeof input.review!=='string'||Array.from(input.review.trim()).length<10||input.review.length>1000)throw new AppError('请填写至少 10 个字的感受');answers.review=input.review.trim();}
    if(step===2){if(typeof input.genre!=='string'||input.genre.trim().length<2||input.genre.length>100)throw new AppError('请填写喜欢的漫剧题材');answers.genre=input.genre.trim();}
-   const reward=step<3?[58,66,77][step]:licenses.complete(id,step,input.code);
+   const reward=step<3?(JSON.parse(row.answers)._rewardQuote??createEarlyStagePolicy(store).effective(id)[['knowledge','review','genre'][step]].amount):licenses.complete(id,step,input.code);
    if(step<3)grant(id,reward,'community-task:'+id+':'+step,'探索任务奖励');
-   db.prepare('UPDATE community_progress SET completed=completed+1,revealed=-1,answers=?,updated_at=? WHERE owner_id=?').run(JSON.stringify(answers),new Date().toISOString(),id);
-   return {...snapshot(id),taskReward:reward};
-  }));}
- };
+    db.prepare('UPDATE community_progress SET completed=completed+1,revealed=-1,answers=?,updated_at=? WHERE owner_id=?').run(JSON.stringify(answers),new Date().toISOString(),id);
+    return {...snapshot(id),taskReward:reward};
+    }));},
+  skipWithdrawal(id,input={}){return store.asUser(id,()=>store.audited(id,'newcomer.withdrawal.skip',id,()=>{
+   if(input.confirm!==true)throw new AppError('请确认跳过提款并放弃 2 美元毕业奖励',400);
+   const n=newcomer(id);
+   if(n.withdrawalSkipped)return snapshot(id);
+   if(!n.identity||!n.experience||!n.card)throw new AppError('请先完成前四项任务',409);
+   if(n.withdrawal||db.prepare("SELECT 1 FROM fund_requests WHERE user_id=? AND kind='withdrawal' AND status IN ('review','paying')").get(id))throw new AppError('已有提款申请，请查看提款记录',409);
+   if(n.graduate)throw new AppError('毕业奖励已领取，无需跳过',409);
+   if(db.prepare('SELECT 1 FROM newcomer_withdrawal_skips WHERE owner_id=?').get(id))throw new AppError('已跳过提现，无需重复操作',409);
+   db.prepare('INSERT INTO newcomer_withdrawal_skips(owner_id,skipped_at) VALUES(?,?)').run(id,new Date().toISOString());
+   store.notifyUser(id,'已跳过首次提款','你已确认跳过首次提款，并放弃 2 美元毕业奖励。','finance','withdrawal-skip:'+id);
+   return snapshot(id);
+  }));},
+   };
 }

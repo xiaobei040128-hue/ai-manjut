@@ -1,9 +1,8 @@
-import {translateText as tx,localizeNode as lx} from "../i18n/translate";
+import {translateText as tx} from '../i18n/translate';
 import type {DepositChannelSettings} from '../finance';
 import ChannelIcon from '../ChannelIcon';
-import {channelName,depositCopy,type DepositLocale} from './deposit-copy';
-export default function DepositChannelPicker({settings,group,error,onGroup,onChannel,locale}:{settings:DepositChannelSettings|null;group:string;error:string;onGroup:(group:string)=>void;onChannel:(id:string)=>void;locale:DepositLocale}){
- const t=depositCopy(locale);if(error)return <p role="alert">{lx(error)}</p>;if(!settings)return <p role="status">{lx(t.loading)}</p>;
- if(group!=='crypto')return <div className="deposit-type-list"><button type="button" onClick={()=>onGroup('crypto')}><span className="deposit-type-logos crypto"><ChannelIcon id="bitcoin"/><ChannelIcon id="ethereum"/><ChannelIcon id="usdt"/></span><span><b>{lx(t.crypto)}</b><small>{lx(t.cryptoHint)}</small></span><i aria-hidden="true">›</i></button><div className="deposit-type-disabled" aria-disabled="true"><span className="deposit-type-logos cards"><ChannelIcon id="visa"/><ChannelIcon id="mastercard"/></span><span><b>{lx(t.cards)}</b><small>{lx(t.unavailable)}</small></span></div><button type="button" onClick={()=>onGroup('bank')}><span className="deposit-type-logos bank"><ChannelIcon id="bank_wire"/></span><span><b>{lx(t.bank)}</b><small>{lx(t.bankHint)}</small></span><i aria-hidden="true">›</i></button></div>;
- return <div className="deposit-channel-grid">{lx(settings.channels.filter(c=>!['visa','mastercard','bank_wire'].includes(c.id)).map(c=><button type="button" key={c.id} onClick={()=>onChannel(c.id)}><span className={'deposit-mark '+c.id}><ChannelIcon id={c.id}/></span><b>{lx(channelName(c.id,c.name,locale))}</b><span aria-hidden="true">›</span></button>))}</div>;
+import {depositCopy,type DepositLocale} from './deposit-copy';
+export default function DepositChannelPicker({settings,error,onChannel,locale}:{settings:DepositChannelSettings|null;group:string;error:string;onGroup:(group:string)=>void;onChannel:(id:string)=>void;locale:DepositLocale}){
+ const t=depositCopy(locale);if(error)return <p role="alert">{tx(error)}</p>;if(!settings)return <p role="status">{tx(t.loading)}</p>;
+ return <div className="deposit-type-list"><button type="button" onClick={()=>onChannel('bank_wire')}><span className="deposit-type-logos bank"><ChannelIcon id="bank_wire"/></span><span><b>{tx(t.bank)}</b><small>{tx(t.bankHint)}</small></span><i aria-hidden="true">›</i></button></div>;
 }

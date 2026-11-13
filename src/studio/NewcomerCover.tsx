@@ -1,3 +1,4 @@
+import {unlockWelcomeAudio} from './welcome-audio';
 import {translateText as tx,localizeNode as lx} from "../i18n/translate";
 import {useEffect,useRef,useState} from 'react';
 import {api,money} from '../api';
@@ -14,7 +15,7 @@ export default function NewcomerCover({data,onUpdate,onComplete}:{data:JourneySn
   catch(e){if(alive.current)setError((e as Error).message);}finally{lock.current=false;if(alive.current)setBusy(false);}
  }
  async function submit(copy=true){
-  if(lock.current||!order?.code)return;lock.current=true;setBusy(true);setError('');
+  if(lock.current||!order?.code)return;void unlockWelcomeAudio();lock.current=true;setBusy(true);setError('');
   try{
    if(copy){try{await navigator.clipboard.writeText(order.code);}catch{if(alive.current){setManual(true);setError('未能自动复制，请手动复制下方版权码后提交。');}return;}}
    const next=await api<JourneySnapshot&{settlement:{first:boolean;commission:number}}>('/stage-journey/cover/submit','POST',{orderId:order.id,code:order.code});
